@@ -15,6 +15,9 @@ await mkdir(output,{recursive:true});
 // returns: purchase-orders is write-gated (erp_write_unqualified), the other
 // modules are admitted.
 const stubs={
+ // This suite exercises list transport; app-screens tests the real 300ms clock.
+ // Commit the toolbar query synchronously without changing existing assertions.
+ 'app-quick-tabs':"export * from '@/components/app'; import {ScreenToolbar as RealScreenToolbar} from '@/components/app'; export const ScreenToolbar=props=><RealScreenToolbar {...props} onSearchChange={value=>{props.onSearchChange(value);props.onSearch(value);}}/>;",
  'erp-client':`
 export const erpClient={
  async getLookupOptions(module,query){return globalThis.__erpStatusHandler?globalThis.__erpStatusHandler(module,query):{items:[],page:1,hasMore:false,requiredParameters:[]};},
@@ -55,6 +58,7 @@ const stubPlugin={
   builder.onResolve({filter:/.*/},args=>{
    if(!/(?:tab-(?:erp-screen|orders|purchases)\.tsx|erp-document-detail-body\.tsx|erp-line-editor\.tsx|sales-order-status-filter\.tsx|document-detail\/[^/]+\.tsx|document-detail\/registry\.ts)$/.test(args.importer.replace(/\\/g,'/')))return null;
    const requested=args.path.replace(/\\/g,'/');
+   if(requested==='@/components/app')return{path:'app-quick-tabs',namespace:'stub'};
    for(const key of Object.keys(stubs))if(requested.endsWith(key))return{path:key,namespace:'stub'};
    return null;
   });
@@ -153,12 +157,14 @@ test('server pagination changes pages and size, resets queries, and preserves th
   await act(async()=>renderer.root.findByProps({'aria-label':'Số dòng mỗi trang'}).props.onChange({target:{value:'50'}}));await flush();
   assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).pageSize,50);
   await click('Trang sau');
-  const input=renderer.root.findAll(node=>node.type==='input'&&node.props.placeholder?.startsWith('Tìm theo mã'))[0];
+  // P2-03: shared toolbar exposes a named search form instead of input keydown.
+  const input=renderer.root.findByProps({'aria-label':'Tìm kiếm chứng từ',type:'search'});
   await act(async()=>input.props.onChange({target:{value:'query test'}}));
-  await act(async()=>input.props.onKeyDown({key:'Enter'}));await flush();
+  await act(async()=>renderer.root.findByProps({role:'search'}).props.onSubmit({preventDefault(){}}));await flush();
   assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).search,'query test');assert.equal(calls.at(-1).pageSize,50);
   await click('Trang sau');
-  const chip=renderer.root.findAll(node=>node.type==='button'&&node.props.onClick&&node.children.some(child=>child.type==='span'&&child.children?.includes('Chờ duyệt')))[0];
+  // Shared FilterChips puts the status label directly in the button.
+  const chip=renderer.root.findAll(node=>node.type==='button'&&node.props['aria-pressed']!==undefined&&node.children.includes('Chờ duyệt'))[0];
   await act(async()=>chip.props.onClick());await flush();
   assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).statusId,2);
   fail=true;await click('Trang sau');
@@ -195,19 +201,20 @@ for(const screenModule of ['sales-orders','sales-order-pm','sales-order-sa'])tes
  try{
   await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:screenModule,...props,isActive:true}));});await flush();
   assert.equal(lookups.length,1);assert.equal(lookups[0].scope,screenModule);assert.equal(lookups[0].branchId,'MB');assert.equal(lookups[0].lookupId,'header.StatusID');
-  const select=()=>renderer.root.findByProps({'aria-label':'Lọc trạng thái đơn hàng'});
-  const options=()=>select().findAll(node=>node.type==='option');
-  assert.deepEqual(options().map(node=>node.children.join('')),['Tất cả','Trạng thái minh họa A','Trạng thái minh họa B','Trạng thái minh họa C']);
+  // P2-03: native lookup IDs/labels now render as pressed chips, without counts.
+  const chips=()=>renderer.root.findByProps({'aria-label':'Lọc trạng thái đơn hàng'}).findAllByType('button');
+  const chip=label=>chips().find(node=>node.children.includes(label));
+  assert.deepEqual(chips().map(node=>node.children.join('')),['Tất cả','Trạng thái minh họa A','Trạng thái minh họa B','Trạng thái minh họa C']);
   assert.doesNotMatch(collect(renderer).text,/Đang mở \/ Chưa khóa|Đã khóa \/ Hoàn tất|Phân hệ ERP/);
   assert.match(collect(renderer).text,/Tên trạng thái từ API/);
   for(const [label,id] of [['Trạng thái minh họa A',-1],['Trạng thái minh họa B',0],['Trạng thái minh họa C',12]]){
-   await act(async()=>select().props.onChange({target:{value:String(id)}}));await flush();
+   await act(async()=>chip(label).props.onClick());await flush();
    assert.equal(calls.at(-1).scope,screenModule);assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).statusId,id);
-   assert.equal(select().props.value,String(id));
+   assert.equal(chip(label).props['aria-pressed'],true);
   }
   await act(async()=>renderer.root.findByProps({'aria-label':'Trang sau'}).props.onClick());await flush();
   assert.equal(calls.at(-1).page,2);assert.equal(calls.at(-1).statusId,12);
-  await act(async()=>select().props.onChange({target:{value:''}}));await flush();
+  await act(async()=>chip('Tất cả').props.onClick());await flush();
   assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).statusId,undefined);
  }finally{delete globalThis.__erpListHandler;delete globalThis.__erpStatusHandler;if(renderer)await act(async()=>renderer.unmount());}
 });
@@ -224,13 +231,13 @@ test('status lookup paging retries failures and ignores responses for a previous
   await act(async()=>renderer.update(React.createElement(TabErpScreen,{module:'sales-order-pm',currentBranch:'MN',isActive:true})));await flush();
   await act(async()=>resolveOld({items:[{id:'99',label:'STALE-STATUS'}],page:1,hasMore:false,requiredParameters:[]}));await flush();
   assert.doesNotMatch(collect(renderer).text,/STALE-STATUS/);
-  const select=()=>renderer.root.findByProps({'aria-label':'Lọc trạng thái đơn hàng'});
   const button=label=>renderer.root.findAll(node=>node.type==='button'&&node.children.includes(label))[0];
-  await act(async()=>select().props.onChange({target:{value:'__more__'}}));await flush();
+  // Lookup pagination is an explicit 44px action instead of a sentinel option.
+  await act(async()=>button('Thêm trạng thái').props.onClick());await flush();
   assert.match(collect(renderer).text,/Chưa tải được danh sách trạng thái/);assert.match(collect(renderer).text,/Trạng thái mới 1/);
   fail=false;await act(async()=>button('Thử lại').props.onClick());await flush();
   assert.match(collect(renderer).text,/Trạng thái mới 2/);
-  assert.equal(select().findAll(node=>node.type==='option'&&node.children.includes('Thêm trạng thái')).length,0);
+  assert.equal(button('Thêm trạng thái'),undefined);
  }finally{delete globalThis.__erpStatusHandler;if(renderer)await act(async()=>renderer.unmount());}
 });
 
@@ -272,7 +279,7 @@ for(const Component of [TabOrders,TabPurchases])test(`${Component.name} paginate
 
 // Màn xuất hàng theo PXK hiển thị bảng chứng từ trên desktop như các màn mua/bán.
 // CSS quyết định bảng hay thẻ theo bề rộng, còn điều kiện "có dựng bảng" thì kiểm tra được ngay trong cây render.
-test('xuất hàng theo PXK dựng bảng desktop với đúng cột, màn khác vẫn giữ lưới thẻ',async()=>{
+test('xuất hàng theo PXK và xuất kho đều dựng bảng desktop và giữ thẻ mobile',async()=>{
  const tables=renderer=>renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.['data-document-table']!==undefined);
  globalThis.__erpListHandler=async(module,params)=>({rows:[{documentId:'PXK-TEST-0001',header:{objectName:'Khách hàng kiểm thử',userCreate:'nguoi.lap',statusName:'Lập hóa đơn',documentDateDisplay:'10/09/2026 00:00:00',statusForeColor:'#FFC000',statusBackColor:'#FFFF00',memo:'Ghi chú kiểm thử'}}],page:params.page,pageSize:params.pageSize,hasMore:false});
  let renderer;
@@ -281,14 +288,16 @@ test('xuất hàng theo PXK dựng bảng desktop với đúng cột, màn khác
   assert.equal(tables(renderer).length,1,'PXK phải dựng bảng chứng từ trên desktop');
   const {text}=collect(renderer);
   for(const header of ['STT','Mã chứng từ','Ngày chứng từ','Khách hàng','Trạng thái','Người lập / Đề nghị','Nội dung','Chi tiết'])assert.ok(text.includes(header),`bảng PXK thiếu cột ${header}: ${text}`);
-  for(const cell of ['PXK-TEST-0001','10/09/2026 00:00:00','Khách hàng kiểm thử','Ghi chú kiểm thử'])assert.ok(text.includes(cell),`bảng PXK thiếu dữ liệu ${cell}`);
-  // Ô trạng thái vẫn nhận màu nền của BE và vẫn đổi sang màu chữ đọc được (chữ vàng trên nền vàng -> đen).
-  const colored=renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.style?.backgroundColor==='#FFFF00');
-  assert.ok(colored.length>0,'ô trạng thái phải nhận màu nền của BE');
-  assert.ok(colored.every(node=>node.props.style.color==='#000000'),'chữ trên badge vàng phải đổi sang màu đọc được');
+  // P2-06: date display omits midnight; ERP hue now has contrast-checked theme pairs.
+  for(const cell of ['PXK-TEST-0001','10/09/2026','Khách hàng kiểm thử','Ghi chú kiểm thử'])assert.ok(text.includes(cell),`bảng PXK thiếu dữ liệu ${cell}`);
+  assert.ok(!text.includes('00:00:00'));
+  const colored=renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.className?.includes('app-status-badge'));
+  assert.ok(colored.length>0,'ô trạng thái vẫn có badge chung');
+  assert.ok(colored.every(node=>node.props.style['--status-bg']&&node.props.style['--status-dark-bg']),'badge có cặp màu sáng/tối');
   await act(async()=>{renderer.unmount();});renderer=null;
   await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:'warehouse-qr',...props,isActive:true}));});await flush();
-  assert.equal(tables(renderer).length,0,'màn khác vẫn giữ lưới thẻ như trước');
+  // P2-03 explicitly expands desktop tables from 8 to all 19 modules.
+  assert.equal(tables(renderer).length,1,'xuất kho cũng có bảng desktop theo P2-03');
   assert.ok(collect(renderer).text.includes('PXK-TEST-0001'),'màn giữ lưới thẻ vẫn đọc được danh sách');
  }finally{delete globalThis.__erpListHandler;if(renderer)await act(async()=>renderer.unmount());}
 });
@@ -304,10 +313,11 @@ test('đề nghị nhập hàng dựng bảng desktop với cột và màu trạ
   const {text}=collect(renderer);
   for(const header of ['STT','Mã chứng từ','Ngày chứng từ','Đối tượng / Mục đích','Trạng thái','Nội dung','Chi tiết'])assert.ok(text.includes(header),`bảng nhập hàng thiếu cột ${header}: ${text}`);
   assert.ok(!text.includes('Người lập / Đề nghị'),'dòng nhập hàng không có người lập nên cột này phải ẩn');
-  for(const cell of ['NK-TEST-0001','01/10/2026 14:22:11','Nhà cung cấp kiểm thử','Chờ nhập kho','Ghi chú nhập kho kiểm thử'])assert.ok(text.includes(cell),`bảng nhập hàng thiếu dữ liệu ${cell}`);
-  // Màu BE đủ tương phản (chữ trắng trên nền xanh đậm) thì giữ nguyên, không tự đổi.
-  const colored=renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.style?.backgroundColor==='#00695C');
-  assert.ok(colored.length>0,'ô trạng thái phải nhận màu nền của BE');
-  assert.ok(colored.every(node=>node.props.style.color==='#FFFFFF'),'cặp màu đủ tương phản phải giữ nguyên màu chữ của BE');
+  // P2-06 keeps actual hours/minutes, omits seconds and paints waiting statuses amber.
+  for(const cell of ['NK-TEST-0001','01/10/2026 14:22','Nhà cung cấp kiểm thử','Chờ nhập kho','Ghi chú nhập kho kiểm thử'])assert.ok(text.includes(cell),`bảng nhập hàng thiếu dữ liệu ${cell}`);
+  assert.ok(!text.includes('14:22:11'));
+  const colored=renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.className?.includes('app-status-badge'));
+  assert.ok(colored.length>0,'ô trạng thái vẫn có badge chung');
+  assert.ok(colored.every(node=>node.props.style['--status-fg']==='#92400E'&&node.props.style['--status-dark-fg']==='#FDE68A'),'trạng thái chờ dùng tone cam sáng/tối');
  }finally{delete globalThis.__erpListHandler;if(renderer)await act(async()=>renderer.unmount());}
 });

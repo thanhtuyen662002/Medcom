@@ -1,14 +1,24 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, RefreshCw, Plus, AlertCircle, ChevronRight, ChevronLeft, Calendar, Info, Loader2, Building } from "lucide-react";
+import { useState, useEffect, useCallback, useRef, useId } from "react";
+import { Plus, AlertCircle, Loader2 } from "lucide-react";
 import { erpClient, type ErpScreenModule, type ErpScreenDescription, type ErpDocumentRow, type ErpActionState, type ErpChoice, type ErpCommandResult } from "@/lib/erp/erp-client";
-import { UntitledBottomSheet } from "./bottom-sheet";
+import { FormSheet } from "@/components/app/form-sheet";
+import { FormField, FormSection } from "@/components/app/form-field";
+import { useIsMobile } from "@/components/app/use-is-mobile";
 import { UntitledButton } from "./button";
 import { LookupField, choiceLabel } from "./lookup-field";
-import { DocumentCardSkeleton } from "./skeleton";
-import { DocumentListTable, type DocumentListColumn } from "./document-list-table";
-import { DocumentListPagination } from "./document-list-pagination";
+import { ScreenHeader } from "@/components/app/screen-header";
+import { ScreenToolbar } from "@/components/app/screen-toolbar";
+import { FilterChips, type FilterChip } from "@/components/app/filter-chips";
+import { FilterSheet } from "@/components/app/filter-sheet";
+import { RecordList } from "@/components/app/record-list";
+import { type RecordColumn } from "@/components/app/record-table";
+import { StatusBadge } from "@/components/app/status-badge";
+import { ListState } from "@/components/app/list-state";
+import { AppButton } from "@/components/app";
+import { CreateFab } from "@/components/app/create-fab";
+import { ERP_LIST_COLUMNS, erpListText as listText } from "@/lib/erp/list-columns";
 import { DocumentDetailDialog } from "@/components/erp/document-detail/document-detail-dialog";
 import { getDocumentDetailEntry } from "@/lib/erp/document-detail/registry";
 import { PurchaseOrderCreateSheet } from "./purchase-order-create-sheet";
@@ -20,12 +30,12 @@ import { useSalesOrderAttachments } from "@/components/erp/use-sales-order-attac
 import { SalesOrderAttachmentPicker } from "@/components/erp/sales-order-attachment-picker";
 import type { ErpDocumentPage } from "@/lib/erp/erp-screen-contracts";
 
-import { SalesOrderStatusFilter } from "@/components/erp/sales-order-status-filter";
+import { useSalesOrderStatuses } from "@/components/erp/sales-order-status-filter";
 import { documentStatusLabel } from "@/lib/erp/document-status";
-import { statusColorsFrom } from "@/lib/erp/status-colors";
+import { formatDateTime } from "@/lib/erp/document-detail/format";
 import { formatMoney as formatMoneyValue } from "@/lib/erp/money";
 import { MoneyInput } from "@/components/erp/money-input";
-import { WRITE_GATED_MODULES, getActionErrorMessage, getActionReasonMessage, formatVietnamDate } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
+import { WRITE_GATED_MODULES, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
 
 interface TabErpScreenProps {
   module: ErpScreenModule;
@@ -196,18 +206,12 @@ export function TabErpScreen({
   const orderCreateIntent = useRef<Parameters<typeof erpClient.createDocument>[1] | null>(null);
   const createGeneration = useRef(0);
   const createLocked = !!createdOrderId || pendingOrderCreate;
-  const [createIsMobile, setCreateIsMobile] = useState(false);
+  const createIsMobile = useIsMobile();
   const [salesOrderCreateStep, setSalesOrderCreateStep] = useState(0);
   const createContentRef = useRef<HTMLDivElement>(null);
   const isSalesOrderMobile = module === "sales-orders" && createIsMobile;
   const showCreateHeader = !isSalesOrderMobile || salesOrderCreateStep === 0;
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const query = window.matchMedia("(max-width: 767px)");
-    const sync = () => setCreateIsMobile(query.matches);
-    sync(); query.addEventListener("change", sync);
-    return () => query.removeEventListener("change", sync);
-  }, []);
+
   useEffect(() => {
     if (createModalOpen) {
       setSalesOrderCreateStep(createLocked ? 2 : 0);
@@ -463,6 +467,9 @@ export function TabErpScreen({
   }, [currentBranch, module, isActive, loadList]);
 
   // Body owns detail reads; selection only opens the registered body.
+  const [detailReloadVersion, setDetailReloadVersion] = useState(0);
+  const detailCloseGuard = useRef<(() => boolean) | null>(null);
+  const detailOpenGuard = useRef<(() => boolean) | null>(null);
   const handleOpenDetail = async (documentId: string) => {
     const guard = detailOpenGuard.current ?? detailCloseGuard.current;
     if (documentId !== selectedDocId && guard && !guard()) return;
@@ -478,9 +485,6 @@ export function TabErpScreen({
     }
   }, [targetDocumentId, isActive]);
 
-  const [detailReloadVersion, setDetailReloadVersion] = useState(0);
-  const detailCloseGuard = useRef<(() => boolean) | null>(null);
-  const detailOpenGuard = useRef<(() => boolean) | null>(null);
   const setDetailCloseGuard = useCallback((guard: (() => boolean) | null) => { detailCloseGuard.current = guard; }, []);
   const setDetailOpenGuard = useCallback((guard: (() => boolean) | null) => { detailOpenGuard.current = guard; }, []);
   const handleCloseDetail = () => {
@@ -799,285 +803,153 @@ export function TabErpScreen({
     return true;
   });
 
-  // Lưới chứng từ dạng bảng trên desktop. Màn xuất hàng theo PXK và đề nghị nhập hàng dùng chung bảng này như các màn mua/bán.
-  const useDesktopTable = ["purchase-requests", "purchase-approvals", "purchase-orders", "sales-orders", "sales-order-pm", "sales-order-sa", "sales-qr", "inbound-requests"].includes(module);
-  const listText = (row: ErpDocumentRow, ...keys: string[]) => {
-    for (const key of keys) {
-      const value = row.header?.[key];
-      if ((typeof value === "string" && value.trim()) || typeof value === "number") return String(value);
+  const salesStatuses = useSalesOrderStatuses({
+    module: isSalesOrderModule ? module : null, branchId: currentBranch, isActive,
+  });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filterSheetId = useId();
+  const immediateSearch = useRef(false);
+  const cancelSearchDebounce = () => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current); searchDebounceRef.current = null;
     }
-    return "";
   };
+  // Clear updates the controlled value before the existing loadList reads it.
+  // Typing retains the screen's 400 ms debounce, without a second toolbar timer.
+  useEffect(() => {
+    if (!immediateSearch.current) return;
+    immediateSearch.current = false;
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current); searchDebounceRef.current = null;
+    }
+    if (isActive) void loadListRef.current(1);
+  }, [search, isActive]);
+
   const rowStatus = (row: ErpDocumentRow) => isSalesOrderModule
     ? documentStatusLabel(typeof row.header?.statusId === "number" ? row.header.statusId : null, listText(row, "statusName"))
     : listText(row, "statusName") || (row.header?.isLocked ? "Đã khóa" : "Đang mở");
-  const tableColumns: DocumentListColumn<ErpDocumentRow>[] = [
-    { id: "document", label: "Mã chứng từ", className: "min-w-40 whitespace-nowrap", render: row => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{row.documentId}</span> },
-    { id: "date", label: "Ngày chứng từ", className: "whitespace-nowrap tabular-nums", render: row => listText(row, "documentDateDisplay", "purchaseDateDisplay", "datetimeRecordedDisplay") || formatVietnamDate(listText(row, "documentDate", "purchaseDate", "datetimeRecorded")) || "—" },
-    { id: "object", label: module.startsWith("sales-") ? "Khách hàng" : module === "purchase-orders" ? "Nhà cung cấp" : "Đối tượng / Mục đích", className: "min-w-60 max-w-sm", render: row => <span className="line-clamp-2 break-words font-medium" title={listText(row, "objectName", "customerName", "vendorName", "purposeDescOrClient")}>{listText(row, "objectName", "customerName", "vendorName", "purposeDescOrClient") || "—"}</span> },
-    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: row => <span className="inline-flex rounded-lg border border-neutral-200 bg-neutral-100 px-2.5 py-1 text-sm font-medium dark:border-neutral-700 dark:bg-neutral-800" style={statusColorsFrom(row.header)}>{rowStatus(row)}</span> },
-    ...(displayRows.some(row => listText(row, "personSuggest", "userCreate")) ? [{ id: "creator", label: "Người lập / Đề nghị", className: "min-w-40 max-w-52", render: (row: ErpDocumentRow) => <span className="line-clamp-2 break-words">{listText(row, "personSuggest", "userCreate") || "—"}</span> }] : []),
-    { id: "notes", label: "Nội dung", className: "min-w-52 max-w-sm", render: row => <span className="line-clamp-2 break-words" title={listText(row, "memo", "notes")}>{listText(row, "memo", "notes") || "—"}</span> },
-  ];
+  const statusBadge = (row: ErpDocumentRow) => ({
+    label: rowStatus(row),
+    statusForeColor: typeof row.header?.statusForeColor === "string" ? row.header.statusForeColor : undefined,
+    statusBackColor: typeof row.header?.statusBackColor === "string" ? row.header.statusBackColor : undefined,
+  });
+  const columnConfig = ERP_LIST_COLUMNS[module];
+  const dateColumn = columnConfig.find(column => column.kind === "date")!;
+  const dateText = (row: ErpDocumentRow) => {
+    const display = listText(row, ...dateColumn.keys.filter(key => key.endsWith("Display")));
+    return formatDateTime(display || listText(row, ...dateColumn.keys.filter(key => !key.endsWith("Display"))));
+  };
+  const tableColumns: RecordColumn<ErpDocumentRow>[] = columnConfig.map(column => ({
+    id: column.id, label: column.label,
+    className: column.kind ? "whitespace-nowrap" : "min-w-40 max-w-sm",
+    render: row => column.kind === "document"
+      ? <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{row.documentId}</span>
+      : column.kind === "date" ? dateText(row) || "—"
+      : column.kind === "status" ? <StatusBadge {...statusBadge(row)} />
+      : <span className="line-clamp-2 break-words" title={listText(row, ...column.keys)}>{listText(row, ...column.keys) || "—"}</span>,
+  }));
+  const objectKeys = columnConfig.find(column => column.id === "object")?.keys ?? [];
+  const creatorKeys = columnConfig.find(column => column.id === "creator")?.keys ?? [];
 
-  const createActionButton = isCreateVisible ? (
-    <UntitledButton
-      variant="primary"
-      size="md"
-      onClick={() => {
-        if (module === "purchase-orders") setPoCreateOpen(true);
-        else if (module === "purchase-requests") setPrCreateOpen(true);
-        else setCreateModalOpen(true);
-      }}
-      disabled={!canCreate}
-      title={createActionTooltip}
-      iconLeading={<Plus className="size-4" />}
-    >
-      Tạo mới
-    </UntitledButton>
-  ) : null;
+  const serverChips = isApprovalModule ? [
+    { value: "all", label: "Tất cả", status: null },
+    { value: "pending", label: "Chờ duyệt", status: 2 },
+    { value: "approved", label: "Đã duyệt", status: 3 },
+    { value: "rejected", label: "Không duyệt", status: 4 },
+  ] : [
+    { value: "all", label: "Tất cả", status: null },
+    { value: "draft", label: "Mới lập", status: 1 },
+    { value: "pending", label: "Chờ duyệt", status: 2 },
+    { value: "approved", label: "Đã duyệt", status: 3 },
+    { value: "returned", label: "Trả về", status: 4 },
+    { value: "ordered", label: "Đã gửi ĐMH", status: 5 },
+  ];
+  const chipItems: FilterChip[] = isSalesOrderModule
+    // Lookup provides labels/IDs, not counts across the server result set.
+    ? [{ value: "", label: "Tất cả", disabled: !isActive }, ...salesStatuses.choices.map(choice => ({ value: String(choice.id), label: choice.label, disabled: !isActive }))]
+    : isSalesModule ? [{ value: "", label: "Tất cả" }]
+    : useServerStatusChips ? serverChips.map(chip => ({
+      ...chip, count: chip.status === null ? rows.length : rows.filter(row => row.header?.statusId === chip.status).length,
+    })) : [
+      { value: "all", label: "Tất cả", count: rows.length },
+      { value: "open", label: "Đang mở / Chưa khóa", count: rows.filter(row => {
+        const locked = row.header?.isLocked ?? (row as Record<string, unknown>).isLocked;
+        return locked === false || locked === 0 || locked === "0" || locked == null;
+      }).length },
+      { value: "locked", label: "Đã khóa / Hoàn tất", count: rows.filter(row => {
+        const locked = row.header?.isLocked ?? (row as Record<string, unknown>).isLocked;
+        return locked === true || locked === 1 || locked === "1";
+      }).length },
+    ];
+  const selectedStatus = isSalesModule ? (statusId === null ? "" : String(statusId)) : statusFilter;
+  const selectStatus = (value: string, size = pageSize) => {
+    if (isSalesOrderModule) {
+      const next = value === "" ? null : Number(value);
+      setStatusId(next); void loadList(1, false, next, size);
+    } else if (useServerStatusChips) {
+      const chip = serverChips.find(item => item.value === (value || "all"))!;
+      setStatusFilter(chip.value); setStatusId(chip.status);
+      void loadList(1, false, chip.status, size);
+    } else {
+      setStatusFilter(value || "all");
+      if (page !== 1 || size !== pageSize) void loadList(1, false, undefined, size);
+    }
+  };
+  const openCreate = () => {
+    if (module === "purchase-orders") setPoCreateOpen(true);
+    else if (module === "purchase-requests") setPrCreateOpen(true);
+    else setCreateModalOpen(true);
+  };
+  const title = screenMeta?.caption || getModuleTitle(module);
 
   return (
-    <div className="space-y-4 pb-24 animate-uui-fade-in">
-      {/* Module Header + Toolbar (No technical menu IDs or form names) */}
-      <div className="rounded-2xl border border-neutral-200/80 bg-white shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="flex flex-col gap-3 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
-          {/* Identity */}
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-              <Building aria-hidden className="size-3.5 shrink-0" />
-              <span className="truncate">Chi nhánh {currentBranch}</span>
-            </div>
-            <h2 className="mt-1 truncate text-lg font-bold tracking-tight text-neutral-900 dark:text-white sm:text-xl">
-              {screenMeta?.caption || getModuleTitle(module)}
-            </h2>
-          </div>
-
-          {/* Controls: search (auto-load) + status filter + create */}
-          <div className="flex flex-col gap-2 border-t border-neutral-100 pt-3 sm:flex-row sm:items-center sm:gap-2.5 lg:border-0 lg:pt-0 dark:border-neutral-800">
-            <div className="relative min-w-0 sm:flex-1 lg:w-72 lg:flex-none">
-              <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter") return;
-                  if (searchDebounceRef.current) { clearTimeout(searchDebounceRef.current); searchDebounceRef.current = null; }
-                  loadList(1);
-                }}
-                placeholder="Tìm theo mã chứng từ, người lập, đối tượng..."
-                className="h-11 w-full rounded-xl border border-neutral-200 bg-white pl-9 pr-3 text-sm text-neutral-900 shadow-2xs outline-none transition-colors placeholder:text-neutral-400 focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-              />
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              {isSalesOrderModule && (
-                <div className="min-w-0 flex-1 sm:flex-none">
-                  <SalesOrderStatusFilter module={module} branchId={currentBranch} isActive={isActive} value={statusId} onChange={next => {
-                    setStatusId(next); void loadList(1, false, next);
-                  }} />
-                </div>
-              )}
-              {createActionButton}
-            </div>
-          </div>
-        </div>
-
-        {isCreateVisible && !canCreate && createActionTooltip && (
-          <p className="flex items-center gap-1.5 border-t border-neutral-100 px-4 py-2.5 text-[11px] text-amber-700 sm:px-5 dark:border-neutral-800 dark:text-amber-300">
-            <AlertCircle aria-hidden className="size-3.5 shrink-0" />
-            <span>Chưa thể tạo mới: {createActionTooltip}</span>
-          </p>
-        )}
-
-        {/* Status chips for modules without the server status dropdown */}
-        {!isSalesModule && (
-          <div className="border-t border-neutral-100 px-4 pb-4 pt-3 sm:px-5 dark:border-neutral-800">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {(isApprovalModule
-              ? ([
-                { id: "all", label: "Tất cả", status: null as number | null },
-                { id: "pending", label: "Chờ duyệt", status: 2 },
-                { id: "approved", label: "Đã duyệt", status: 3 },
-                { id: "rejected", label: "Không duyệt", status: 4 },
-              ] as const).map((chip) => ({
-                id: chip.id,
-                label: chip.label,
-                status: chip.status,
-                count: chip.status === null
-                  ? rows.length
-                  : rows.filter((r) => {
-                    const s = (r.header as Record<string, unknown> | undefined)?.statusId;
-                    return s === chip.status;
-                  }).length,
-              }))
-              : isPrModule
-                ? ([
-                  { id: "all", label: "Tất cả", status: null as number | null },
-                  { id: "draft", label: "Mới lập", status: 1 },
-                  { id: "pending", label: "Chờ duyệt", status: 2 },
-                  { id: "approved", label: "Đã duyệt", status: 3 },
-                  { id: "returned", label: "Trả về", status: 4 },
-                  { id: "ordered", label: "Đã gửi ĐMH", status: 5 },
-                ] as const).map((chip) => ({
-                  id: chip.id,
-                  label: chip.label,
-                  status: chip.status,
-                  count: chip.status === null
-                    ? rows.length
-                    : rows.filter((r) => {
-                      const s = (r.header as Record<string, unknown> | undefined)?.statusId;
-                      return s === chip.status;
-                    }).length,
-                }))
-                : [
-                  { id: "all", label: "Tất cả", count: rows.length, status: undefined as unknown as number | null },
-                  {
-                    id: "open",
-                    label: "Đang mở / Chưa khóa",
-                    count: rows.filter((r) => {
-                      const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
-                      return isLocked === false || isLocked === 0 || isLocked === "0" || isLocked == null;
-                    }).length,
-                    status: undefined as unknown as number | null,
-                  },
-                  {
-                    id: "locked",
-                    label: "Đã khóa / Hoàn tất",
-                    count: rows.filter((r) => {
-                      const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
-                      return isLocked === true || isLocked === 1 || isLocked === "1";
-                    }).length,
-                    status: undefined as unknown as number | null,
-                  },
-                ]
-            ).map((chip) => {
-              const isSelected = statusFilter === chip.id;
-              return (
-                <button
-                  key={chip.id}
-                  type="button"
-                  onClick={() => {
-                    setStatusFilter(chip.id);
-                    if (useServerStatusChips) {
-                      setStatusId(chip.status);
-                      void loadList(1, false, chip.status);
-                    } else if (page !== 1) {
-                      void loadList(1);
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${isSelected
-                      ? "bg-brand-600 text-white shadow-xs"
-                      : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                    }`}
-                >
-                  <span>{chip.label}</span>
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${isSelected
-                        ? "bg-brand-700 text-white"
-                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
-                      }`}
-                  >
-                    {chip.count}
-                  </span>
-                </button>
-              );
-            })}
-            </div>
-          </div>
-        )}
+    <div className="min-w-0 space-y-4 pb-24 animate-uui-fade-in">
+      <ScreenHeader title={title} branch={currentBranch} count={rows.length} />
+      <ScreenToolbar
+        search={search} onSearchChange={setSearch} debounceMs={null}
+        onSearch={value => {
+          cancelSearchDebounce();
+          if (value === search) void loadList(1);
+          else immediateSearch.current = true;
+        }}
+        onFilter={() => setFiltersOpen(true)} filterOpen={filtersOpen} filterId={filterSheetId}
+        filterCount={selectedStatus && selectedStatus !== "all" ? 1 : 0}
+        onRefresh={() => void loadList(search.trim() === appliedSearchRef.current ? page : 1)}
+        refreshing={isLoadingList || isRefreshing}
+        onCreate={isCreateVisible ? openCreate : undefined} createDisabled={!canCreate}
+      />
+      <div className="min-w-0" aria-busy={isSalesOrderModule && salesStatuses.busy}>
+        <FilterChips items={chipItems} value={selectedStatus} onChange={value => selectStatus(value)}
+          description={!isSalesOrderModule ? "Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại." : undefined}
+          label={isSalesOrderModule ? "Lọc trạng thái đơn hàng" : "Lọc nhanh trạng thái"}
+          // selectStatus sends the status and page 1 together in one server read.
+          onPageChange={() => {}} />
+        {isSalesOrderModule && salesStatuses.busy && <p role="status" className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400"><Loader2 aria-hidden className="size-4 animate-spin" />Đang tải trạng thái...</p>}
+        {isSalesOrderModule && !salesStatuses.busy && salesStatuses.failedPage != null
+          ? <ListState state="error" error="Chưa tải được danh sách trạng thái." onRetry={salesStatuses.retry} />
+          : isSalesOrderModule && salesStatuses.hasMore && <AppButton variant="secondary" disabled={salesStatuses.busy || !isActive} onClick={salesStatuses.loadMore}>Thêm trạng thái</AppButton>}
       </div>
-
-      {/* Global Error Banner */}
-      {errorMsg && (
-        <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-          <span>{errorMsg}</span>
-        </div>
-      )}
-
-      {/* Document List */}
-      <div className="space-y-2">
-        {isLoadingList ? (
-          <>
-            {useDesktopTable && <DocumentListTable label={getModuleTitle(module)} rows={[]} columns={tableColumns} rowId={row => row.documentId} onOpen={row => handleOpenDetail(row.documentId)} loading />}
-            <div className={useDesktopTable ? "lg:hidden" : ""}><DocumentCardSkeleton count={4} /></div>
-          </>
-        ) : displayRows.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center">
-            <Info className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
-            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-              Không có chứng từ nào
-            </p>
-            <p className="text-xs text-neutral-500 mt-1">
-              Chưa có bản ghi nào phù hợp với bộ lọc hiện tại tại chi nhánh {currentBranch}.
-            </p>
-            <button
-              type="button"
-              onClick={() => void loadList(1)}
-              disabled={isLoadingList}
-              className="mt-3 px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 inline-flex items-center gap-1.5"
-            >
-              <RefreshCw className={`size-3.5 ${isLoadingList ? "animate-spin" : ""}`} />
-              Tải lại danh sách
-            </button>
-          </div>
-        ) : (
-          <>
-          {useDesktopTable && <DocumentListTable label={screenMeta?.caption || getModuleTitle(module)} rows={displayRows} columns={tableColumns} rowId={row => row.documentId} onOpen={row => handleOpenDetail(row.documentId)} rowOffset={(page - 1) * pageSize} />}
-          <div className={`space-y-2 ${useDesktopTable ? "lg:hidden" : ""}`} data-document-cards>
-          {displayRows.map((row) => {
-            const h = row.header || {};
-            const docId = row.documentId;
-            const dateDisplay = (h.documentDateDisplay || h.purchaseDateDisplay || h.datetimeRecordedDisplay || "") as string;
-            const rawDate = (h.documentDate || h.purchaseDate || h.datetimeRecorded || "") as string;
-            const dateText = dateDisplay || (rawDate ? formatVietnamDate(rawDate) : "");
-            const statusName = rowStatus(row);
-            const objectName = (h.objectName || h.personSuggest || h.orderNumber || h.customerName || h.vendorName || "") as string;
-
-            return (
-              <div
-                key={docId}
-                onClick={() => handleOpenDetail(docId)}
-                className="group cursor-pointer rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 hover:border-brand-300 dark:hover:border-brand-800/60 transition-all shadow-xs hover:shadow-md"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white font-mono">
-                        {docId}
-                      </span>
-                      {statusName && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300" style={statusColorsFrom(h)}>
-                          {statusName}
-                        </span>
-                      )}
-                    </div>
-                    {objectName && (
-                      <p className="text-xs text-neutral-700 dark:text-neutral-300 font-medium mt-1 leading-relaxed break-words line-clamp-2">
-                        {objectName}
-                      </p>
-                    )}
-                    {dateText && (
-                      <p className="text-[11px] text-neutral-400 mt-1.5 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-brand-600" />
-                        <span>{dateText}</span>
-                      </p>
-                    )}
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-brand-600 transition-colors shrink-0 mt-1" />
-                </div>
-              </div>
-            );
-          })}
-          </div>
-          </>
-        )}
-
-        <DocumentListPagination page={page} pageSize={pageSize} rowCount={rows.length} visibleRowCount={displayRows.length} hasMore={hasMore} busy={isLoadingList || isRefreshing}
-          onPageChange={nextPage => void loadList(search.trim() === appliedSearchRef.current ? nextPage : 1)} onPageSizeChange={size => void loadList(1, false, undefined, size)} />
-      </div>
+      <FilterSheet id={filterSheetId} open={filtersOpen} onClose={() => setFiltersOpen(false)}
+        value={{ status: selectedStatus === "all" ? "" : selectedStatus, pageSize }}
+        statuses={chipItems.map(chip => ({ value: chip.value === "all" ? "" : chip.value, label: chip.label }))}
+        onApply={value => selectStatus(value.status, value.pageSize)} />
+      {isCreateVisible && !canCreate && createActionTooltip && <p className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
+        <AlertCircle aria-hidden className="mt-0.5 size-4 shrink-0" /><span>Chưa thể tạo mới: {createActionTooltip}</span>
+      </p>}
+      <RecordList label={title} rows={displayRows} columns={tableColumns} rowId={row => row.documentId}
+        card={row => ({
+          code: row.documentId, title: listText(row, ...objectKeys) || listText(row, ...creatorKeys) || "Chứng từ",
+          meta: [dateText(row), listText(row, ...creatorKeys)], status: statusBadge(row),
+        })}
+        onOpen={row => void handleOpenDetail(row.documentId)} loading={isLoadingList}
+        error={errorMsg} retainRowsOnError onRetry={() => void loadList(page)}
+        empty={{ message: `Chưa có chứng từ phù hợp với bộ lọc tại chi nhánh ${currentBranch}.`,
+          onCreate: isCreateVisible && canCreate ? openCreate : undefined }}
+        pagination={{ page, pageSize, rowCount: rows.length, visibleRowCount: displayRows.length, hasMore, busy: isLoadingList || isRefreshing,
+          onPageChange: nextPage => void loadList(search.trim() === appliedSearchRef.current ? nextPage : 1),
+          onPageSizeChange: size => void loadList(1, false, undefined, size) }} />
+      <CreateFab allowed={isActive && isCreateVisible && !selectedDocId && !createModalOpen && !poCreateOpen && !prCreateOpen && !filtersOpen}
+        label={`Tạo ${getModuleTitle(module)}`} onClick={openCreate} disabled={!canCreate} />
 
       {(() => {
         const entry = getDocumentDetailEntry(module);
@@ -1147,115 +1019,42 @@ export function TabErpScreen({
       />}
 
       {createModalOpen && (
-        <UntitledBottomSheet
-          open={createModalOpen}
-          presentation={module === "sales-orders" ? "document" : "sheet"}
+        <FormSheet open={createModalOpen}
           onClose={() => { if (!creatingDocument && !createAttachments.uploading) setCreateModalOpen(false); }}
-          title={module === "sales-orders" ? "Tạo đơn hàng" : `Tạo mới ${getModuleTitle(module)}`}
-          footer={isSalesOrderMobile ? <div className="flex gap-2">
-            <button type="button" disabled={creatingDocument}
-              onClick={() => salesOrderCreateStep > 0 && !createLocked ? goToSalesOrderStep(salesOrderCreateStep - 1) : setCreateModalOpen(false)}
-              className="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl border border-neutral-300 px-4 text-xs font-semibold text-neutral-700 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-200">
-              {salesOrderCreateStep > 0 && !createLocked && <ChevronLeft className="size-4" />}{createLocked ? "Đóng" : salesOrderCreateStep > 0 ? "Quay lại" : "Hủy"}
-            </button>
-            {salesOrderCreateStep < 2 ? <button type="button" disabled={creatingDocument || customerLoading || createAttachments.validating}
-              onClick={() => goToSalesOrderStep(salesOrderCreateStep + 1)}
-              className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-xl bg-brand-600 px-3 text-xs font-bold text-white disabled:opacity-50">
-              {salesOrderCreateStep === 0 ? "Tiếp: Chi tiết" : "Xem lại"}<ChevronRight className="size-4 shrink-0" />
-            </button> : <button type="button" onClick={handleCreateDocument}
-              disabled={creatingDocument || createAttachments.validating || (!createLocked && (customerLoading || !!customerError))}
-              className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-xl bg-brand-600 px-3 text-xs font-bold text-white disabled:opacity-50">
-              {creatingDocument && <Loader2 className="size-4 animate-spin" />}{createAttachments.uploading ? "Đang tải ảnh..." : creatingDocument ? "Đang tạo..." : createdOrderId ? "Thử lại tải ảnh" : pendingOrderCreate ? "Kiểm tra / tiếp tục" : createAttachments.files.length ? "Tạo đơn & tải ảnh" : "Xác nhận tạo đơn"}
-            </button>}
-          </div> : undefined}
+          title={module === "sales-orders" ? "Tạo đơn hàng" : "Tạo mới " + getModuleTitle(module)}
+          submitLabel={module === "sales-orders" ? createAttachments.uploading ? "Đang tải ảnh..." : creatingDocument ? "Đang tạo..." : createdOrderId ? "Thử lại tải ảnh" : pendingOrderCreate ? "Kiểm tra / tiếp tục" : "Tạo đơn hàng" : creatingDocument ? "Đang tạo..." : "Tạo chứng từ"}
+          onSubmit={() => void handleCreateDocument()} busy={creatingDocument}
+          submitDisabled={creatingDocument || createAttachments.validating || (module === "sales-orders" && !createLocked && (customerLoading || !!customerError))}
+          steps={isSalesOrderMobile ? ["Thông tin", "Chi tiết", "Xem lại"].map(label => ({ id: label, label })) : []}
+          currentStep={salesOrderCreateStep} onBack={createLocked ? undefined : () => goToSalesOrderStep(salesOrderCreateStep - 1)}
+          cancelLabel={createLocked ? "Đóng" : "Hủy"}
+          onNext={() => goToSalesOrderStep(salesOrderCreateStep + 1)} nextDisabled={creatingDocument || customerLoading || createAttachments.validating}
+          onStepChange={goToSalesOrderStep} stepDisabled={creatingDocument || createLocked}
         >
-          <div ref={createContentRef} className="min-w-0 space-y-5 text-base leading-6 text-black dark:text-white font-['Segoe_UI',Roboto,Arial,sans-serif] [&_input]:min-h-11! [&_input]:text-base! [&_label]:text-sm! [&_label]:text-black! dark:[&_label]:text-white! [&_textarea]:text-base! [&_button]:min-h-11! [&_button]:text-base!">
-            {isSalesOrderMobile && <ol aria-label="Các bước tạo đơn hàng" className="flex items-center gap-1">
-              {["Thông tin", "Chi tiết", "Xem lại"].map((label, index) => <li key={label} className="min-w-0 flex-1">
-                <button type="button" onClick={() => goToSalesOrderStep(index)} disabled={creatingDocument || createLocked}
-                  aria-current={salesOrderCreateStep === index ? "step" : undefined} className="min-h-10 w-full text-left disabled:opacity-50">
-                  <span className={`block h-1 rounded-full ${index <= salesOrderCreateStep ? "bg-brand-600" : "bg-neutral-200 dark:bg-neutral-700"}`} />
-                  <span className={`mt-1 block text-sm font-semibold ${index === salesOrderCreateStep ? "text-brand-700 dark:text-brand-300" : "text-black"}`}>{index + 1}. {label}</span>
-                </button>
-              </li>)}
-            </ol>}
-            {createFeedback && <p role="status" className="text-sm text-amber-700">{createFeedback.message}</p>}
+          <div ref={createContentRef} className="min-w-0 space-y-5 text-base leading-6 text-neutral-900 dark:text-neutral-100">
+            {createFeedback && <p role="status" className="text-sm text-amber-700 dark:text-amber-300">{createFeedback.message}</p>}
             {module === "sales-orders" && createdOrderId && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">Đơn {createdOrderId} đã được tạo. Các lần thử tiếp theo chỉ tiếp tục tải ảnh vào đơn này.</p>}
             {module === "sales-orders" && pendingOrderCreate && !creatingDocument && <p role="status" className="text-sm text-amber-700 dark:text-amber-300">Đang giữ lần tạo hiện tại. Bấm Kiểm tra / tiếp tục để xác nhận kết quả trước khi tạo đơn khác.</p>}
-            {module === "sales-orders" && <p className="text-black">Chi nhánh: {currentBranch} · Số chứng từ được cấp khi lưu.</p>}
+            {module === "sales-orders" && <p className="text-neutral-700 dark:text-neutral-200">Chi nhánh: {currentBranch} · Số chứng từ được cấp khi lưu.</p>}
             {showCreateHeader && <fieldset aria-label="Thông tin đơn hàng" disabled={module === "sales-orders" && (creatingDocument || createLocked)} className="min-w-0 space-y-3.5 border-0 p-0">
-            {module === "sales-orders" ? (
-              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-                <div className="min-w-0">
-                  <label className="block text-black mb-1 font-medium">Ngày lập chứng từ (*):</label>
-                  <input
-                    type="date"
-                    value={createDate}
-                    onChange={(e) => setCreateDate(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <label className="block text-black mb-1 font-medium">Ngày giao:</label>
-                  <input
-                    type="date"
-                    value={createDeliverDate}
-                    onChange={(e) => setCreateDeliverDate(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div>
-                <label className="block text-black mb-1 font-medium">
-                  {module === "purchase-requests" ? "Ngày đề xuất (*):" : "Ngày lập chứng từ (*):"}
-                </label>
-                <input
-                  type="date"
-                  value={createDate}
-                  onChange={(e) => setCreateDate(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm"
-                />
-              </div>
-            )}
+            <FormSection title={module === "sales-orders" ? "Thông tin đơn hàng" : "Thông tin chứng từ"}>
+              <FormField label={module === "purchase-requests" ? "Ngày đề xuất" : "Ngày lập chứng từ"} required
+                type="date" value={createDate} onChange={event => setCreateDate(event.target.value)} />
+              {module === "sales-orders" && <FormField label="Ngày giao" type="date" value={createDeliverDate}
+                onChange={event => setCreateDeliverDate(event.target.value)} />}
+            </FormSection>
 
             {module !== "internal-transfer-batches" && module !== "sales-orders" && (
-              <div>
-                <label className="block text-black mb-1 font-medium">
-                  {module === "purchase-requests"
-                    ? "Người đề xuất (*):"
-                    : module === "purchase-orders"
-                      ? "Mã nhà cung cấp (ObjectId) (*):"
-                      : module === "inbound-requests"
-                        ? "Số hóa đơn / Số đơn hàng (*):"
-                        : module === "internal-transfer-requests"
-                          ? "Lý do điều chuyển:"
-                          : module === "machine-movements"
-                            ? "Mã loại di chuyển (MoveTypeId) (*):"
-                            : module === "machine-repairs"
-                              ? "Mã loại dịch vụ sửa chữa (ServiceTypeId) (*):"
-                              : "Đối tượng / Người liên quan (*):"}
-                </label>
-                <input
-                  type="text"
-                  value={createObject}
-                  onChange={(e) => setCreateObject(e.target.value)}
-                  placeholder={
-                    module === "purchase-requests"
-                      ? "VD: NV01, Nguyen Van A..."
-                      : module === "purchase-orders"
-                        ? "Mã NCC (VD: NCC001)..."
-                        : module === "inbound-requests"
-                          ? "VD: HD00123 / PO001..."
-                          : module === "machine-movements"
-                            ? "VD: MOVE01..."
-                            : module === "machine-repairs"
-                              ? "VD: REPAIR01..."
-                              : "Nhập thông tin đối tượng..."
-                  }
-                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm"
-                />
-              </div>
+              // Bindings: six-screen-catalog.json and cud-workflow-catalog.json, lookups[].
+              module === "machine-movements" || module === "machine-repairs" || module === "purchase-orders" || module === "purchase-requests"
+                ? <LookupField label={module === "machine-movements" ? "Loại di chuyển" : module === "machine-repairs" ? "Loại dịch vụ sửa chữa" : module === "purchase-orders" ? "Nhà cung cấp" : "Người đề xuất"}
+                    required module={module} branchId={currentBranch}
+                    lookupId={module === "machine-movements" ? "header.MoveTypeID" : module === "machine-repairs" ? "header.ServiceTypeID" : module === "purchase-orders" ? "header.ObjectID" : "header.PersonSuggest"}
+                    value={createObject} choice={null} onSelect={choice => setCreateObject(choice?.id || "")} placeholder="Tìm và chọn từ danh mục..." />
+                : <FormField label={module === "inbound-requests" ? "Số hóa đơn / Số đơn hàng" : module === "internal-transfer-requests" ? "Lý do điều chuyển" : "Đối tượng / Người liên quan"}
+                    required={module !== "internal-transfer-requests"} value={createObject} onChange={event => setCreateObject(event.target.value)}
+                    placeholder={module === "inbound-requests" ? "Ví dụ: HD00123 / PO001" : "Nhập thông tin chứng từ"}
+                    hint={module === "inbound-requests" ? "Nhập số hóa đơn hoặc số đơn hàng liên quan." : "Nhập lý do để người xử lý nắm rõ nội dung điều chuyển."} />
             )}
 
             {module === "sales-orders" && (
@@ -1267,18 +1066,11 @@ export function TabErpScreen({
                   onSelect={selectSoCustomer}
                   placeholder="Chọn khách hàng..." />
                 <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-                  <div className="min-w-0">
-                    <label htmlFor="so-create-tax-code" className="block text-black mb-1 font-medium">Mã số thuế</label>
-                    <input id="so-create-tax-code" readOnly value={salesOrderField(createObjectChoice, "TaxCode")} className="w-full min-h-11 p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm" />
-                  </div>
-                  <div className="min-w-0 sm:col-span-2">
-                    <label htmlFor="so-create-address" className="block text-black mb-1 font-medium">Địa chỉ khách hàng</label>
-                    <textarea id="so-create-address" readOnly rows={2} value={salesOrderField(createObjectChoice, "Address")}
-                      className="w-full p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm" />
-                  </div>
+                  <FormField label="Mã số thuế" id="so-create-tax-code">{control => <input {...control} readOnly value={salesOrderField(createObjectChoice, "TaxCode")} />}</FormField>
+                  <FormField label="Địa chỉ khách hàng" id="so-create-address">{control => <textarea {...control} readOnly rows={2} value={salesOrderField(createObjectChoice, "Address")} />}</FormField>
                 </div>
-                {customerLoading && <p role="status" className="text-sm text-black">Đang tải thông tin khách hàng...</p>}
-                {customerError && <p role="alert" className="text-sm text-red-600">{customerError}
+                {customerLoading && <p role="status" className="text-sm text-neutral-700 dark:text-neutral-200">Đang tải thông tin khách hàng...</p>}
+                {customerError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{customerError}
                   <button type="button" className="ml-2 underline" onClick={() => setCustomerRetry(v => v + 1)}>Tải lại khách hàng</button></p>}
                 <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
                   <LookupField label="Mã nhân viên" required module="sales-orders" lookupId="header.EmployeeID"
@@ -1297,72 +1089,33 @@ export function TabErpScreen({
                     onSelect={selectSoContract}
                     placeholder="Chọn hợp đồng (không bắt buộc)..." />
                 </div>
-                <div className="min-w-0">
-                  <label htmlFor="so-create-link" className="block text-black mb-1 font-medium">Link tài liệu đính kèm</label>
-                  <input id="so-create-link" type="url" value={createLink} onChange={e => setCreateLink(e.target.value)}
-                    className="w-full min-h-11 p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm" />
-                </div>
+                <FormField label="Link tài liệu đính kèm" id="so-create-link">{control => <input {...control} type="url" value={createLink} onChange={event => setCreateLink(event.target.value)} />}</FormField>
               </div>
             )}
             </fieldset>}
 
             {module !== "sales-orders" && (
-              <div className={`grid grid-cols-1 ${module === "machine-movements" || module === "machine-repairs" || module === "internal-transfer-batches" ? "" : module === "internal-transfer-requests" || module === "inbound-requests" ? "sm:grid-cols-2" : "sm:grid-cols-3"} gap-2`}>
-                <div className={module === "machine-movements" || module === "machine-repairs" || module === "internal-transfer-batches" ? "w-full" : "sm:col-span-1"}>
-                  <label className="block text-black mb-1 font-medium">
-                    {module === "machine-movements" || module === "machine-repairs"
-                      ? "Mã thiết bị / máy (AssetId) (*):"
-                      : module === "internal-transfer-batches"
-                        ? "Mã đề nghị điều chuyển (RequestId) (*):"
-                        : "Mã mặt hàng (ItemID) (*):"}
-                  </label>
-                  <input
-                    type="text"
-                    value={createItemId}
-                    onChange={(e) => setCreateItemId(e.target.value)}
-                    placeholder={
-                      module === "machine-movements" || module === "machine-repairs"
-                        ? "VD: ASSET01..."
-                        : module === "internal-transfer-batches"
-                          ? "VD: DNDC001..."
-                          : "Mã VT (VD: VT001)..."
-                    }
-                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm"
-                  />
-                </div>
+              <FormSection title="Chi tiết chứng từ">
+                {module === "internal-transfer-batches"
+                  ? <FormField label="Mã đề nghị điều chuyển" required value={createItemId} onChange={event => setCreateItemId(event.target.value)}
+                      placeholder="Ví dụ: DNDC001" hint="Nhập mã đề nghị đã có. Danh mục chọn cần chi nhánh nguồn và đích chưa có trong form này." />
+                  : <LookupField label={module === "machine-movements" || module === "machine-repairs" ? "Thiết bị / máy" : "Mặt hàng"}
+                      required module={module} branchId={currentBranch}
+                      lookupId={module === "machine-movements" || module === "machine-repairs" ? "lines.AssetID" : "lines.ItemID"}
+                      value={createItemId} choice={null} onSelect={choice => setCreateItemId(choice?.id || "")} placeholder="Tìm và chọn từ danh mục..." />}
                 {module !== "machine-movements" && module !== "machine-repairs" && module !== "internal-transfer-batches" && (
-                  <div>
-                    <label className="block text-black mb-1 font-medium">
-                      {module === "internal-transfer-requests"
-                        ? "Số lượng yêu cầu (*):"
-                        : module === "inbound-requests"
-                          ? "Số lượng kiện/hộp (*):"
-                          : "Số lượng (*):"}
-                    </label>
-                    <input
-                      type="number"
-                      value={createQuantity}
-                      onChange={(e) => setCreateQuantity(e.target.value)}
-                      className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm"
-                    />
-                  </div>
+                  <FormField label={module === "internal-transfer-requests" ? "Số lượng yêu cầu" : module === "inbound-requests" ? "Số lượng kiện/hộp" : "Số lượng"}
+                    required type="number" value={createQuantity} onChange={event => setCreateQuantity(event.target.value)} />
                 )}
                 {module !== "machine-movements" && module !== "machine-repairs" && module !== "internal-transfer-batches" && module !== "internal-transfer-requests" && module !== "inbound-requests" && (
-                  <div>
-                    <label className="block text-black mb-1 font-medium">Đơn giá dự kiến:</label>
-                    <MoneyInput
-                      value={createUnitPrice}
-                      onValueChange={setCreateUnitPrice}
-                      className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm"
-                    />
-                  </div>
+                  <FormField label="Đơn giá dự kiến">{control => <MoneyInput {...control} value={createUnitPrice} onValueChange={setCreateUnitPrice} />}</FormField>
                 )}
-              </div>
+              </FormSection>
             )}
 
             {module === "sales-orders" && (!isSalesOrderMobile || salesOrderCreateStep === 1) && (
               <div className="space-y-2">
-                {lineResetNotice && <p role="status" className="text-sm text-amber-700">Đã bỏ các chi tiết cũ khi đổi hợp đồng / khách hàng. Vui lòng chọn lại hàng.</p>}
+                {lineResetNotice && <p role="status" className="text-sm text-amber-700 dark:text-amber-300">Đã bỏ các chi tiết cũ khi đổi hợp đồng / khách hàng. Vui lòng chọn lại hàng.</p>}
                 <fieldset disabled={creatingDocument || createLocked} className="min-w-0 border-0 p-0">
                 <SalesOrderLineEditor lines={createSoLines} branchId={currentBranch} contractId={createContract}
                   onPatch={patchSoLine} onAdd={() => {
@@ -1375,22 +1128,12 @@ export function TabErpScreen({
             )}
 
             {module === "sales-orders" ? (showCreateHeader ? <fieldset disabled={creatingDocument || createLocked} className="grid min-w-0 grid-cols-1 gap-3.5 border-0 p-0 sm:grid-cols-2">
-              <div><label htmlFor="so-create-memo" className="block text-black mb-1 font-medium">Diễn giải</label>
-                <textarea id="so-create-memo" value={createMemo} onChange={e => setCreateMemo(e.target.value)} rows={3}
-                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm" /></div>
-              <div><label htmlFor="so-create-order-notes" className="block text-black mb-1 font-medium">Ghi chú đơn hàng</label>
-                <textarea id="so-create-order-notes" value={createOrderNotes} onChange={e => setCreateOrderNotes(e.target.value)} rows={3} maxLength={250}
-                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm" /></div>
-            </fieldset> : null) : <div>
-              <label className="block text-black mb-1 font-medium">Ghi chú / Diễn giải:</label>
-              <textarea
-                value={createNotes}
-                onChange={(e) => setCreateNotes(e.target.value)}
-                placeholder="Ghi chú nội dung phiếu..."
-                rows={3}
-                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm"
-              />
-            </div>}
+              <FormField label="Diễn giải" id="so-create-memo">{control => <textarea {...control} value={createMemo} onChange={event => setCreateMemo(event.target.value)} rows={3} />}</FormField>
+              <FormField label="Ghi chú đơn hàng" id="so-create-order-notes">{control => <textarea {...control} value={createOrderNotes} onChange={event => setCreateOrderNotes(event.target.value)} rows={3} maxLength={250} />}</FormField>
+            </fieldset> : null) : <FormField label="Ghi chú / Diễn giải">
+              {control => <textarea {...control} value={createNotes} onChange={event => setCreateNotes(event.target.value)}
+                placeholder="Ghi chú nội dung phiếu..." rows={3} />}
+            </FormField>}
 
             {module === "sales-orders" && showCreateHeader && <SalesOrderAttachmentPicker files={createAttachments.files}
               onAdd={createAttachments.addFiles} onRemove={createAttachments.removeFile}
@@ -1398,7 +1141,7 @@ export function TabErpScreen({
               readOnly={pendingOrderCreate} documentCreated={!!createdOrderId} />}
 
             {isSalesOrderMobile && salesOrderCreateStep === 2 && <section className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-3 dark:border-neutral-800 dark:bg-neutral-950/40">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-black">Xem lại đơn hàng</h4>
+              <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-200">Xem lại đơn hàng</h4>
               <dl className="grid min-w-0 grid-cols-2 gap-3">
                 {[
                   { label: "Ngày chứng từ", value: createDate },
@@ -1413,8 +1156,8 @@ export function TabErpScreen({
                   { label: "Diễn giải", value: createMemo, full: true },
                   { label: "Ghi chú đơn hàng", value: createOrderNotes, full: true },
                 ].map(field => <div key={field.label} className={`min-w-0 ${field.full ? "col-span-full" : ""}`}>
-                  <dt className="mb-1 text-sm text-black">{field.label}</dt>
-                  <dd className="whitespace-pre-wrap break-words font-semibold text-black dark:text-white">{field.value || "—"}</dd>
+                  <dt className="mb-1 text-sm text-neutral-700 dark:text-neutral-200">{field.label}</dt>
+                  <dd className="whitespace-pre-wrap break-words font-semibold text-neutral-900 dark:text-neutral-100">{field.value || "—"}</dd>
                 </div>)}
               </dl>
               <div className="space-y-2 border-t border-neutral-200 pt-3 dark:border-neutral-800">
@@ -1423,13 +1166,13 @@ export function TabErpScreen({
                   const values = salesOrderLineDisplay(line);
                   return <div key={line.key} className="min-w-0 rounded-xl bg-neutral-100 p-3 dark:bg-neutral-800">
                     <p className="break-words font-semibold">{index + 1}. {choiceLabel(line.choice, line.itemId)}</p>
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-black">
-                      <p>Số lượng: <strong className="text-black dark:text-white">{line.quantity} {values.unit}</strong></p>
-                      <p>Đơn giá: <strong className="break-words text-black dark:text-white">{formatMoneyValue(line.unitPrice)}</strong></p>
-                      <p className="col-span-full">Tổng tiền tạm tính: <strong className="break-words text-black dark:text-white">{formatMoneyValue(values.totalAmount)}</strong></p>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-neutral-700 dark:text-neutral-200">
+                      <p>Số lượng: <strong className="text-neutral-900 dark:text-neutral-100">{line.quantity} {values.unit}</strong></p>
+                      <p>Đơn giá: <strong className="break-words text-neutral-900 dark:text-neutral-100">{formatMoneyValue(line.unitPrice)}</strong></p>
+                      <p className="col-span-full">Tổng tiền tạm tính: <strong className="break-words text-neutral-900 dark:text-neutral-100">{formatMoneyValue(values.totalAmount)}</strong></p>
                     </div>
-                    {line.dienGiai && <p className="mt-2 break-words text-sm text-black">Diễn giải: {line.dienGiai}</p>}
-                    {line.notes && <p className="mt-1 break-words text-sm text-black">Ghi chú: {line.notes}</p>}
+                    {line.dienGiai && <p className="mt-2 break-words text-sm text-neutral-700 dark:text-neutral-200">Diễn giải: {line.dienGiai}</p>}
+                    {line.notes && <p className="mt-1 break-words text-sm text-neutral-700 dark:text-neutral-200">Ghi chú: {line.notes}</p>}
                   </div>;
                 })}
               </div>
@@ -1438,25 +1181,9 @@ export function TabErpScreen({
                 disabled={creatingDocument} validating={createAttachments.validating} documentCreated={!!createdOrderId} />
             </section>}
 
-            {!isSalesOrderMobile && <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setCreateModalOpen(false)} disabled={creatingDocument}
-                className="px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-black dark:text-white text-sm"
-              >
-                {createLocked ? "Đóng" : "Hủy"}
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateDocument}
-                disabled={creatingDocument || createAttachments.validating || (module === "sales-orders" && !createLocked && (customerLoading || !!customerError))}
-                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 text-sm"
-              >
-                {module === "sales-orders" ? createAttachments.uploading ? "Đang tải ảnh..." : creatingDocument ? "Đang tạo..." : createdOrderId ? "Thử lại tải ảnh" : pendingOrderCreate ? "Kiểm tra / tiếp tục" : createAttachments.files.length ? "Tạo đơn & tải ảnh" : "Xác nhận tạo đơn" : creatingDocument ? "Đang tạo..." : "Xác nhận tạo chứng từ"}
-              </button>
-            </div>}
+
           </div>
-        </UntitledBottomSheet>
+        </FormSheet>
       )}
 
     </div>

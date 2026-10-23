@@ -1,36 +1,21 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import {
-  Search,
-  Filter,
-  ShoppingBag,
-  Calendar,
-  Building,
-  User,
-  CheckCircle2,
-  LockKeyhole,
-  Lock,
-  Printer,
-  ChevronRight,
-  RefreshCw,
-  Package,
-  Plus,
-} from "lucide-react";
-import { UntitledBadge } from "./badge";
-import { UntitledButton } from "./button";
+import { LockKeyhole } from "lucide-react";
+import { ScreenHeader, ScreenToolbar, FilterChips, FilterSheet, RecordList, CreateFab, StatusBadge, AppButton, type RecordColumn } from "@/components/app";
 import { UntitledBottomSheet } from "./bottom-sheet";
-import { DocumentCardSkeleton, DetailLinesSkeleton } from "./skeleton";
-import { DocumentListTable, type DocumentListColumn } from "./document-list-table";
-import { DocumentListPagination } from "./document-list-pagination";
+import { DetailLinesSkeleton } from "./skeleton";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { DocumentDetail, PurchaseOrderHeader, PurchaseOrderLineFields } from "@/lib/erp/contracts";
 import { errorMessage } from "@/lib/erp/api";
 
+import { formatDateTime } from "@/lib/erp/document-detail/format";
 import {formatMoney} from "@/lib/erp/money";
 import { statusColorStyle } from "@/lib/erp/status-colors";
 
 function formatVND(value?: string | null, currency = "VND"): string {
+  const plainCurrency = value?.match(/^(-?\d+)\s*([A-Z]{3}|[₫$€])$/);
+  if (plainCurrency) return `${formatMoney(plainCurrency[1])} ${plainCurrency[2]}`;
   if (value && /[A-Z]{3}|[₫$€]/.test(value)) return value;
   return `${formatMoney(value || "0")}${currency ? ` ${currency}` : ""}`;
 }
@@ -76,8 +61,10 @@ export interface TabOrdersProps {
 
 export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpenCreateModal }: TabOrdersProps) {
   const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState(currentBranch || "");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,7 +117,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
             const currencyId = h?.currencyId || (raw.currencyId as string) || "VND";
             const formattedTotal = baseTotal
               ? formatVND(baseTotal, currencyId)
-              : "Theo chi tiết đơn";
+              : "—";
 
             return {
               documentId: r.documentId,
@@ -138,9 +125,9 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                 (raw.documentDateDisplay as string) ||
                 (h as any)?.documentDateDisplay ||
                 (h?.documentDate
-                  ? h.documentDate.slice(0, 10)
+                  ? h.documentDate
                   : r.documentDate
-                  ? r.documentDate.slice(0, 10)
+                  ? r.documentDate
                   : "—"),
               branchId: (raw.branchName as string) || (h as any)?.branchName || r.branchId || selectedBranch || "CN01",
               statusId: r.statusId,
@@ -181,9 +168,9 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                 (raw.deliverDateDisplay as string) ||
                 (h as any)?.deliverDateDisplay ||
                 (h?.deliverDate
-                  ? h.deliverDate.slice(0, 10)
+                  ? h.deliverDate
                   : (raw.deliverDate as string)
-                  ? String(raw.deliverDate).slice(0, 10)
+                  ? String(raw.deliverDate)
                   : null),
               currencyId,
               contractId: h?.contractId || (raw.contractId as string),
@@ -296,38 +283,15 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
     return true;
   });
 
-  const getStatusBadge = (statusId: number | null, statusName?: string | null, style?: { color?: string; backgroundColor?: string }) => {
-    if (statusId === 2) {
-      return (
-        <UntitledBadge variant="success" size="sm" dot style={style}>
-          {statusName || "Đã duyệt"}
-        </UntitledBadge>
-      );
-    }
-    if (statusId === 3) {
-      return (
-        <UntitledBadge variant="blue" size="sm" dot style={style}>
-          {statusName || "Hoàn tất"}
-        </UntitledBadge>
-      );
-    }
-    if (statusId === 1) {
-      return (
-        <UntitledBadge variant="warning" size="sm" dot style={style}>
-          {statusName || "Chờ phê duyệt"}
-        </UntitledBadge>
-      );
-    }
-    return (
-      <UntitledBadge variant="gray" size="sm" style={style}>
-        {statusName || "Bản nháp"}
-      </UntitledBadge>
-    );
-  };
+  const getStatusBadge = (statusId: number | null, statusName?: string | null, style?: { color?: string; backgroundColor?: string }) => (
+    <StatusBadge label={statusName || (statusId === 2 ? "Đã duyệt" : statusId === 3 ? "Hoàn tất" : statusId === 1 ? "Chờ phê duyệt" : "Bản nháp")} tone={statusId === 2 ? "success" : statusId === 3 ? "info" : statusId === 1 ? "warning" : "neutral"} statusForeColor={style?.color} statusBackColor={style?.backgroundColor} />
+  );
+  const statuses = [{ value: "", label: "Tất cả" }, { value: "pending", label: "Chờ duyệt" }, { value: "approved", label: "Đã duyệt" }, { value: "completed", label: "Hoàn tất" }];
+  const statusIds: Record<string, number> = { pending: 1, approved: 2, completed: 3 };
 
-  const tableColumns: DocumentListColumn<OrderItem>[] = [
+  const tableColumns: RecordColumn<OrderItem>[] = [
     { id: "document", label: "Mã PO", className: "min-w-40 whitespace-nowrap", render: order => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{order.documentId}</span> },
-    { id: "date", label: "Ngày chứng từ", className: "whitespace-nowrap tabular-nums", render: order => order.documentDate },
+    { id: "date", label: "Ngày chứng từ", className: "whitespace-nowrap tabular-nums", render: order => formatDateTime(order.documentDate) },
     { id: "supplier", label: "Nhà cung cấp", className: "min-w-60 max-w-sm", render: order => <span className="line-clamp-2 break-words font-medium" title={order.supplier}>{order.supplier}</span> },
     { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: order => <div className="flex items-center gap-2">{getStatusBadge(order.statusId, order.statusName, statusColorStyle(order.statusForeColor, order.statusBackColor))}{order.isLocked && <LockKeyhole aria-label="Đã khóa" className="size-4" />}</div> },
     { id: "creator", label: "Người lập", className: "min-w-40 max-w-52", render: order => <span className="line-clamp-2 break-words">{order.creator}</span> },
@@ -335,193 +299,23 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
   ];
 
   return (
-    <div className="space-y-4 pb-28">
-      {/* Search & Actions Bar */}
-      <div className="space-y-2.5">
-        <div className="flex gap-2 items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
-            <input
-              type="text"
-              placeholder="Tìm theo mã PO, nhà cung cấp, dược phẩm..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-2xs"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => loadOrders(false)}
-            disabled={isRefreshing}
-            className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
-            title="Làm mới danh sách"
-          >
-            <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-brand-600" : ""}`} />
-          </button>
-
-          <UntitledButton
-            variant="primary"
-            size="md"
-            onClick={onOpenCreateModal || (() => alert("Mở form lập đề nghị mua hàng (PO)..."))}
-            iconLeading={<Plus className="size-4" />}
-          >
-            Tạo mới
-          </UntitledButton>
-        </div>
-
-        {/* Filter Chips Bar */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {[
-            { id: "all", label: "Tất cả", count: orders.length },
-            { id: "pending", label: "Chờ duyệt", count: orders.filter((o) => o.statusId === 1).length },
-            { id: "approved", label: "Đã duyệt", count: orders.filter((o) => o.statusId === 2).length },
-            { id: "completed", label: "Hoàn tất", count: orders.filter((o) => o.statusId === 3).length },
-          ].map((chip) => {
-            const isSelected = statusFilter === chip.id;
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                onClick={() => { setStatusFilter(chip.id); if (page !== 1) void loadOrders(false, 1); }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
-                  isSelected
-                    ? "bg-brand-600 text-white shadow-xs"
-                    : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                }`}
-              >
-                <span>{chip.label}</span>
-                <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                    isSelected
-                      ? "bg-brand-700 text-white"
-                      : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
-                  }`}
-                >
-                  {chip.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Orders List Container */}
-      <div className="space-y-3">
-        {error ? (
-          <div className="rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/30 p-6 text-center space-y-3">
-            <p className="text-sm font-semibold text-red-700 dark:text-red-400">{error}</p>
-            <UntitledButton
-              variant="secondary-gray"
-              size="sm"
-              onClick={() => loadOrders(false)}
-              iconLeading={<RefreshCw className="size-3.5" />}
-            >
-              Thử lại
-            </UntitledButton>
-          </div>
-        ) : loading ? (
-          <>
-            <DocumentListTable label="Danh sách đặt mua hàng" rows={[]} columns={tableColumns} rowId={order => order.documentId} onOpen={handleOpenDetail} loading />
-            <div className="space-y-3 lg:hidden">
-            <DocumentCardSkeleton />
-            <DocumentCardSkeleton />
-            <DocumentCardSkeleton />
-            <DocumentCardSkeleton />
-            </div>
-          </>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center space-y-3">
-            <div className="size-12 rounded-2xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto">
-              <ShoppingBag className="size-6 stroke-[1.8]" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-neutral-900 dark:text-white">
-                Chưa có đơn đặt hàng PO nào
-              </p>
-              <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto">
-                Không tìm thấy dữ liệu đơn đặt hàng cho chi nhánh hoặc điều kiện tìm kiếm hiện tại từ máy chủ backend.
-              </p>
-            </div>
-            <UntitledButton
-              variant="secondary-gray"
-              size="sm"
-              onClick={() => loadOrders(false)}
-              iconLeading={<RefreshCw className="size-3.5" />}
-            >
-              Tải lại danh sách
-            </UntitledButton>
-          </div>
-        ) : (
-          <>
-          <DocumentListTable label="Danh sách đặt mua hàng" rows={filtered} columns={tableColumns} rowId={order => order.documentId} onOpen={handleOpenDetail} rowOffset={(page - 1) * pageSize} />
-          <div className="space-y-3 lg:hidden" data-document-cards>
-          {filtered.map((order) => (
-            <div
-              key={order.documentId}
-              data-order-id={order.documentId}
-              onClick={() => handleOpenDetail(order)}
-              className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 hover:border-brand-300 dark:hover:border-brand-800 p-4 sm:p-5 transition-all duration-150 cursor-pointer shadow-xs active:scale-[0.99] group"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                <div className="space-y-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs sm:text-sm font-mono font-bold text-brand-700 dark:text-brand-300">
-                      {order.documentId}
-                    </span>
-                    {getStatusBadge(order.statusId, order.statusName, statusColorStyle(order.statusForeColor, order.statusBackColor))}
-                    {order.isLocked && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full">
-                        <LockKeyhole className="size-3" /> Đã khóa
-                      </span>
-                    )}
-                  </div>
-                  <h4 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-white truncate">
-                    {order.supplier}
-                  </h4>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                    {order.notes}
-                  </p>
-                </div>
-
-                <div className="sm:text-right shrink-0 mt-2 sm:mt-0 flex sm:flex-col justify-between sm:justify-start items-center sm:items-end">
-                  <span className="text-sm sm:text-base font-extrabold text-neutral-900 dark:text-white">
-                    {order.totalAmount}
-                  </span>
-                  <span className="text-[11px] text-neutral-400">
-                    {order.lines.length > 0 ? `${order.lines.length} chi tiết` : "Xem chi tiết"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Meta details footer */}
-              <div className="mt-3.5 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
-                <div className="flex items-center gap-3 truncate">
-                  <span className="flex items-center gap-1">
-                    <Building className="size-3.5 text-neutral-400" />
-                    {order.branchId}
-                  </span>
-                  <span className="flex items-center gap-1 truncate">
-                    <User className="size-3.5 text-neutral-400" />
-                    {order.creator}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-neutral-400 shrink-0">
-                  <Calendar className="size-3.5" />
-                  <span>{order.documentDate}</span>
-                  <ChevronRight className="size-4 text-neutral-400 group-hover:text-brand-600 transition-colors ml-1" />
-                </div>
-              </div>
-            </div>
-          ))}
-          </div>
-          </>
-        )}
-      </div>
-
-      <DocumentListPagination page={page} pageSize={pageSize} rowCount={orders.length} visibleRowCount={filtered.length} hasMore={hasMore} busy={loading || isRefreshing} maxPage={1000}
-        onPageChange={nextPage => void loadOrders(false, nextPage)} onPageSizeChange={size => void loadOrders(false, 1, size)} />
+    <div className="min-w-0 space-y-3 pb-8">
+      <ScreenHeader title="Đơn hàng PO" branch={currentBranch} count={orders.length} />
+      <ScreenToolbar search={searchInput} onSearchChange={setSearchInput} onSearch={setSearch}
+        onFilter={() => setFilterOpen(true)} filterOpen={filterOpen} filterId="orders-filters"
+        filterCount={Number(Boolean(statusFilter)) + Number(pageSize !== 20)}
+        refreshing={loading || isRefreshing} onRefresh={() => void loadOrders(true)} onCreate={onOpenCreateModal} />
+      <FilterChips description="Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại." items={statuses.map(status => ({ ...status, count: status.value ? orders.filter(order => order.statusId === statusIds[status.value]).length : orders.length }))}
+        value={statusFilter} onChange={setStatusFilter} onPageChange={() => { if (page !== 1) void loadOrders(false, 1); }} />
+      <RecordList label="Danh sách đặt mua hàng" rows={filtered} columns={tableColumns} rowId={order => order.documentId}
+        card={order => ({ code: order.documentId, title: order.supplier, meta: [formatDateTime(order.documentDate), order.creator, order.totalAmount === "—" ? null : order.totalAmount, order.isLocked ? "Đã khóa" : null], status: { label: order.statusName, tone: order.statusId === 2 ? "success" : order.statusId === 1 ? "warning" : order.statusId === 3 ? "info" : "neutral", statusForeColor: order.statusForeColor, statusBackColor: order.statusBackColor } })}
+        onOpen={handleOpenDetail} loading={loading} error={error} onRetry={() => void loadOrders(false)}
+        empty={{ message: "Chưa có chứng từ khớp với tìm kiếm hoặc bộ lọc.", onCreate: onOpenCreateModal }}
+        pagination={{ page, pageSize, rowCount: orders.length, visibleRowCount: filtered.length, hasMore, busy: loading || isRefreshing, maxPage: 1000,
+          onPageChange: nextPage => void loadOrders(false, nextPage), onPageSizeChange: size => void loadOrders(false, 1, size) }} />
+      <FilterSheet id="orders-filters" open={filterOpen} onClose={() => setFilterOpen(false)} value={{ status: statusFilter, pageSize }} statuses={statuses}
+        onApply={value => { setStatusFilter(value.status); void loadOrders(false, 1, value.pageSize); }} />
+      {onOpenCreateModal && <CreateFab allowed={isActive && !selectedOrder && !filterOpen} label="Tạo đơn hàng PO" onClick={onOpenCreateModal} />}
 
       {/* Order Detail Viewport-Anchored Modal */}
       <UntitledBottomSheet
@@ -529,18 +323,17 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
         open={Boolean(selectedOrder)}
         onClose={() => setSelectedOrder(null)}
         title={selectedOrder?.documentId || "Chi tiết đơn đặt hàng PO"}
-        subtitle={`Chi nhánh: ${selectedOrder?.branchId || "CN01"} · Ngày chứng từ: ${selectedOrder?.documentDate}`}
+        subtitle={`Chi nhánh: ${selectedOrder?.branchId || "CN01"} · Ngày chứng từ: ${formatDateTime(selectedOrder?.documentDate)}`}
         footer={
           selectedOrder && (
             <div className="flex gap-2">
-              <UntitledButton
-                variant="secondary-gray"
-                size="md"
-                fullWidth
+              <AppButton
+                variant="secondary"
+                className="w-full"
                 onClick={() => setSelectedOrder(null)}
               >
                 Đóng
-              </UntitledButton>
+              </AppButton>
             </div>
           )
         }
@@ -551,7 +344,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
             <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xs space-y-3">
               <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-neutral-100 dark:border-neutral-800">
                 <div className="space-y-0.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
                     Mã đơn hàng PO
                   </span>
                   <p className="font-mono text-sm sm:text-base font-bold text-neutral-900 dark:text-white">
@@ -566,10 +359,10 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                 </div>
               </div>
 
-              {/* Tên đối tượng / Nhà cung cấp (ObjectName) */}
+              {/* Tên đối tượng / Nhà cung cấp */}
               <div className="py-1 border-b border-neutral-100 dark:border-neutral-800/60">
-                <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold block mb-1">
-                  Nhà cung cấp / Đối tượng (ObjectName)
+                <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 block mb-1">
+                  Nhà cung cấp / Đối tượng
                 </span>
                 <p className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white leading-relaxed break-words">
                   {selectedOrder.purchaseOrderHeader?.objectId || selectedOrder.supplier}
@@ -579,48 +372,48 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
               {/* Chi tiết thông số thuộc tính */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                 <div className="flex flex-col py-1">
-                  <span className="text-[10px] text-neutral-400">Ngày lập chứng từ</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">Ngày lập chứng từ</span>
                   <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                    {selectedOrder.documentDate}
+                    {formatDateTime(selectedOrder.documentDate)}
                   </span>
                 </div>
                 <div className="flex flex-col py-1">
-                  <span className="text-[10px] text-neutral-400">Chi nhánh</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">Chi nhánh</span>
                   <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                     {selectedOrder.branchId}
                   </span>
                 </div>
                 {selectedOrder.deliverDate && (
                   <div className="flex flex-col py-1">
-                    <span className="text-[10px] text-neutral-400">Ngày giao hàng</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Ngày giao hàng</span>
                     <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                      {selectedOrder.deliverDate}
+                      {formatDateTime(selectedOrder.deliverDate)}
                     </span>
                   </div>
                 )}
                 {selectedOrder.contractId && (
                   <div className="flex flex-col py-1">
-                    <span className="text-[10px] text-neutral-400">Hợp đồng liên kết</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Hợp đồng liên kết</span>
                     <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                       {selectedOrder.contractId}
                     </span>
                   </div>
                 )}
                 <div className="flex flex-col py-1">
-                  <span className="text-[10px] text-neutral-400">Người lập đơn</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">Người lập đơn</span>
                   <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                     {selectedOrder.creator}
                   </span>
                 </div>
                 <div className="flex flex-col py-1">
-                  <span className="text-[10px] text-neutral-400">Khóa chứng từ</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">Khóa chứng từ</span>
                   <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                     {selectedOrder.isLocked ? "Đã khóa (Bảo vệ dữ liệu)" : "Chưa khóa"}
                   </span>
                 </div>
                 {selectedOrder.memo && (
                   <div className="flex flex-col py-1 sm:col-span-2">
-                    <span className="text-[10px] text-neutral-400">Ghi chú nghiệp vụ</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Ghi chú nghiệp vụ</span>
                     <span className="font-medium text-neutral-700 dark:text-neutral-300 break-words">
                       {selectedOrder.memo}
                     </span>
