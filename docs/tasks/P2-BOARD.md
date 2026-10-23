@@ -4,9 +4,9 @@ Thiết kế: `docs/architecture/APP_SCREEN_UNIFICATION_P2.md`. Nhánh tích h�
 
 | Phiếu | Nội dung | Agent | Trạng thái | Phụ thuộc |
 |---|---|---|---|---|
-| [P2-01](P2-01.md) | Thư viện `components/app/*` + sửa lỗi tab PR | Codex | Đang làm | — |
-| [P2-02](P2-02.md) | Tab Đơn hàng/PR/Nhập kho, trang chủ, cài đặt, scanner; bỏ chức năng giả | Codex | Todo | P2-01 |
-| [P2-03](P2-03.md) | Danh sách ERP 19 module | Codex | Todo | P2-01 |
+| [P2-01](P2-01.md) | Thư viện `components/app/*` + sửa lỗi tab PR | Codex | **Done** (PR #176) | — |
+| [P2-02](P2-02.md) | Tab Đơn hàng/PR/Nhập kho, trang chủ, cài đặt, scanner; bỏ chức năng giả | Codex | **Đang làm** | P2-01 |
+| [P2-03](P2-03.md) | Danh sách ERP 19 module | Codex | **Đang làm** | P2-01 |
 | P2-04 | Form tạo/sửa → `FormSheet`/`FormField` | Codex | Todo | P2-03 |
 | P2-05 | Khung điều hướng | Codex | Todo | P2-02 |
 | P2-06 | Rà soát thị giác cuối, sửa lỗi | Leader + Codex | Todo | tất cả |
@@ -24,3 +24,4 @@ Một agent trên VPS kéo `main` và **deploy production định kỳ ở phút
 - 2026-10-24: Chủ dự án giao toàn quyền (gồm sửa BE và merge `main`, đi ngủ). Leader merge PR #175 (`cb85348`) sau khi kiểm tra merge không tự deploy (deploy workflow chỉ `workflow_dispatch`). Tạo `p2/main`.
 - Phát hiện lỗi production có sẵn: tab "Đề nghị PR" hỏng do schema `workspace` FE lệch backend; đưa vào P2-01.
 - Giao P2-01.
+- P2-01 Đạt (22/22 test mới; contracts 833/820/13 trùng baseline; build pass; tab Đề nghị PR tải được 11 phiếu thật trên VPS). Merge vào `p2/main`, mở PR #176 vào `main` (repo không cho auto-merge, leader merge tay khi CI xanh). Giao P2-02 ∥ P2-03.
