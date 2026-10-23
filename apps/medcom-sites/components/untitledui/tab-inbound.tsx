@@ -1,26 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import {
-  PackageCheck,
-  Search,
-  Plus,
-  ThermometerSnowflake,
-  ShieldCheck,
-  Truck,
-  CheckCircle2,
-  Clock,
-  Building2,
-  Calendar,
-  ChevronRight,
-  Barcode,
-  RefreshCw,
-  Layers,
-} from "lucide-react";
-import { UntitledBadge } from "./badge";
-import { UntitledButton } from "./button";
+import { ScreenHeader, ScreenToolbar, FilterChips, FilterSheet, RecordList, CreateFab, StatusBadge, type RecordColumn } from "@/components/app";
 import { UntitledBottomSheet } from "./bottom-sheet";
-import { DocumentCardSkeleton, DetailLinesSkeleton } from "./skeleton";
+import { DetailLinesSkeleton } from "./skeleton";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { DocumentDetail, InboundRequestHeader, InboundRequestLineFields } from "@/lib/erp/contracts";
 import { errorMessage } from "@/lib/erp/api";
@@ -43,8 +26,9 @@ export interface InboundReceipt {
   supplier: string;
   receivedDate: string;
   inspector: string;
-  temperature: string;
-  tempStatus: "pass" | "warning";
+  statusName?: string | null;
+  statusForeColor?: string | null;
+  statusBackColor?: string | null;
   stage: "receiving" | "inspecting" | "stored" | "rejected";
   batchNo: string;
   expiryDate: string;
@@ -84,7 +68,13 @@ export function TabInbound({
 }: TabInboundProps) {
   const [inbounds, setInbounds] = useState<InboundReceipt[]>([]);
   const [search, setSearch] = useState("");
-  const [stageFilter, setStageFilter] = useState<string>("all");
+  const [searchInput, setSearchInput] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [stageFilter, setStageFilter] = useState<string>("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [hasMore, setHasMore] = useState(false);
+  const listSeqRef = useRef(0);
   const [activeItem, setActiveItem] = useState<InboundReceipt | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -93,23 +83,21 @@ export function TabInbound({
   const lastFetchedRef = useRef<number>(0);
 
   const loadInbounds = useCallback(
-    async (isBackground = false) => {
-      if (!isBackground) {
-        if (inbounds.length === 0) setLoading(true);
-        else setIsRefreshing(true);
-      } else {
-        setIsRefreshing(true);
-      }
-
+    async (isBackground = false, targetPage = page, targetPageSize = pageSize) => {
+      const seq = ++listSeqRef.current;
+      if (!isBackground) setLoading(true);
+      else setIsRefreshing(true);
       try {
         setError(null);
         const pageData = await erpClient.getDocumentsList(
           "inbound-requests",
-          1,
+          targetPage,
           search,
-          currentBranch
+          currentBranch,
+          targetPageSize
         );
 
+        if (seq !== listSeqRef.current) return;
         if (pageData && pageData.rows) {
           const mapped: InboundReceipt[] = pageData.rows.map((r) => {
             const raw = r as Record<string, unknown>;
@@ -159,8 +147,9 @@ export function TabInbound({
                 : (raw.qrPrintType as string)
                 ? `KTV. ${raw.qrPrintType}`
                 : "KTV. Kiểm soát Kho Dược",
-              temperature: "22.5 °C (Chuẩn mát GSP)",
-              tempStatus: "pass",
+              statusName: r.statusName,
+              statusForeColor: typeof r.statusForeColor === "string" ? r.statusForeColor : null,
+              statusBackColor: typeof r.statusBackColor === "string" ? r.statusBackColor : null,
               stage,
               batchNo: declarationNumber ? `TK: ${declarationNumber}` : `LÔ-${r.documentId}`,
               expiryDate: "Theo chứng từ",
@@ -171,6 +160,9 @@ export function TabInbound({
           });
 
           setInbounds(mapped);
+          setPage(pageData.page);
+          setPageSize(pageData.pageSize);
+          setHasMore(pageData.hasMore);
           onCountChange?.(mapped.length);
           lastFetchedRef.current = Date.now();
         } else {
@@ -178,29 +170,32 @@ export function TabInbound({
           onCountChange?.(0);
         }
       } catch (e) {
+        if (seq !== listSeqRef.current) return;
         setError(errorMessage(e));
       } finally {
-        setLoading(false);
-        setIsRefreshing(false);
+        if (seq === listSeqRef.current) {
+          setLoading(false);
+          setIsRefreshing(false);
+        }
       }
     },
-    [search, currentBranch, inbounds.length, onCountChange]
+    [search, currentBranch, page, pageSize, onCountChange]
   );
 
-  // Initial and search/branch fetch
+  // Query changes start at page one; stale activation refreshes the current page.
+  const listQueryRef = useRef<string | null>(null);
+  const wasActiveRef = useRef(false);
   useEffect(() => {
-    loadInbounds();
-  }, [search, currentBranch]);
-
-  // Tab activation: stale-while-revalidate caching
-  useEffect(() => {
-    if (isActive) {
-      const now = Date.now();
-      if (now - lastFetchedRef.current > 45000 || inbounds.length === 0) {
-        loadInbounds(inbounds.length > 0);
-      }
+    const becameActive = isActive && !wasActiveRef.current;
+    wasActiveRef.current = isActive;
+    if (!isActive) return;
+    const query = JSON.stringify([search, currentBranch]);
+    const queryChanged = query !== listQueryRef.current;
+    if (queryChanged || (becameActive && Date.now() - lastFetchedRef.current > 45000)) {
+      listQueryRef.current = query;
+      void loadInbounds(!queryChanged, queryChanged ? 1 : page);
     }
-  }, [isActive, loadInbounds, inbounds.length]);
+  }, [search, currentBranch, isActive, loadInbounds, page]);
 
   const handleOpenDetail = async (item: InboundReceipt) => {
     setActiveItem(item);
@@ -293,55 +288,21 @@ export function TabInbound({
     }
   };
 
-  const getStageBadge = (stage: InboundReceipt["stage"]) => {
-    switch (stage) {
-      case "stored":
-        return (
-          <UntitledBadge variant="success" size="sm" dot>
-            Đã nhập kệ GSP
-          </UntitledBadge>
-        );
-      case "inspecting":
-        return (
-          <UntitledBadge variant="purple" size="sm" dot>
-            Đang kiểm định
-          </UntitledBadge>
-        );
-      case "receiving":
-        return (
-          <UntitledBadge variant="warning" size="sm" dot>
-            Chờ kiểm hàng
-          </UntitledBadge>
-        );
-      case "rejected":
-        return (
-          <UntitledBadge variant="error" size="sm" dot>
-            Từ chối lô
-          </UntitledBadge>
-        );
-    }
-  };
-
-  const handleAdvanceStage = (id: string) => {
-    setInbounds((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        const nextStage: InboundReceipt["stage"] =
-          item.stage === "receiving"
-            ? "inspecting"
-            : item.stage === "inspecting"
-            ? "stored"
-            : "stored";
-        return { ...item, stage: nextStage };
-      })
-    );
-    if (activeItem && activeItem.id === id) {
-      setActiveItem((prev) => (prev ? { ...prev, stage: "stored" } : null));
-    }
-  };
+  const stageLabels = { receiving: "Chờ kiểm hàng", inspecting: "Đang kiểm hàng", stored: "Đã nhập kho", rejected: "Từ chối" };
+  const stageTones = { receiving: "neutral", inspecting: "warning", stored: "success", rejected: "danger" } as const;
+  const getStageBadge = (item: InboundReceipt) => <StatusBadge label={item.statusName || stageLabels[item.stage]} tone={stageTones[item.stage]} statusForeColor={item.statusForeColor} statusBackColor={item.statusBackColor} />;
+  const statuses = [{ value: "", label: "Tất cả" }, ...Object.entries(stageLabels).map(([value, label]) => ({ value, label }))];
+  const tableColumns: RecordColumn<InboundReceipt>[] = [
+    { id: "document", label: "Mã phiếu nhập", render: item => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{item.code}</span> },
+    { id: "date", label: "Ngày chứng từ", className: "whitespace-nowrap", render: item => item.receivedDate },
+    { id: "supplier", label: "Nhà cung cấp", className: "min-w-60 max-w-sm", render: item => <span className="line-clamp-2 break-words">{item.supplier}</span> },
+    { id: "status", label: "Trạng thái", render: getStageBadge },
+    { id: "order", label: "Đơn hàng PO", render: item => item.orderNumber || "—" },
+    { id: "invoice", label: "Số hóa đơn", render: item => item.invoiceNo || "—" },
+  ];
 
   const filtered = inbounds.filter((item) => {
-    if (stageFilter !== "all" && item.stage !== stageFilter) return false;
+    if (stageFilter !== "" && item.stage !== stageFilter) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       const codeMatch = item.id.toLowerCase().includes(q) || (item.orderNumber && item.orderNumber.toLowerCase().includes(q));
@@ -354,162 +315,24 @@ export function TabInbound({
   });
 
   return (
-    <div className="space-y-4 pb-24 animate-uui-fade-in">
-      {/* Search & Actions Bar */}
-      <div className="space-y-2.5">
-        <div className="flex gap-2 items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
-            <input
-              type="text"
-              placeholder="Tìm theo số phiếu nhập, số PO, nhà cung cấp..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-2xs"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => loadInbounds(false)}
-            disabled={isRefreshing}
-            className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
-            title="Làm mới danh sách"
-          >
-            <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-brand-600" : ""}`} />
-          </button>
-
-          <UntitledButton
-            variant="primary"
-            size="md"
-            onClick={onOpenNewInbound || (() => alert("Mở form lập Yêu cầu nhập kho..."))}
-            iconLeading={<Plus className="size-4" />}
-          >
-            Tạo mới
-          </UntitledButton>
-        </div>
-
-        {/* Filter Chips Bar */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {[
-            { id: "all", label: "Tất cả", count: inbounds.length },
-            { id: "receiving", label: "Cổng kho", count: inbounds.filter((i) => i.stage === "receiving").length },
-            { id: "inspecting", label: "Kiểm nghiệm GSP", count: inbounds.filter((i) => i.stage === "inspecting").length },
-            { id: "stored", label: "Đã nhập kệ", count: inbounds.filter((i) => i.stage === "stored").length },
-          ].map((chip) => {
-            const isSelected = stageFilter === chip.id;
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                onClick={() => setStageFilter(chip.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
-                  isSelected
-                    ? "bg-brand-600 text-white shadow-xs"
-                    : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                }`}
-              >
-                <span>{chip.label}</span>
-                <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                    isSelected
-                      ? "bg-brand-700 text-white"
-                      : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
-                  }`}
-                >
-                  {chip.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Inbound List */}
-      <div className="space-y-3">
-        {error ? (
-          <div className="rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/30 p-6 text-center space-y-3">
-            <p className="text-sm font-semibold text-red-700 dark:text-red-400">{error}</p>
-            <UntitledButton
-              variant="secondary-gray"
-              size="sm"
-              onClick={() => loadInbounds(false)}
-              iconLeading={<RefreshCw className="size-3.5" />}
-            >
-              Thử lại
-            </UntitledButton>
-          </div>
-        ) : loading && inbounds.length === 0 ? (
-          <DocumentCardSkeleton count={4} />
-        ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center space-y-3">
-            <PackageCheck className="size-10 text-neutral-400 mx-auto stroke-[1.4]" />
-            <div>
-              <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                Không có phiếu nhập kho nào
-              </p>
-              <p className="text-xs text-neutral-400 mt-0.5">
-                Chưa có phiếu nhập nào khớp với bộ lọc hoặc tìm kiếm.
-              </p>
-            </div>
-            <UntitledButton
-              variant="secondary-gray"
-              size="sm"
-              onClick={() => loadInbounds(false)}
-              iconLeading={<RefreshCw className="size-3.5" />}
-            >
-              Tải lại dữ liệu
-            </UntitledButton>
-          </div>
-        ) : (
-          filtered.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => handleOpenDetail(item)}
-              className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 hover:border-brand-300 dark:hover:border-brand-800 p-4 transition-all duration-150 cursor-pointer shadow-xs active:scale-[0.99] group"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="space-y-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                      {item.code}
-                    </span>
-                    {getStageBadge(item.stage)}
-                  </div>
-                  <h4 className="text-sm font-bold text-neutral-900 dark:text-white truncate">
-                    {item.supplier}
-                  </h4>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    Mã chứng từ: <span className="font-mono">{item.code}</span>
-                  </p>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block">
-                    {item.items.length > 0 ? `${item.items.length} mặt hàng` : "Xem chi tiết"}
-                  </span>
-                  <span className="text-[11px] text-neutral-400">
-                    {item.receivedDate}
-                  </span>
-                </div>
-              </div>
-
-              {/* Inbound Meta */}
-              <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs text-neutral-500">
-                <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-                  <Calendar className="size-3.5 text-brand-600" />
-                  <span className="font-medium">{item.receivedDate}</span>
-                </div>
-
-                <div className="flex items-center gap-1 text-neutral-400">
-                  <span>{item.inspector}</span>
-                  <ChevronRight className="size-4 group-hover:text-brand-600 transition-colors ml-1" />
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+    <div className="min-w-0 space-y-3 pb-8 animate-uui-fade-in">
+      <ScreenHeader title="Nhập kho" subtitle={"Chi nhánh " + currentBranch + " · " + inbounds.length + " chứng từ trên trang"} />
+      <ScreenToolbar search={searchInput} onSearchChange={setSearchInput} onSearch={setSearch}
+        onFilter={() => setFilterOpen(true)} filterOpen={filterOpen} filterId="inbound-filters"
+        filterCount={Number(Boolean(stageFilter)) + Number(pageSize !== 20)}
+        refreshing={loading || isRefreshing} onRefresh={() => void loadInbounds(true)} onCreate={onOpenNewInbound} />
+      <FilterChips items={statuses.map(status => ({ ...status, count: status.value ? inbounds.filter(item => item.stage === status.value).length : inbounds.length }))}
+        value={stageFilter} onChange={setStageFilter} onPageChange={() => { if (page !== 1) void loadInbounds(false, 1); }} />
+      <p className="text-sm text-neutral-500 dark:text-neutral-400">Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại.</p>
+      <RecordList label="Danh sách nhập kho" rows={filtered} columns={tableColumns} rowId={item => item.id}
+        card={item => ({ code: item.code, title: item.supplier, meta: [item.receivedDate, item.orderNumber ? "PO: " + item.orderNumber : null, item.invoiceNo ? "Hóa đơn: " + item.invoiceNo : null], status: { label: item.statusName || stageLabels[item.stage], tone: stageTones[item.stage], statusForeColor: item.statusForeColor, statusBackColor: item.statusBackColor } })}
+        onOpen={handleOpenDetail} loading={loading} error={error} onRetry={() => void loadInbounds(false)}
+        empty={{ message: "Chưa có chứng từ khớp với tìm kiếm hoặc bộ lọc.", onCreate: onOpenNewInbound }}
+        pagination={{ page, pageSize, rowCount: inbounds.length, visibleRowCount: filtered.length, hasMore, busy: loading || isRefreshing, maxPage: 1000,
+          onPageChange: nextPage => void loadInbounds(false, nextPage), onPageSizeChange: size => void loadInbounds(false, 1, size) }} />
+      <FilterSheet id="inbound-filters" open={filterOpen} onClose={() => setFilterOpen(false)} value={{ status: stageFilter, pageSize }} statuses={statuses}
+        onApply={value => { setStageFilter(value.status); void loadInbounds(false, 1, value.pageSize); }} />
+      {onOpenNewInbound && <CreateFab allowed label="Tạo phiếu nhập kho" onClick={onOpenNewInbound} />}
 
       {/* Inbound Detail Bottom Sheet */}
       <UntitledBottomSheet
@@ -517,21 +340,6 @@ export function TabInbound({
         onClose={() => setActiveItem(null)}
         title={activeItem?.code || "Chi tiết biên bản nhập kho"}
         subtitle={`Chứng từ ERP: ${activeItem?.code}`}
-        footer={
-          activeItem && activeItem.stage !== "stored" ? (
-            <div className="flex gap-2">
-              <UntitledButton
-                variant="primary"
-                size="md"
-                fullWidth
-                onClick={() => handleAdvanceStage(activeItem.id)}
-                iconLeading={<CheckCircle2 className="size-4" />}
-              >
-                Xác nhận vào kệ kho
-              </UntitledButton>
-            </div>
-          ) : null
-        }
       >
         {activeItem && (
           <div className="space-y-4 pb-12">
@@ -546,7 +354,7 @@ export function TabInbound({
                     {activeItem.code}
                   </p>
                 </div>
-                <div>{getStageBadge(activeItem.stage)}</div>
+                <div>{getStageBadge(activeItem)}</div>
               </div>
 
               {/* Tên đối tượng / Nhà cung cấp (ObjectName - có thể dài nên bố trí trọn dòng rõ ràng) */}

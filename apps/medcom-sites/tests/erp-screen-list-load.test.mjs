@@ -15,6 +15,9 @@ await mkdir(output,{recursive:true});
 // returns: purchase-orders is write-gated (erp_write_unqualified), the other
 // modules are admitted.
 const stubs={
+ // This suite exercises list transport; app-screens tests the real 300ms clock.
+ // Commit the toolbar query synchronously without changing existing assertions.
+ 'app-quick-tabs':"export * from '@/components/app'; import {ScreenToolbar as RealScreenToolbar} from '@/components/app'; export const ScreenToolbar=props=><RealScreenToolbar {...props} onSearchChange={value=>{props.onSearchChange(value);props.onSearch(value);}}/>;",
  'erp-client':`
 export const erpClient={
  async getLookupOptions(module,query){return globalThis.__erpStatusHandler?globalThis.__erpStatusHandler(module,query):{items:[],page:1,hasMore:false,requiredParameters:[]};},
@@ -55,6 +58,7 @@ const stubPlugin={
   builder.onResolve({filter:/.*/},args=>{
    if(!/(?:tab-(?:erp-screen|orders|purchases)\.tsx|erp-document-detail-body\.tsx|erp-line-editor\.tsx|sales-order-status-filter\.tsx|document-detail\/[^/]+\.tsx|document-detail\/registry\.ts)$/.test(args.importer.replace(/\\/g,'/')))return null;
    const requested=args.path.replace(/\\/g,'/');
+   if(requested==='@/components/app')return{path:'app-quick-tabs',namespace:'stub'};
    for(const key of Object.keys(stubs))if(requested.endsWith(key))return{path:key,namespace:'stub'};
    return null;
   });

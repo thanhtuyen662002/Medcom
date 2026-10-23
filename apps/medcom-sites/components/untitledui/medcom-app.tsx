@@ -8,12 +8,14 @@ import { UntitledMobileHeader, type BranchOption } from "./mobile-header";
 import { UntitledBottomNav, type NavTabId } from "./bottom-nav";
 import { TabHome } from "./tab-home";
 import { TabOrders } from "./tab-orders";
-import { TabPurchases, type PurchaseItem } from "./tab-purchases";
+import { TabPurchases } from "./tab-purchases";
 import { TabInbound } from "./tab-inbound";
-import { UntitledQrScannerView, type ScannedMedicineInfo } from "./qr-scanner-view";
+import { UntitledQrScannerView } from "./qr-scanner-view";
 import { TabSettings } from "./tab-settings";
 import { LoginScreen } from "./login-screen";
-import { QuickCreateModal } from "./quick-create-modal";
+import { PurchaseOrderCreateSheet } from "./purchase-order-create-sheet";
+import { PurchaseRequestCreateSheet } from "./purchase-request-create-sheet";
+import { ScreenHeader } from "@/components/app/screen-header";
 import { NotificationsSheet } from "./notifications-sheet";
 import { SidebarDrawer } from "./sidebar-drawer";
 import { TabErpScreen } from "./tab-erp-screen";
@@ -80,9 +82,47 @@ export function MedcomApp() {
   }, [currentUser, retryTabAccess]);
 
   // Modals state
-  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [createRequest, setCreateRequest] = useState<{
+    module: "purchase-orders" | "purchase-requests";
+    user: LoginResult["user"];
+    branch: string;
+  } | null>(null);
+  const createModule = createRequest?.user === currentUser && createRequest?.branch === currentBranch ? createRequest.module : null;
+  const [createAccess, setCreateAccess] = useState<{
+    user: LoginResult["user"];
+    branch: string;
+    modules: readonly string[];
+  } | null>(null);
+
+  // Creation is exposed only after both current branch CRUD and module actions
+  // allow it. A response for an old session/branch cannot expose a new opener.
+  useEffect(() => {
+    if (!currentUser) return;
+    let cancelled = false;
+    const user = currentUser;
+    const branch = currentBranch;
+    const load = async () => {
+      try {
+        const [permissions, ...actions] = await Promise.all([
+          erpClient.getScreenPermissions(branch),
+          erpClient.getErpModuleActions("purchase-orders", { branchId: branch }),
+          erpClient.getErpModuleActions("purchase-requests", { branchId: branch }),
+        ]);
+        const modules = ["purchase-orders", "purchase-requests"].filter((module, index) => {
+          const screen = permissions.screens.find(item => item.module === module);
+          const action = actions[index].find(item => item.id === "create");
+          return screen?.canView && screen.crud.canCreate && action?.visible && action.enabled;
+        });
+        if (!cancelled) setCreateAccess({ user, branch, modules });
+      } catch {
+        if (!cancelled) setCreateAccess({ user, branch, modules: [] });
+      }
+    };
+    void load();
+    return () => { cancelled = true; };
+  }, [currentUser, currentBranch]);
+  const canCreate = (module: string) => createAccess?.user === currentUser && createAccess?.branch === currentBranch && createAccess.modules.includes(module);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [selectedPurchaseItem, setSelectedPurchaseItem] = useState<PurchaseItem | null>(null);
   const [targetDocPerModule, setTargetDocPerModule] = useState<{ module: ErpScreenModule; documentId: string } | null>(null);
 
   // Check saved session, theme, and layout on initial mount with automatic reauthentication
@@ -399,16 +439,9 @@ export function MedcomApp() {
   };
 
   const handleBranchChange = (newBranch: string) => {
+    setCreateRequest(null);
     setCurrentBranch(newBranch);
     refreshGlobalCounts(newBranch);
-  };
-
-  const handleScanAddToPurchase = (_med: ScannedMedicineInfo) => {
-    setQuickCreateOpen(true);
-  };
-
-  const handleScanAddToInbound = (_med: ScannedMedicineInfo) => {
-    setActiveTab("inbound");
   };
 
   // If still checking initial authentication in localStorage, show clean loader
@@ -501,8 +534,8 @@ export function MedcomApp() {
               <TabHome
                 onNavigateTab={(tab) => setActiveTab(tab)}
                 onSelectPurchaseItem={(item) => {
-                  setSelectedPurchaseItem(item);
-                  setActiveTab("purchases");
+                  setTargetDocPerModule({ module: "purchase-requests", documentId: item.id });
+                  setActiveTab("purchase-requests");
                 }}
                 userName={currentUser.displayName}
                 currentBranch={currentBranch}
@@ -520,16 +553,14 @@ export function MedcomApp() {
                 currentBranch={currentBranch}
                 isActive={activeTab === "orders"}
                 onCountChange={setOrdersCount}
-                onOpenCreateModal={() => setQuickCreateOpen(true)}
+                onOpenCreateModal={canCreate("purchase-orders") ? () => setCreateRequest({ module: "purchase-orders", user: currentUser, branch: currentBranch }) : undefined}
               />
             </div>
 
             {/* TAB 3: Purchases (PR) */}
             <div className={activeTab === "purchases" ? "block" : "hidden"}>
               <TabPurchases
-                onOpenCreateModal={() => setQuickCreateOpen(true)}
-                selectedItemForDetail={selectedPurchaseItem}
-                onCloseDetailModal={() => setSelectedPurchaseItem(null)}
+                onOpenCreateModal={canCreate("purchase-requests") ? () => setCreateRequest({ module: "purchase-requests", user: currentUser, branch: currentBranch }) : undefined}
                 currentBranch={currentBranch}
                 isActive={activeTab === "purchases"}
                 onCountChange={setPurchasesCount}
@@ -542,25 +573,19 @@ export function MedcomApp() {
                 currentBranch={currentBranch}
                 isActive={activeTab === "inbound"}
                 onCountChange={setInboundCount}
-                onOpenNewInbound={() => setQuickCreateOpen(true)}
               />
             </div>
 
             {/* TAB 5: QR / Barcode Scanner */}
             <div className={activeTab === "scan" ? "block" : "hidden"}>
               <div className="space-y-4 max-w-2xl mx-auto">
-                <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-5 shadow-xs">
-                  <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
-                    Quét tem mã vạch thuốc & QR Lô GSP
-                  </h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                    Nhận diện chuẩn GS1 DataMatrix, mã vạch EAN-13 và tem niêm phong dược phẩm
-                  </p>
-                </div>
-                <UntitledQrScannerView
-                  onAddToPurchase={handleScanAddToPurchase}
-                  onAddToInbound={handleScanAddToInbound}
-                />
+                <ScreenHeader title="Quét mã QR" subtitle="Đọc bằng camera hoặc nhập mã thủ công" />
+                {activeTab === "scan" && <UntitledQrScannerView
+                  key={currentUser.username + ":" + currentBranch}
+                  scopeKey={currentUser.username + ":" + currentBranch}
+                  onOpenPurchases={() => setActiveTab("purchases")}
+                  onOpenInbound={() => setActiveTab("inbound")}
+                />}
               </div>
             </div>
 
@@ -568,6 +593,7 @@ export function MedcomApp() {
             <div className={activeTab === "settings" ? "block" : "hidden"}>
               <div className="max-w-2xl mx-auto">
                 <TabSettings
+                  currentUser={currentUser}
                   currentBranch={currentBranch}
                   onBranchChange={handleBranchChange}
                   isDarkMode={isDarkMode}
@@ -627,16 +653,30 @@ export function MedcomApp() {
           onRetryTabs={() => void retryTabAccess()}
         />
 
-        {/* Quick Create PR Bottom Sheet */}
-        <QuickCreateModal
-          open={quickCreateOpen}
-          onClose={() => setQuickCreateOpen(false)}
+        {createModule === "purchase-orders" && canCreate("purchase-orders") && <PurchaseOrderCreateSheet
+          key={currentBranch}
+          open
+          onClose={() => setCreateRequest(null)}
           currentBranch={currentBranch}
-          onSuccess={(newPr) => {
-            setSelectedPurchaseItem(newPr);
-            setActiveTab("purchases");
+          onCreated={documentId => {
+            setCreateRequest(null);
+            setTargetDocPerModule({ module: "purchase-orders", documentId });
+            setActiveTab("purchase-orders");
+            void refreshGlobalCounts(currentBranch);
           }}
-        />
+        />}
+        {createModule === "purchase-requests" && canCreate("purchase-requests") && <PurchaseRequestCreateSheet
+          key={currentBranch}
+          open
+          onClose={() => setCreateRequest(null)}
+          currentBranch={currentBranch}
+          onCreated={documentId => {
+            setCreateRequest(null);
+            setTargetDocPerModule({ module: "purchase-requests", documentId });
+            setActiveTab("purchase-requests");
+            void refreshGlobalCounts(currentBranch);
+          }}
+        />}
 
         {/* Realtime Notifications Sheet */}
         <NotificationsSheet
