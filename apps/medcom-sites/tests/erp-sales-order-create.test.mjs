@@ -51,8 +51,9 @@ const stubs={
   'erp-client':clientStub,
   'lookup-field':lookupStub,
   'bottom-sheet':`export const UntitledBottomSheet=({open,children})=>open?<div data-sheet="1">{children}</div>:null;`,
-  'erp-detail-sheet':`export const ErpDetailSheet=({open,children})=>open?<div data-sheet="1">{children}</div>:null;`,
+  'record-dialog':`export const RecordDetailStatus=({children})=><div>{children}</div>;`,
   'button':`export const UntitledButton=({children,iconLeading,iconTrailing,variant,size,...rest})=>(<button type="button" {...rest}>{children}</button>);`,
+  'document-detail-dialog':`export const DocumentDetailDialog=({open,children})=>open?<div>{children}</div>:null;`,
   'sales-order-form':`export const SalesOrderForm=()=>null;`,
   'purchase-order-create-sheet':`export const PurchaseOrderCreateSheet=()=>null;`,
   'purchase-request-create-sheet':`export const PurchaseRequestCreateSheet=()=>null;`,
@@ -63,7 +64,7 @@ const stubPlugin=(importerPattern,map)=>({
   name:'erp-stubs',
   setup(builder){
     builder.onResolve({filter:/.*/},args=>{
-      if(!importerPattern.test(args.importer.replace(/\\/g,'/')))return null;
+      if(!/(?:erp-document-detail-body)\.tsx$/.test(args.importer.replace(/\\/g,'/'))&&!importerPattern.test(args.importer.replace(/\\/g,'/'))&&!args.importer.replace(/\\/g,'/').endsWith('/document-detail/registry.ts'))return null;
       const requested=args.path.replace(/\\/g,'/');
       for(const key of Object.keys(map))if(requested.endsWith(key))return{path:key,namespace:'stub'};
       return null;

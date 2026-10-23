@@ -33,6 +33,15 @@ export const SALES_ORDER_LINE_COLUMNS = [
   { key: "notes", label: "Ghi chú", editable: true },
 ] satisfies Array<{ key: string; label: string; numeric?: boolean; editable?: boolean; formula?: string }>;
 
+// Compatibility for the shared detail config: group only the current upstream
+// columns. Unit2/UnitFactor/Quantity2 were removed from that column contract.
+export const SALES_ORDER_LINE_GROUPS = [
+  { label: "Thông tin hàng", keys: ["itemId", "itemCode", "unit"], fullWidth: ["itemId"] },
+  { label: "Số lượng", keys: ["quantity", "soLuongHopDong", "deliveryQuantity", "vATQuantity"], fullWidth: ["vATQuantity"] },
+  { label: "Giá & thuế", keys: ["unitPrice", "amount", "discountPercent", "discountAmount", "vATPercent", "vATAmount", "totalAmount"], fullWidth: ["totalAmount"] },
+  { label: "Nội dung", keys: ["dienGiai", "notes"], fullWidth: ["dienGiai", "notes"] },
+];
+
 export function isSalesOrderLineValid(line: SalesOrderDraftLine): boolean {
   const number = /^\d+(\.\d+)?$/;
   return !!line.itemId.trim() && number.test(line.quantity.trim()) &&

@@ -11,13 +11,22 @@ const output=path.join(app,'.test-runtime','sales-order-detail-summary');
 await mkdir(output,{recursive:true});
 const outfile=path.join(output,'fixture.cjs');
 await build({
-  stdin:{contents:'export {SalesOrderDetailTabs} from "./components/erp/sales-order-detail-tabs";',resolveDir:app,loader:'tsx'},
+  // T-008: the old tabs component was deleted by ui-sync. Exercise its shared
+  // replacement with the real sales config; keep both scenarios/assertions below.
+  stdin:{contents:'export {DocumentDetailView} from "./components/erp/document-detail/document-detail-view"; export {salesOrderDetailConfig} from "./lib/erp/document-detail/modules/sales";',resolveDir:app,loader:'tsx'},
   outfile,bundle:true,platform:'node',format:'cjs',packages:'external',jsx:'automatic',alias:{'@':app},logLevel:'warning',
 });
 
 const require=createRequire(import.meta.url),React=require('react'),{create,act}=require('react-test-renderer');
 globalThis.IS_REACT_ACT_ENVIRONMENT=true;
-const {SalesOrderDetailTabs}=require(outfile);
+const {DocumentDetailView,salesOrderDetailConfig}=require(outfile);
+const noop=()=>{};
+const SalesOrderDetailTabs=({lines,history,currencyId,summary})=>React.createElement(DocumentDetailView,{
+  config:salesOrderDetailConfig,module:'sales-orders',
+  model:{documentId:'QA-SUMMARY',header:{currencyId},lines:{rows:lines,hasMore:false},history:{rows:history,hasMore:false},summary,
+    status:{label:null,locked:null},loading:false,error:null,editing:false,dirty:false,busy:false,draft:{},feedback:null,actions:[]},
+  handlers:{onAction:noop,onFieldChange:noop,onLoadMore:noop,onRetry:noop},
+});
 
 const lines=[{lineId:'1',fields:{itemId:'SP01',itemName:'Sản phẩm kiểm thử',unit:'Hộp',quantity:'2',unitPrice:'550',amount:'1100',totalAmount:'1100'}}];
 const text=node=>{const out=[];const walk=n=>{if(n==null)return;if(typeof n==='string'||typeof n==='number'){out.push(String(n));return;}if(Array.isArray(n)){n.forEach(walk);return;}if(n.children)walk(n.children);};walk(node);return out.join(' ');};
