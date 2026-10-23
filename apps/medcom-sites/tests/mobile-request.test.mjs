@@ -103,8 +103,9 @@ test('actual mobile component interactions and adversarial async states in insta
       assert.equal(await page.getByLabel('Phòng ban *', {exact: true}).inputValue(), 'Phòng giữ nguyên');
     });
     await t.test('line cards add/remove within the supplied limit and perform actual remote lookup', async () => {
-      await reset(); await page.getByRole('button', {name: 'Thêm dòng hàng'}).click(); assert.equal(await page.getByRole('article').count(), 2); assert.ok(await page.getByRole('button', {name: 'Thêm dòng hàng'}).isDisabled());
-      await page.getByRole('article', {name: 'Dòng hàng 2', exact: true}).getByLabel('Số lượng *', {exact: true}).fill('2');
+      // Current shared detail DOM says "Thêm chi tiết"; structural gates are unchanged.
+      await reset(); await page.getByRole('button', {name: 'Thêm chi tiết'}).click(); assert.equal(await page.getByRole('article').count(), 2); assert.ok(await page.getByRole('button', {name: 'Thêm chi tiết'}).isDisabled());
+      await page.getByRole('article', {name: 'Chi tiết 2', exact: true}).getByLabel('Số lượng *', {exact: true}).fill('2');
       const lineValues = () => page.locator('article').evaluateAll(articles => articles.map(article => Array.from(article.querySelectorAll('input'), input => ({name: input.name, value: input.value}))));
       const retainedValues = await lineValues();
       const remove = page.getByRole('button', {name: 'Bỏ dòng 2', exact: true}), confirmation = page.getByRole('alertdialog');
@@ -273,7 +274,7 @@ test('I58 actual purchase editor restricts structural changes to the generic pro
       try {
         const before = structuredClone(f.lines().lines), handlers = f.lines();
         assert.equal(f.buttons().some(node => /^Bỏ dòng /.test(node.children.join(''))), false);
-        assert.equal(f.button('Thêm dòng hàng').props.disabled, true);
+        assert.equal(f.button('Thêm chi tiết').props.disabled, true);
         assert.equal(f.field('department').props.disabled, false); assert.equal(f.field('lines.QA-L1.quantity').props.disabled, false);
         await act(async () => {handlers.onAdd(); handlers.onRemove('QA-L1');});
         assert.deepEqual(f.lines().lines, before); assert.equal(f.confirmation().open, false); assert.equal(f.confirmation().isAllowed(), false);
@@ -288,7 +289,7 @@ test('I58 actual purchase editor restricts structural changes to the generic pro
       const f = await fixture();
       try {
         const before = structuredClone(f.lines().lines);
-        await f.click('Thêm dòng hàng'); assert.equal(f.lines().lines.length, 2); assert.deepEqual(f.lines().lines[0], before[0]);
+        await f.click('Thêm chi tiết'); assert.equal(f.lines().lines.length, 2); assert.deepEqual(f.lines().lines[0], before[0]);
         const added = structuredClone(f.lines().lines);
         await f.click('Bỏ dòng 2'); assert.equal(f.confirmation().open, true); assert.deepEqual(f.lines().lines, added); assert.deepEqual(f.calls, []);
         await f.click('Giữ dòng'); assert.equal(f.confirmation().open, false); assert.deepEqual(f.lines().lines, added);
