@@ -17,9 +17,29 @@ Nhập tại cột **SL lấy đợt này** trong hộp chọn rồi bấm **Ch�
 
 Mã hàng, liên kết dòng PO và **Hãng sản xuất** được chuyển sang chi tiết phiếu. Hãng sản xuất lấy theo danh mục hàng; nếu danh mục chưa khai báo thì cần kiểm tra danh mục trước, không nhập đoán hãng.
 
-## 3. Kiểm tra và lưu đề nghị
+## 3. Một mặt hàng có nhiều lô: copy dòng và lưu một lần
 
-Kiểm tra PO, ngày chứng từ, chi nhánh, loại nhập hàng, nơi đi/nơi đến và các trường bắt buộc trên form. Tại **Chi tiết hàng hóa**, bổ sung **số lô, số lượng trên chứng từ, hạn sử dụng trên chứng từ** cho từng dòng. Bấm **Lưu**.
+Cách này áp dụng cho **phiếu mới** và **phiếu đã lưu** còn ở trạng thái **Nháp / Yêu cầu TM xem lại**. Với phiếu đã lưu, mở đúng phiếu rồi bấm **Sửa**.
+
+Tại **Chi tiết hàng hóa**, thực hiện:
+
+- Nhấp phải vào dòng hàng cần chia nhiều lô, chọn **Chèn dòng / Copy dòng này (nhân bản)**.
+- Nhập số dòng cần thêm rồi bấm **Copy**. Ví dụ cần 3 lô thì copy thêm **2 dòng**, cùng với dòng gốc thành 3 dòng.
+- Sửa cột **SL đề nghị đợt này** ở cả dòng gốc và các dòng copy theo số lượng từng lô.
+- Điền **Số lô trên chứng từ** và **Hạn sử dụng trên chứng từ** riêng cho từng dòng. Giữ đúng mã hàng và nguồn đơn đặt hàng.
+
+Ví dụ minh họa: một dòng hàng có số lượng đợt nhập là **3.680**, được giao thành ba lô:
+
+| Dòng hàng | Số lô minh họa | SL đề nghị đợt này | Hạn sử dụng minh họa |
+| --- | --- | --- | --- |
+| Dòng copy thứ nhất | LO-VD-01 | 80 | 19/05/2030 |
+| Dòng copy thứ hai | LO-VD-02 | 1.600 | 01/07/2030 |
+| Dòng gốc | LO-VD-03 | 2.000 | 06/07/2030 |
+| **Tổng cùng dòng PO** | | **3.680** | |
+
+Kiểm tra PO, ngày chứng từ, chi nhánh, loại nhập hàng, nơi đi/nơi đến và các trường bắt buộc trên form. Hoàn tất số lượng, lô và hạn dùng của mọi dòng rồi bấm **Lưu** một lần.
+
+Hệ thống kiểm tra **tổng số lượng cuối cùng theo từng dòng PO**, gồm tất cả các dòng copy trên phiếu và phần đã phân bổ ở các đợt chưa hủy khác. Tổng này phải không vượt số lượng đặt. Nếu tổng vượt PO, lần lưu bị từ chối và các thay đổi của lần lưu đó không được ghi dở dang. Kiểm tra lại tổng, điều chỉnh các dòng liên quan rồi lưu lại.
 
 Các dòng phải còn liên kết đúng dòng PO. Không đổi sang PO khác khi phiếu đã có phân bổ; hãy dùng phiếu nháp mới nếu chọn nhầm nguồn. Sau khi gửi xử lý, không sửa trực tiếp số lượng để thay đổi kế hoạch của đợt.
 
