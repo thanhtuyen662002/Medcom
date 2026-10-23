@@ -1,7 +1,7 @@
 {
   "title": "MEDCOM · Tài liệu ERP",
-  "version": "2026.10.22",
-  "reviewed": "2026-10-22",
+  "version": "2026.10.23",
+  "reviewed": "2026-10-23",
   "defaultArticle": "inbound",
   "articles": [
     {
@@ -86,7 +86,7 @@
     {
       "id": "inbound",
       "title": "Nhập hàng theo từng đợt",
-      "subtitle": "Lấy hàng từ đơn đặt hàng, xác nhận hàng về và gửi đúng bộ phận xử lý.",
+      "subtitle": "Lấy hàng từng đợt, copy dòng theo lô, lưu một lần và gửi Thủ kho.",
       "group": "Mua hàng & nhập kho",
       "roles": [
         "Thương mại",
@@ -99,11 +99,11 @@
       "source": "HDSD quy trình nhập hàng.docx",
       "stages": [
         "Chọn PO",
-        "Nhập SL đợt này",
-        "Lưu phiếu",
+        "Copy & nhập lô",
+        "Lưu một lần",
         "Gửi Thủ kho"
       ],
-      "flow": "flowchart TD\nPO[Đơn đặt hàng còn số lượng] --> TM[TM lập đề nghị nhập theo đợt]\nTM --> WH[Thủ kho xác nhận hàng thực tế]\nWH --> SA[TP SA kiểm tra]\nSA --> PM[PM xử lý]\nPM --> Q{Cần Kỹ thuật?}\nQ -->|Có| TECH[Kỹ thuật xác nhận]\nQ -->|Không| KT[Kế toán]\nTECH --> KT\nTM -. Phương án cần BLĐ .-> BLD[BLĐ duyệt hoặc hủy phương án]\nBLD -->|Duyệt| KT\nKT --> NK[Chứng từ mua hàng và nhập kho liên quan]\nWH -. Trả TM .-> TM\nSA -. Trả Thủ kho .-> WH\nPM -. Trả TP SA .-> SA\nTECH -. Trả PM .-> PM",
+      "flow": "flowchart TD\nPO[Đơn đặt hàng còn số lượng] --> TM[TM lập đề nghị nhập theo đợt]\nOLD[Phiếu đã lưu: Nháp hoặc Yêu cầu TM xem lại] --> EDIT[Bấm Sửa]\nTM --> LOT{Một mặt hàng có nhiều lô?}\nEDIT --> LOT\nLOT -->|Có| COPY[Copy thêm dòng cho từng lô]\nLOT -->|Không| DETAIL[Nhập số lượng, lô và hạn dùng từng dòng]\nCOPY --> DETAIL\nDETAIL --> SAVE[Bấm Lưu một lần]\nSAVE --> CHECK{Tổng theo dòng PO, cộng các đợt khác, không vượt PO?}\nCHECK -->|Vượt: từ chối toàn bộ lần lưu| DETAIL\nCHECK -->|Hợp lệ| SAVED[Phiếu được lưu, giữ liên kết PO]\nSAVED -->|Gửi Thủ kho| WH[Thủ kho xác nhận hàng thực tế]\nWH --> SA[TP SA kiểm tra]\nSA --> PM[PM xử lý]\nPM --> Q{Cần Kỹ thuật?}\nQ -->|Có| TECH[Kỹ thuật xác nhận]\nQ -->|Không| KT[Kế toán]\nTECH --> KT\nSAVED -. Phương án cần BLĐ .-> BLD[BLĐ duyệt hoặc hủy phương án]\nBLD -->|Duyệt| KT\nKT --> NK[Chứng từ mua hàng và nhập kho liên quan]\nWH -. Trả TM .-> TM\nSA -. Trả Thủ kho .-> WH\nPM -. Trả TP SA .-> SA\nTECH -. Trả PM .-> PM",
       "guide": "guides/inbound.md",
       "technical": "technical/inbound.md",
       "forms": [
@@ -122,10 +122,22 @@
         "AP_POInboundPartial_CancelStp",
         "IV_InboundPartial_PlanHeaderTrg",
         "IV_InboundPartial_PlanDetailTrg",
+        "IV_InboundRequest_PrepareDetailSaveStp",
+        "IV_InboundRequest_ParseSaveDetailsFnc",
+        "IV_InboundRequest_ApplyDetailSaveTrg",
+        "IV_InboundRequest_SaveBatchAdapterTrg",
         "IV_InboundRequest_ChangeWorkflowStatusStp",
         "IV_InboundRequest_DeleteDraftTrg"
       ],
       "errors": [
+        [
+          "Một mặt hàng giao thành nhiều lô",
+          "Nhấp phải dòng hàng → Chèn dòng / Copy dòng này (nhân bản); nhập số dòng thêm. Chỉnh SL đề nghị đợt này, lô và hạn dùng từng dòng, rồi Lưu một lần. Phiếu đã lưu còn Nháp/Yêu cầu TM xem lại thì bấm Sửa trước."
+        ],
+        [
+          "Lưu báo tổng số lượng vượt PO",
+          "Cộng số lượng của dòng gốc và mọi dòng copy cùng nguồn PO, cộng phần đã phân bổ ở các đợt chưa hủy khác. Điều chỉnh tổng cho phù hợp rồi lưu lại; lần lưu bị từ chối không ghi dở dang."
+        ],
         [
           "Không sửa được số lượng",
           "Nhập tại “SL lấy đợt này” trong hộp lấy PO. Nếu cột chưa xuất hiện sau cập nhật, đóng hẳn ERP và mở lại; không sửa số lượng đặt của PO."
@@ -147,7 +159,7 @@
           "Kiểm tra trạng thái và các chứng từ liên kết. Không xóa cưỡng bức master/detail hoặc bỏ liên kết để qua kiểm tra."
         ]
       ],
-      "reviewed": "2026-10-22"
+      "reviewed": "2026-10-23"
     },
     {
       "id": "bptm",

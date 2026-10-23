@@ -49,6 +49,14 @@ Không sửa tài khoản, nhóm quyền, phạm vi chi nhánh, trạng thái ho
 
 Ảnh preview chỉ chứa nội dung minh họa đã loại thông tin khách hàng. Chưa triển khai vào tên miền của ERP; chưa xác nhận URL/HTTPS/cache trên máy chủ đích.
 
+## Cập nhật riêng luồng copy nhiều lô — 23/10/2026
+
+HDSD nhập hàng và sơ đồ đã bổ sung cách nhấp phải dòng → **Chèn dòng / Copy dòng này (nhân bản)** → chỉnh số lượng, lô, hạn dùng → **Lưu một lần**, áp dụng cả phiếu mới và phiếu đã lưu còn Nháp/Yêu cầu TM xem lại. TLKT cùng bài ghi các đối tượng lưu bộ chi tiết cuối cùng và tham số người dùng đúng của bộ xử lý trước lưu.
+
+Căn cứ là lượt sửa ERP được chủ hệ thống yêu cầu trước lượt cập nhật tài liệu này: chủ hệ thống thực hiện copy hai dòng và chỉ sửa số lượng chi tiết rồi lưu thành công trên phiếu thử riêng. Đọc lại DB xác nhận ba dòng 80 + 1.600 + 2.000 = 3.680 và dòng khác 480; giữ khóa dòng PO, cùng một đợt phân bổ và mã phiên lưu đã áp dụng. Các ca kiểm thử DB xác nhận chặn vượt PO, tính cả đợt khác và hoàn tác khi lỗi. Đã xóa bộ dữ liệu thử riêng, giữ nguyên phân quyền và liên kết master/detail. Không suy rộng kết quả này sang các vai trò hoặc quy trình khác còn UNKNOWN trong bảng quan sát ngày 22/10.
+
+Định nghĩa và kết quả đọc DB đầy đủ giữ ngoài repo; [content/evidence.json](content/evidence.json) chỉ bổ sung metadata, hash đối tượng và mô tả kiểm chứng đã loại dữ liệu giao dịch. Các mã lô trong HDSD là ví dụ minh họa.
+
 ## Quy tắc cập nhật tiếp
 
 Khi DB hoặc ERP đổi, đối chiếu module/form liên quan, cập nhật bài nguồn và sơ đồ cùng lượt. Đổi hash định nghĩa là dấu hiệu cần rà lại, không tự chứng minh nghiệp vụ đã đổi. Giữ các trạng thái UNKNOWN cho đến khi có quan sát hoặc kiểm thử đúng phạm vi, không nâng thành PASS bằng suy luận.

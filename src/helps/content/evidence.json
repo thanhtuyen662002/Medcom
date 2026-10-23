@@ -287,7 +287,37 @@
           "schema": "dbo",
           "name": "IV_InputTbl",
           "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundRequest_PrepareDetailSaveStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "404d2916bf7e301788d801b44efd2df5877c4386ebb13f12221a481a111ff079"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundRequest_ParseSaveDetailsFnc",
+          "type": "SQL_INLINE_TABLE_VALUED_FUNCTION",
+          "definitionSha256": "0a041cecec20101567acfa53cd1dac2edaef3f5236762963704eb142d8147e34"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundRequest_ApplyDetailSaveTrg",
+          "type": "SQL_TRIGGER",
+          "definitionSha256": "8221aaff83d2914d8732c74e37fcc6fc5196e05a5d6463c8853ac205771878fc"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundRequest_SaveBatchAdapterTrg",
+          "type": "SQL_TRIGGER",
+          "definitionSha256": "aa854a0f76f18139c1a6a7ef960337795261b89d7a3d505248c3a156802e0717"
         }
+      ],
+      "reviewDate": "2026-10-23",
+      "verifiedBehavior": [
+        "Native grid copy retains the source PO line and unique detail keys.",
+        "An existing draft saves final split quantities in one save with detail-only edits.",
+        "Total allocation includes other noncancelled shipments; over-quota changes roll back atomically."
       ]
     },
     {
@@ -943,6 +973,13 @@
       "screen": "Other role sessions, receipt/posting/apply and notification delivery",
       "status": "UNKNOWN",
       "finding": "Not exercised in this read-only review. ERP later showed Not Responding; configuration evidence is not an end-to-end acceptance."
+    },
+    {
+      "date": "2026-10-23",
+      "form": "IV_InboundRequestFrm",
+      "status": "PASS",
+      "scope": "Owner performed native copy, edited only detail quantities and saved once on a dedicated synthetic draft. Independently read back three lines totaling 3680 and a second item of 480, preserved PO references, same shipment and matching applied save token. Temporary test records removed. Permissions unchanged."
     }
-  ]
+  ],
+  "lastUpdated": "2026-10-23"
 }
