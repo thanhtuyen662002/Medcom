@@ -1,21 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Bell, BookOpen, ChevronDown, LayoutDashboard, LogOut, Moon, PanelLeft, Settings2, Sun } from "lucide-react";
 import { MedcomLogo } from "@/components/brand/medcom-logo";
-import {
-  Building2,
-  ChevronDown,
-  Check,
-  Bell,
-  Sun,
-  Moon,
-  LogOut,
-  LayoutDashboard,
-  Settings2,
-  Menu,
-  PanelLeft,
-  BookOpen,
-} from "lucide-react";
+import { AppButton } from "@/components/app/app-button";
+import { BranchSwitcher } from "@/components/app/branch-switcher";
+import { NavigationMenu, type NavigationAccess } from "@/components/app/app-navigation";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { NavTabId } from "./bottom-nav";
 import type { BranchOption } from "./mobile-header";
 
@@ -34,275 +25,45 @@ export interface DesktopHeaderProps {
   onToggleDarkMode: () => void;
   onLogout: () => void;
   onToggleLayoutMode?: () => void;
+  tabAccess?: NavigationAccess | null;
+  onRetryTabs?: () => void;
 }
 
-export function DesktopHeader({
-  currentBranch,
-  onBranchChange,
-  branches,
-  activeTab,
-  onTabChange,
-  onOpenMenu,
-  userName = "Administrator",
-  userRole = "Dược sĩ / Quản lý",
-  unreadNotifications = 0,
-  onNotificationsClick,
-  isDarkMode,
-  onToggleDarkMode,
-  onLogout,
-  onToggleLayoutMode,
-}: DesktopHeaderProps) {
-  const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-
-  const activeBranch = branches.find((b) => b.id === currentBranch) || branches[0];
-
-  const navItems = [
-    {
-      id: "home" as NavTabId,
-      label: "Tổng quan",
-      icon: LayoutDashboard,
-      badge: 0,
-    },
-  ];
-
-  return (
-    <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800 transition-colors shadow-2xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
-          {/* Brand & Branch Selector */}
-          <div className="flex items-center gap-4 shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="h-10 w-20 flex items-center justify-center">
-                <MedcomLogo alt="MEDCOMTECH" width={144} height={52} className="h-full w-full object-contain" priority />
-              </div>
-            </div>
-
-            {/* Branch Switcher Dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setBranchDropdownOpen(!branchDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/80 dark:bg-neutral-800/80 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs font-semibold text-neutral-800 dark:text-neutral-200 transition-all cursor-pointer"
-              >
-                <Building2 className="size-3.5 text-brand-600" />
-                <span className="max-w-[150px] lg:max-w-[200px] truncate">
-                  {activeBranch.name}
-                </span>
-                <ChevronDown
-                  className={`size-3 text-neutral-400 transition-transform ${
-                    branchDropdownOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {branchDropdownOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-30"
-                    onClick={() => setBranchDropdownOpen(false)}
-                  />
-                  <div className="absolute left-0 mt-2 w-72 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl p-2 z-40 animate-uui-fade-in">
-                    <div className="px-3 py-2 border-b border-neutral-100 dark:border-neutral-800 text-xs">
-                      <p className="font-bold text-neutral-900 dark:text-white">
-                        Chuyển đổi Chi nhánh
-                      </p>
-                      <p className="text-[10px] text-neutral-400">
-                        Phân quyền và chứng từ theo đơn vị
-                      </p>
-                    </div>
-                    <div className="py-1 space-y-0.5">
-                      {branches.map((b) => {
-                        const isSelected = b.id === activeBranch.id;
-                        return (
-                          <button
-                            key={b.id}
-                            type="button"
-                            onClick={() => {
-                              onBranchChange(b.id);
-                              setBranchDropdownOpen(false);
-                            }}
-                            className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-colors ${
-                              isSelected
-                                ? "bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 font-semibold"
-                                : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
-                            }`}
-                          >
-                            <span className="truncate">{b.name}</span>
-                            {isSelected && (
-                              <Check className="size-3.5 text-brand-600 shrink-0 ml-2" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Navigation Links (Desktop): scrolls internally instead of overflowing the bar */}
-          <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none [mask-image:linear-gradient(to_right,black_92%,transparent)]">
-            {navItems.map((item) => {
-              const isActive = activeTab === item.id;
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  data-tab={item.id}
-                  type="button"
-                  onClick={() => onTabChange(item.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all relative cursor-pointer ${
-                    isActive
-                      ? "bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 shadow-2xs"
-                      : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                  }`}
-                >
-                  <Icon
-                    className={`size-4 ${
-                      isActive ? "text-brand-600 dark:text-brand-400" : "text-neutral-400"
-                    }`}
-                  />
-                  <span>{item.label}</span>
-                  {item.badge > 0 && (
-                    <span
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                        isActive
-                          ? "bg-brand-200 dark:bg-brand-800 text-brand-900 dark:text-brand-200"
-                          : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-brand-600 dark:bg-brand-400" />
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Right Header Actions */}
-          <div className="flex items-center gap-2 shrink-0">
-            <a href="/help" target="_blank" rel="noopener noreferrer" aria-label="Hướng dẫn sử dụng (mở tab mới)" title="Hướng dẫn sử dụng" className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800">
-              <BookOpen className="size-4" />
-            </a>
-            {onToggleLayoutMode && (
-              <button
-                type="button"
-                onClick={onToggleLayoutMode}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-2xs"
-                title="Dùng giao diện sidebar dọc bên trái"
-              >
-                <PanelLeft className="size-3.5 text-brand-600" />
-                <span className="hidden xl:inline">Sidebar dọc</span>
-              </button>
-            )}
-
-            {onOpenMenu && (
-              <button
-                type="button"
-                onClick={onOpenMenu}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer text-brand-700 dark:text-brand-300 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:hover:bg-brand-900/60 border border-brand-200 dark:border-brand-800 shadow-2xs"
-                title="Mở toàn bộ danh mục phân hệ ERP"
-              >
-                <Menu className="size-3.5 text-brand-600 dark:text-brand-400" />
-                <span>Phân hệ ERP</span>
-              </button>
-            )}
-
-            {/* Notifications */}
-            <button
-              type="button"
-              onClick={onNotificationsClick}
-              className="relative p-2 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-              title="Thông báo"
-            >
-              <Bell className="size-4" />
-              {unreadNotifications > 0 && (
-                <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-brand-600 ring-2 ring-white dark:ring-neutral-900" />
-              )}
-            </button>
-
-            {/* Theme Toggle */}
-            <button
-              type="button"
-              onClick={onToggleDarkMode}
-              className="p-2 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-              title="Đổi màu giao diện sáng / tối"
-            >
-              {isDarkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}
-            </button>
-
-            {/* User Profile & Logout */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                className="flex items-center gap-2 p-1.5 pl-2 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all cursor-pointer"
-              >
-                <div className="size-7 rounded-lg bg-gradient-to-tr from-brand-700 to-brand-500 text-white font-bold text-xs flex items-center justify-center">
-                  {userName.charAt(0)}
-                </div>
-                <div className="text-left hidden lg:block">
-                  <p className="text-xs font-bold text-neutral-900 dark:text-white leading-tight truncate max-w-[120px]">
-                    {userName}
-                  </p>
-                  <p className="text-[10px] text-neutral-400 leading-tight truncate">
-                    {userRole}
-                  </p>
-                </div>
-                <ChevronDown className="size-3 text-neutral-400" />
-              </button>
-
-              {profileDropdownOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-30"
-                    onClick={() => setProfileDropdownOpen(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl p-2 z-40 animate-uui-fade-in text-xs">
-                    <div className="px-3 py-2 border-b border-neutral-100 dark:border-neutral-800">
-                      <p className="font-bold text-neutral-900 dark:text-white truncate">
-                        {userName}
-                      </p>
-                      <p className="text-[11px] text-neutral-400 truncate">{userRole}</p>
-                    </div>
-
-                    <div className="py-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onTabChange("settings");
-                          setProfileDropdownOpen(false);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left transition-colors"
-                      >
-                        <Settings2 className="size-3.5 text-neutral-400" />
-                        <span>Cài đặt & Chẩn đoán ERP</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setProfileDropdownOpen(false);
-                          onLogout();
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-left transition-colors mt-1 font-semibold"
-                      >
-                        <LogOut className="size-3.5" />
-                        <span>Đăng xuất tài khoản</span>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+export function DesktopHeader({ currentBranch, onBranchChange, branches, activeTab, onTabChange, userName = "", userRole = "", unreadNotifications = 0,
+  onNotificationsClick, isDarkMode, onToggleDarkMode, onLogout, onToggleLayoutMode, tabAccess, onRetryTabs }: DesktopHeaderProps) {
+  const [profileOpen, setProfileOpen] = useState(false);
+  return <header className="sticky top-0 z-40 w-full border-b border-neutral-200 bg-white/95 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/95">
+    <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 lg:flex-nowrap lg:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-3 lg:flex-none">
+        <MedcomLogo alt="MEDCOMTECH" width={144} height={52} className="h-10 w-20 shrink-0 object-contain" priority />
+        <BranchSwitcher branches={branches} currentBranch={currentBranch} onBranchChange={onBranchChange} />
       </div>
-    </header>
-  );
+      <nav aria-label="Điều hướng chính" className="order-last flex w-full min-w-0 items-center gap-2 lg:order-none lg:w-auto lg:flex-1">
+        <AppButton variant={activeTab === "home" ? "secondary" : "ghost"} className="shrink-0" aria-current={activeTab === "home" ? "page" : undefined} onClick={() => onTabChange("home")}>
+          <LayoutDashboard aria-hidden="true" className="size-5" /><span>Tổng quan</span>
+        </AppButton>
+        <NavigationMenu activeTab={activeTab} onSelect={onTabChange} tabAccess={tabAccess} onRetryTabs={onRetryTabs} />
+      </nav>
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        <a href="/help" target="_blank" rel="noopener noreferrer" aria-label="Hướng dẫn sử dụng (mở tab mới)" className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-neutral-600 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-brand-500 dark:text-neutral-300 dark:hover:bg-neutral-800"><BookOpen aria-hidden="true" className="size-5" /></a>
+        {onToggleLayoutMode && <AppButton variant="ghost" size="icon" aria-label="Dùng thanh điều hướng dọc" onClick={onToggleLayoutMode}><PanelLeft aria-hidden="true" className="size-5" /></AppButton>}
+        <AppButton variant="ghost" size="icon" aria-label="Thông báo" onClick={onNotificationsClick} className="relative"><Bell aria-hidden="true" className="size-5" />
+          {unreadNotifications > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-brand-600 dark:bg-brand-400" />}
+        </AppButton>
+        <AppButton variant="ghost" size="icon" aria-label="Giao diện tối" aria-pressed={isDarkMode} onClick={onToggleDarkMode}>{isDarkMode ? <Sun aria-hidden="true" className="size-5" /> : <Moon aria-hidden="true" className="size-5" />}</AppButton>
+        <Popover open={profileOpen} onOpenChange={setProfileOpen}>
+          <PopoverTrigger asChild><AppButton variant="secondary" className="min-w-11 gap-2 px-2" aria-label="Hồ sơ tài khoản">
+            <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">{userName.charAt(0).toUpperCase()}</span>
+            <span className="hidden min-w-0 max-w-28 text-left xl:block"><span className="block truncate text-sm">{userName}</span><span className="block truncate text-xs font-normal text-neutral-500 dark:text-neutral-400">{userRole}</span></span>
+            <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
+          </AppButton></PopoverTrigger>
+          <PopoverContent align="end" aria-label="Tài khoản" className="w-72 rounded-2xl border-neutral-200 bg-white p-2 text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100">
+            <div className="border-b border-neutral-200 px-3 py-2 dark:border-neutral-800"><p className="truncate text-sm font-semibold" title={userName}>{userName}</p><p className="truncate text-sm text-neutral-500 dark:text-neutral-400" title={userRole}>{userRole}</p></div>
+            <AppButton variant="ghost" className="mt-1 w-full justify-start px-3" onClick={() => { onTabChange("settings"); setProfileOpen(false); }}><Settings2 aria-hidden="true" className="size-5" />Cài đặt hệ thống</AppButton>
+            <AppButton variant="ghost" className="w-full justify-start px-3" onClick={() => { setProfileOpen(false); onLogout(); }}><LogOut aria-hidden="true" className="size-5" />Đăng xuất</AppButton>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  </header>;
 }
