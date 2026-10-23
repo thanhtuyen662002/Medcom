@@ -98,8 +98,8 @@ const transport = `
 
 test('375×812 and 1280×860: real tabs, portal bounds, themes, detail labels, overlays and touch targets', { timeout: 150000 }, async () => {
   const toolRequire = process.env.MEDCOM_BROWSER_TOOLCHAIN
-    ? createRequire(path.join(path.resolve(process.env.MEDCOM_BROWSER_TOOLCHAIN), 'package.json')) : require;
-  const { chromium } = toolRequire('playwright');
+    ? createRequire(path.join(path.resolve(process.env.MEDCOM_BROWSER_TOOLCHAIN), 'package.json')) : createRequire(import.meta.url);
+  const { chromium } = toolRequire('playwright-core');
   const postcss = require('postcss');
   const tailwind = require('@tailwindcss/postcss');
   const css = await postcss([tailwind({ base: app })]).process(await readFile(path.join(app, 'app/globals.css'), 'utf8'), { from: path.join(app, 'app/globals.css') });
