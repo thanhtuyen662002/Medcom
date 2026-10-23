@@ -6,10 +6,10 @@ Thiết kế: `docs/architecture/APP_SCREEN_UNIFICATION_P2.md`. Nhánh tích h�
 |---|---|---|---|---|
 | [P2-01](P2-01.md) | Thư viện `components/app/*` + sửa lỗi tab PR | Codex | **Done** (PR #176) | — |
 | [P2-02](P2-02.md) | Tab Đơn hàng/PR/Nhập kho, trang chủ, cài đặt, scanner; bỏ chức năng giả | Codex | **Done** (p2/main) | P2-01 |
-| [P2-03](P2-03.md) | Danh sách ERP 19 module | Codex | **Đang làm** | P2-01 |
-| P2-04 | Form tạo/sửa → `FormSheet`/`FormField` | Codex | Todo | P2-03 |
-| P2-05 | Khung điều hướng | Codex | Todo | P2-02 |
-| P2-06 | Rà soát thị giác cuối, sửa lỗi | Leader + Codex | Todo | tất cả |
+| [P2-03](P2-03.md) | Danh sách ERP 19 module | Codex | **Done** (p2/main) | P2-01 |
+| [P2-04](P2-04.md) | Form tạo/sửa → `FormSheet`/`FormField` | Codex | **Đang làm** | P2-03 |
+| [P2-05](P2-05.md) | Khung điều hướng | Codex | **Đang làm** | P2-02 |
+| [P2-06](P2-06.md) | Rà soát thị giác cuối, sửa lỗi (FAB lệch, badge dark, nhãn kỹ thuật, 00:00:00) | Codex | Todo | tất cả |
 
 ## Quy tắc phát hành (chủ dự án, 2026-10-24)
 
@@ -27,3 +27,5 @@ Một agent trên VPS kéo `main` và **deploy production định kỳ ở phút
 - P2-01 Đạt (22/22 test mới; contracts 833/820/13 trùng baseline; build pass; tab Đề nghị PR tải được 11 phiếu thật trên VPS). Merge vào `p2/main`, mở PR #176 vào `main` (repo không cho auto-merge, leader merge tay khi CI xanh). Giao P2-02 ∥ P2-03.
 - P2-02 Đạt lần 1 (55/55 test liên quan; contracts 833/820/13 trùng baseline; lint baseline; build pass). Xóa QuickCreate, duyệt/từ chối giả, dữ liệu mẫu; nút tạo PO/PR mở form thật theo quyền. Merge vào `p2/main`.
 - P2-03 Review lần 1: 3 lỗi lint mới (`react-hooks/immutability`); leader cho phép dời 3 khai báo lên trước handler.
+- P2-03 Đạt lần 2 (dời đúng 3 khai báo; lint về baseline). Merge vào `p2/main`; kiểm tra gộp: 91/91 test liên quan, contracts 888/875/13 (13 lỗi trùng baseline), build pass. Giao P2-04 ∥ P2-05.
+- Leader kiểm tra giao diện `p2/main` ở mobile (ảnh `artifacts/ui-sync/P2-merge/`): tab nhanh và màn ERP đã đồng bộ. Phát hiện lỗi FAB `fixed` bị lệch do `transform` của `animate-uui-fade-in`, cùng badge dark, nhãn kỹ thuật và `00:00:00`. Đưa vào P2-06, bắt buộc xong trước khi merge `main`.
