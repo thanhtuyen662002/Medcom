@@ -25,8 +25,6 @@
       let heading='';if(a.group!==group){group=a.group;heading=`<p class="nav-group">${esc(group)}</p>`;}
       return heading+`<a class="nav-link" href="#${a.id}" data-article="${a.id}">${icon(a.id)}<span>${esc(navTitles[a.id]||a.title)}</span></a>`;
     }).join('');
-    $(mode==='technical'?'technical-link':'guide-link').classList.add('active');
-    $(mode==='technical'?'technical-link':'guide-link').setAttribute('aria-current','page');
   }
   function closeMenu(){
     $('sidebar').classList.remove('open');$('sidebar-shade').hidden=true;$('menu-toggle').setAttribute('aria-expanded','false');
@@ -46,8 +44,6 @@
     const route=core.route(location.hash,docs), previous=current?.id;
     current=docs.articles.find(a=>a.id===route.id);activeTab=route.tab;
     document.title=`${current.title} · ${mode==='technical'?'Tài liệu kỹ thuật':'Hướng dẫn'} MEDCOM ERP`;
-    $('guide-link').href=`${root}HDSD-ERP/#${current.id}`;
-    $('technical-link').href=`${root}TLKT/#${current.id}`;
     for(const link of document.querySelectorAll('[data-article]')){
       const selected=link.dataset.article===current.id;link.classList.toggle('active',selected);
       if(selected)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
@@ -74,7 +70,6 @@
       const source=current.technical.indexOf('## Màn hình liên quan');
       panel.innerHTML=source<0?core.markdown('## Bản đồ liên kết\n\nChọn một quy trình cụ thể để xem tên form và các đối tượng DB.'):core.markdown(current.technical.slice(source));
     } else panel.innerHTML=`<h2 class="panel-heading">Khi thao tác chưa thành công</h2><p class="error-empty">Chọn tình huống để xem điểm cần kiểm tra.</p><div class="error-list">${current.errors.map(([title,answer])=>`<details><summary>${esc(title)}</summary><p>${esc(answer)}</p></details>`).join('')}</div>`;
-    $('stage-strip').innerHTML=current.stages.map((s,i)=>`<div class="stage"><span class="stage-icon">${i+1}</span><span>${esc(s)}</span></div>`).join('');
     $('related-links').innerHTML=(relations[current.id]||[]).map(id=>{const a=docs.articles.find(a=>a.id===id);return `<a href="#${id}">${esc(a.title)}<span aria-hidden="true">→</span></a>`;}).join('');
     closeMenu();if(previous!==current.id)window.scrollTo({top:0,behavior:'instant'});
   }
@@ -105,7 +100,7 @@
         const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(standalone)],{type:'image/svg+xml;charset=utf-8'}));
         const a=document.createElement('a');a.href=url;a.download=`medcom-${current.id}.svg`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
       };scale();
-    }catch(error){if(token!==renderToken)return;$('diagram').innerHTML=`<p class="flow-fallback">Chưa tải được bộ vẽ sơ đồ. Bạn có thể xem các giai đoạn bên dưới hoặc mở mã Mermaid.</p>`;for(const b of document.querySelectorAll('.flow-controls button'))b.disabled=true;}
+    }catch(error){if(token!==renderToken)return;$('diagram').innerHTML=`<p class="flow-fallback">Chưa tải được bộ vẽ sơ đồ. Bạn có thể đọc các bước xử lý trong bài hoặc mở mã Mermaid.</p>`;for(const b of document.querySelectorAll('.flow-controls button'))b.disabled=true;}
   }
   for(const btn of document.querySelectorAll('[data-tab]'))btn.addEventListener('click',()=>{location.hash=`${current.id}${btn.dataset.tab==='guide'?'':'/'+btn.dataset.tab}`;});
   document.querySelector('.tabs').addEventListener('keydown',event=>{
@@ -115,10 +110,10 @@
   });
   const dialog=$('search-dialog'),input=$('search-input');
   function search(){
-    const query=input.value.trim(), results=core.search(query,docs.articles);
-    $('search-results').innerHTML=!query?'<div class="search-empty">Ví dụ: “gửi thủ kho”, “nhận từng phần”, “hiệu lực”, “BatchReceiveStp”.</div>':!results.length?'<div class="search-empty">Chưa có kết quả. Thử từ khóa ngắn hơn hoặc tên quy trình.</div>':results.map(({article,technical})=>{
-      const target=technical?'TLKT':mode==='technical'?'TLKT':'HDSD-ERP';
-      return `<a class="search-result" href="${root}${target}/#${article.id}"><strong>${esc(article.title)}</strong><small>${technical?'Tài liệu kỹ thuật':mode==='technical'?'Tài liệu kỹ thuật':'Hướng dẫn sử dụng'} · ${esc(article.group)}</small><p>${esc(article.subtitle)}</p></a>`;
+    const query=input.value.trim(), results=core.search(query,docs.articles,mode);
+    const example=mode==='technical'?'Ví dụ: “OrderDetailID”, “BatchReceiveStp”, “chuyển bước”.':'Ví dụ: “gửi thủ kho”, “nhận từng phần”, “hiệu lực”.';
+    $('search-results').innerHTML=!query?`<div class="search-empty">${example}</div>`:!results.length?'<div class="search-empty">Chưa có kết quả. Thử từ khóa ngắn hơn hoặc tên quy trình.</div>':results.map(({article})=>{
+      return `<a class="search-result" href="#${article.id}"><strong>${esc(article.title)}</strong><small>${esc(article.group)}</small><p>${esc(article.subtitle)}</p></a>`;
     }).join('');
   }
   function openSearch(){dialog.showModal();input.value='';search();input.focus();}

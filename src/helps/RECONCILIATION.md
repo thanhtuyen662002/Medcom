@@ -57,6 +57,12 @@ Căn cứ là lượt sửa ERP được chủ hệ thống yêu cầu trước 
 
 Định nghĩa và kết quả đọc DB đầy đủ giữ ngoài repo; [content/evidence.json](content/evidence.json) chỉ bổ sung metadata, hash đối tượng và mô tả kiểm chứng đã loại dữ liệu giao dịch. Các mã lô trong HDSD là ví dụ minh họa.
 
+## Tách giao diện theo nhóm người đọc — 23/10/2026
+
+Theo yêu cầu chủ hệ thống, bỏ hai tab chuyển HDSD/TLKT trên header và thanh tóm tắt giai đoạn cuối bài. Hai đường dẫn vẫn hoạt động riêng, với dữ liệu tải và tìm kiếm riêng từng khu vực; HDSD không hiển thị lời mời mở TLKT, kết quả tìm kiếm hoặc liên kết chuyển sang TLKT. Logo và liên kết bài giữ nguyên khu vực đang đọc. Bố cục điện thoại bỏ phần chiều cao dành cho thanh tab cũ. Các tab nội dung Hướng dẫn/Luồng xử lý, Sơ đồ và Xử lý lỗi/Form & SQL vẫn phục vụ bài hiện tại.
+
+Đây là thay đổi giao diện tài liệu, không thay đổi dữ liệu nghiệp vụ, phân quyền hoặc các bước trên ERP. Cấu trúc tải HDSD giữ tên `assets/content.generated.js` để tương thích script cập nhật IIS hiện có; TLKT dùng `assets/technical.generated.js` được đóng gói cùng thư mục assets.
+
 ## Quy tắc cập nhật tiếp
 
 Khi DB hoặc ERP đổi, đối chiếu module/form liên quan, cập nhật bài nguồn và sơ đồ cùng lượt. Đổi hash định nghĩa là dấu hiệu cần rà lại, không tự chứng minh nghiệp vụ đã đổi. Giữ các trạng thái UNKNOWN cho đến khi có quan sát hoặc kiểm thử đúng phạm vi, không nâng thành PASS bằng suy luận.

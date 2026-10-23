@@ -59,17 +59,19 @@
     const [requested,tab]=hash.replace(/^#/,'').split('/');
     return {id:catalog.articles.some(a=>a.id===requested)?requested:catalog.defaultArticle,tab:['guide','flow','errors'].includes(tab)?tab:'guide'};
   }
-  function search(query,articles) {
+  function search(query,articles,mode='guide') {
     const terms=fold(query).trim().split(/\s+/).filter(Boolean);
     if(!terms.length)return [];
     return articles.flatMap(article=>{
-      const title=fold(article.title), body=fold(article.guide+' '+article.technical+' '+article.errors.flat().join(' '));
+      const content=mode==='technical'?(article.technical||''):(article.guide||'');
+      const extra=mode==='technical'?[...(article.forms||[]),...(article.objects||[])].join(' '):(article.errors||[]).flat().join(' ');
+      const title=fold(article.title), body=fold(content+' '+extra);
       if(!terms.every(t=>(title+' '+body).includes(t)))return [];
-      const phrase=terms.join(' '),guide=fold(article.guide);
-      const phraseCount=guide.split(phrase).length-1;
-      const headings=guide.split('\n').filter(line=>line.startsWith('## ')).join(' ');
+      const phrase=terms.join(' '),text=fold(content);
+      const phraseCount=text.split(phrase).length-1;
+      const headings=text.split('\n').filter(line=>line.startsWith('## ')).join(' ');
       const score=terms.reduce((s,t)=>s+(title.includes(t)?8:1),0)+Math.min(phraseCount,8)*3+(headings.includes(phrase)?12:0);
-      return [{article,score,technical:!terms.every(t=>fold(article.guide+' '+article.title+' '+article.errors.flat().join(' ')).includes(t))}];
+      return [{article,score}];
     }).sort((a,b)=>b.score-a.score);
   }
   global.HelpCore={escape,fold,inline,markdown,route,search};
