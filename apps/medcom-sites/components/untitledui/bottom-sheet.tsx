@@ -96,7 +96,7 @@ export function UntitledBottomSheet({
         )}
 
         {/* Scrollable Body */}
-        <div className={`flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain scrollbar-thin text-base leading-6 text-black dark:text-white font-['Segoe_UI',Roboto,Arial,sans-serif] [&_input]:text-base! [&_textarea]:text-base! [&_label]:text-sm! [&_.text-xs]:text-sm! [&_.text-neutral-400]:text-black! [&_.text-neutral-500]:text-black! dark:[&_.text-neutral-400]:text-white! dark:[&_.text-neutral-500]:text-white! [&_.text-neutral-600]:text-black! [&_.text-neutral-700]:text-black! [&_.text-neutral-800]:text-black! dark:[&_.text-neutral-600]:text-white! dark:[&_.text-neutral-700]:text-white! dark:[&_.text-neutral-800]:text-white! ${presentation === "document" ? "px-4 py-5 sm:p-6" : "px-5 py-4"}`} data-document-detail-body={presentation === "document" ? "" : undefined}>
+        <div className={`flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain scrollbar-thin text-base leading-6 text-black dark:text-white font-['Segoe_UI',Roboto,Arial,sans-serif] [&_input]:text-base! [&_textarea]:text-base! [&_label]:text-sm! ${presentation === "document" ? "px-4 py-5 sm:p-6" : "px-5 py-4 [&_.text-xs]:text-sm! [&_.text-neutral-400]:text-black! [&_.text-neutral-500]:text-black! dark:[&_.text-neutral-400]:text-white! dark:[&_.text-neutral-500]:text-white! [&_.text-neutral-600]:text-black! [&_.text-neutral-700]:text-black! [&_.text-neutral-800]:text-black! dark:[&_.text-neutral-600]:text-white! dark:[&_.text-neutral-700]:text-white! dark:[&_.text-neutral-800]:text-white!"}`} data-document-detail-body={presentation === "document" ? "" : undefined}>
           {children}
         </div>
 

@@ -147,14 +147,15 @@ test('RecordCard has one code, two-line title, distinct metadata and one button'
   assert.equal(opened, 1);
 });
 
-test('StatusBadge preserves ERP colors and corrects weak text contrast on light and dark backgrounds', () => {
+test('StatusBadge uses subdued ERP theme pairs and semantic fallback tones', () => {
   const badge = props => render(h(StatusBadge, { label: 'Tổng hợp', ...props }));
-  assert.match(badge({ statusForeColor: '#FFFFFF', statusBackColor: '#123456' }), /color:#FFFFFF;background-color:#123456/);
-  assert.match(badge({ statusForeColor: '#FFFF00', statusBackColor: '#FFFF00' }), /color:#000000;background-color:#FFFF00/);
-  assert.match(badge({ statusForeColor: '#000000', statusBackColor: '#000000' }), /color:#FFFFFF;background-color:#000000/);
+  // P2-06 replaces raw Windows colors with theme pairs; contrast assertions and
+  // computed light/dark browser colors live in app-visual-qa.test.mjs.
+  for (const colors of [['#FFFFFF', '#123456'], ['#FFFF00', '#FFFF00'], ['#000000', '#000000']]) {
+    assert.match(badge({ statusForeColor: colors[0], statusBackColor: colors[1] }), /--status-fg:#[A-F0-9]{6};--status-bg:#[A-F0-9]{6};--status-dark-fg:#[A-F0-9]{6};--status-dark-bg:#[A-F0-9]{6}/);
+  }
   const fallback = badge({ tone: 'success', statusForeColor: 'invalid', statusBackColor: 'url(unsafe)' });
-  assert.match(fallback, /bg-green-100.*dark:bg-green-950.*dark:text-green-200/);
-  assert.doesNotMatch(fallback, /style=/);
+  assert.match(fallback, /--status-fg:#166534;--status-bg:#F0FDF4;--status-dark-fg:#BBF7D0;--status-dark-bg:#052E16/);
 });
 
 test('ListState uses responsive skeletons, permission-aware empty state and one retry error style', async () => {
@@ -207,11 +208,9 @@ test('header/create FAB keep desktop actions and mobile permission/safe-area pla
   assert.match(header, /Chi nhánh QA · 0 chứng từ/);
   assert.match(header, /hidden md:inline-flex/);
   assert.equal(render(h(CreateFab, { allowed: false, label: 'Tạo chứng từ', onClick: noop })), '');
-  const fab = render(h(CreateFab, { allowed: true, label: 'Tạo chứng từ tổng hợp', onClick: noop }));
-  assert.match(fab, /aria-label="Tạo chứng từ tổng hợp"/);
-  assert.match(fab, /size-14/);
-  assert.match(fab, /md:hidden/);
-  assert.match(fab, /bottom:calc\(80px \+ env\(safe-area-inset-bottom\)\)/);
+  // Portals intentionally emit no SSR markup. The visual QA suite checks the
+  // real body child, size, click and safe-area bounds in a browser after mount.
+  assert.equal(render(h(CreateFab, { allowed: true, label: 'Tạo chứng từ tổng hợp', onClick: noop })), '');
 });
 
 test('FormField connects label, required marker, hint and error to the input and supports custom controls', () => {

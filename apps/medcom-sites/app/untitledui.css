@@ -139,7 +139,7 @@
     opacity: 0.5;
   }
   to {
-    transform: translateY(0);
+    transform: none;
     opacity: 1;
   }
 }
@@ -156,12 +156,12 @@
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: none;
   }
 }
 
 .animate-uui-fade-in {
-  animation: uui-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: uui-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* SMOOTH SIDEBAR SLIDE IN LEFT */
@@ -170,10 +170,35 @@
     transform: translateX(-100%);
   }
   to {
-    transform: translateX(0);
+    transform: none;
   }
 }
 
 .animate-uui-slide-in-left {
   animation: uui-slide-in-left 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Theme pairs are opaque, contrast-checked colors from status-colors.ts. */
+.app-status-badge {
+  color: var(--status-fg);
+  background-color: var(--status-bg);
+}
+.dark .app-status-badge, [data-theme="dark"] .app-status-badge {
+  color: var(--status-dark-fg);
+  background-color: var(--status-dark-bg);
+}
+
+/* Keep chip scrolling discoverable without a progress-bar-like scrollbar. */
+.app-filter-chips {
+  scrollbar-width: none;
+  mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
+  padding-right: 20px;
+}
+.app-filter-chips::-webkit-scrollbar { display: none; }
+.app-filter-chips:focus-within { mask-image: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-uui-fade-in, .animate-uui-slide-up, .animate-uui-slide-in-left {
+    animation: none;
+  }
 }

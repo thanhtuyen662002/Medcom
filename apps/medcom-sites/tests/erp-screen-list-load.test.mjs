@@ -288,11 +288,12 @@ test('xuất hàng theo PXK và xuất kho đều dựng bảng desktop và gi�
   assert.equal(tables(renderer).length,1,'PXK phải dựng bảng chứng từ trên desktop');
   const {text}=collect(renderer);
   for(const header of ['STT','Mã chứng từ','Ngày chứng từ','Khách hàng','Trạng thái','Người lập / Đề nghị','Nội dung','Chi tiết'])assert.ok(text.includes(header),`bảng PXK thiếu cột ${header}: ${text}`);
-  for(const cell of ['PXK-TEST-0001','10/09/2026 00:00:00','Khách hàng kiểm thử','Ghi chú kiểm thử'])assert.ok(text.includes(cell),`bảng PXK thiếu dữ liệu ${cell}`);
-  // Ô trạng thái vẫn nhận màu nền của BE và vẫn đổi sang màu chữ đọc được (chữ vàng trên nền vàng -> đen).
-  const colored=renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.style?.backgroundColor==='#FFFF00');
-  assert.ok(colored.length>0,'ô trạng thái phải nhận màu nền của BE');
-  assert.ok(colored.every(node=>node.props.style.color==='#000000'),'chữ trên badge vàng phải đổi sang màu đọc được');
+  // P2-06: date display omits midnight; ERP hue now has contrast-checked theme pairs.
+  for(const cell of ['PXK-TEST-0001','10/09/2026','Khách hàng kiểm thử','Ghi chú kiểm thử'])assert.ok(text.includes(cell),`bảng PXK thiếu dữ liệu ${cell}`);
+  assert.ok(!text.includes('00:00:00'));
+  const colored=renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.className?.includes('app-status-badge'));
+  assert.ok(colored.length>0,'ô trạng thái vẫn có badge chung');
+  assert.ok(colored.every(node=>node.props.style['--status-bg']&&node.props.style['--status-dark-bg']),'badge có cặp màu sáng/tối');
   await act(async()=>{renderer.unmount();});renderer=null;
   await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:'warehouse-qr',...props,isActive:true}));});await flush();
   // P2-03 explicitly expands desktop tables from 8 to all 19 modules.
@@ -312,10 +313,11 @@ test('đề nghị nhập hàng dựng bảng desktop với cột và màu trạ
   const {text}=collect(renderer);
   for(const header of ['STT','Mã chứng từ','Ngày chứng từ','Đối tượng / Mục đích','Trạng thái','Nội dung','Chi tiết'])assert.ok(text.includes(header),`bảng nhập hàng thiếu cột ${header}: ${text}`);
   assert.ok(!text.includes('Người lập / Đề nghị'),'dòng nhập hàng không có người lập nên cột này phải ẩn');
-  for(const cell of ['NK-TEST-0001','01/10/2026 14:22:11','Nhà cung cấp kiểm thử','Chờ nhập kho','Ghi chú nhập kho kiểm thử'])assert.ok(text.includes(cell),`bảng nhập hàng thiếu dữ liệu ${cell}`);
-  // Màu BE đủ tương phản (chữ trắng trên nền xanh đậm) thì giữ nguyên, không tự đổi.
-  const colored=renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.style?.backgroundColor==='#00695C');
-  assert.ok(colored.length>0,'ô trạng thái phải nhận màu nền của BE');
-  assert.ok(colored.every(node=>node.props.style.color==='#FFFFFF'),'cặp màu đủ tương phản phải giữ nguyên màu chữ của BE');
+  // P2-06 keeps actual hours/minutes, omits seconds and paints waiting statuses amber.
+  for(const cell of ['NK-TEST-0001','01/10/2026 14:22','Nhà cung cấp kiểm thử','Chờ nhập kho','Ghi chú nhập kho kiểm thử'])assert.ok(text.includes(cell),`bảng nhập hàng thiếu dữ liệu ${cell}`);
+  assert.ok(!text.includes('14:22:11'));
+  const colored=renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.className?.includes('app-status-badge'));
+  assert.ok(colored.length>0,'ô trạng thái vẫn có badge chung');
+  assert.ok(colored.every(node=>node.props.style['--status-fg']==='#92400E'&&node.props.style['--status-dark-fg']==='#FDE68A'),'trạng thái chờ dùng tone cam sáng/tối');
  }finally{delete globalThis.__erpListHandler;if(renderer)await act(async()=>renderer.unmount());}
 });

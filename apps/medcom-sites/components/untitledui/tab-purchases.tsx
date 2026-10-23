@@ -8,10 +8,13 @@ import { erpClient } from "@/lib/erp/erp-client";
 import type { PurchaseRequestHeaderFields, PurchaseRequestLineFields, PurchaseReadback } from "@/lib/erp/purchase-request-api";
 import { errorMessage } from "@/lib/erp/api";
 
+import { formatDateTime } from "@/lib/erp/document-detail/format";
 import {formatMoney} from "@/lib/erp/money";
 import { statusColorStyle } from "@/lib/erp/status-colors";
 
 function formatVND(value?: string | null, currency = "VND"): string {
+  const plainCurrency = value?.match(/^(-?\d+)\s*([A-Z]{3}|[₫$€])$/);
+  if (plainCurrency) return `${formatMoney(plainCurrency[1])} ${plainCurrency[2]}`;
   if (value && /[A-Z]{3}|[₫$€]/.test(value)) return value;
   return `${formatMoney(value || "0")}${currency ? ` ${currency}` : ""}`;
 }
@@ -123,9 +126,9 @@ export function TabPurchases({
             const dateStr =
               (raw.purchaseDateDisplay as string) ||
               (f as any)?.purchaseDateDisplay ||
-              (f?.purchaseDate ? f.purchaseDate.slice(0, 10) : undefined) ||
-              (r.purchaseDate ? r.purchaseDate.slice(0, 10) : undefined) ||
-              (raw.purchaseDate as string ? String(raw.purchaseDate).slice(0, 10) : "—");
+              (f?.purchaseDate ? f.purchaseDate : undefined) ||
+              (r.purchaseDate ? r.purchaseDate : undefined) ||
+              (raw.purchaseDate as string ? String(raw.purchaseDate) : "—");
             const priceVal =
               f?.price ||
               (raw.price as string) ||
@@ -134,7 +137,7 @@ export function TabPurchases({
               (raw.priceDisplay as string) ||
               (raw.totalAmountDisplay as string);
             const currencyVal = f?.currencyId || (raw.currencyId as string) || "VND";
-            const totalStr = priceVal ? formatVND(priceVal, currencyVal) : "Chi tiết dòng";
+            const totalStr = priceVal ? formatVND(priceVal, currencyVal) : "—";
             const purposeStr =
               f?.purposeDescOrClient ||
               (raw.purposeDescOrClient as string) ||
@@ -312,7 +315,7 @@ export function TabPurchases({
 
   const tableColumns: RecordColumn<PurchaseItem>[] = [
     { id: "document", label: "Mã PR", className: "min-w-40 whitespace-nowrap", render: item => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{item.code}</span> },
-    { id: "date", label: "Ngày đề nghị", className: "whitespace-nowrap tabular-nums", render: item => item.date },
+    { id: "date", label: "Ngày đề nghị", className: "whitespace-nowrap tabular-nums", render: item => formatDateTime(item.date) },
     { id: "purpose", label: "Mục đích / Nội dung", className: "min-w-60 max-w-sm", render: item => <span className="line-clamp-2 break-words font-medium" title={item.purpose}>{item.purpose}</span> },
     { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: item => getStatusBadge(item.status, statusColorStyle(item.statusForeColor, item.statusBackColor)) },
     { id: "creator", label: "Người đề nghị", className: "min-w-40 max-w-52", render: item => <span className="line-clamp-2 break-words">{item.creator}</span> },
@@ -321,23 +324,22 @@ export function TabPurchases({
 
   return (
     <div className="min-w-0 space-y-3 pb-8 animate-uui-fade-in">
-      <ScreenHeader title="Đề nghị PR" subtitle={"Chi nhánh " + currentBranch + " · " + purchases.length + " chứng từ trên trang"} />
+      <ScreenHeader title="Đề nghị PR" branch={currentBranch} count={purchases.length} />
       <ScreenToolbar search={searchInput} onSearchChange={setSearchInput} onSearch={setSearch}
         onFilter={() => setFilterOpen(true)} filterOpen={filterOpen} filterId="purchases-filters"
         filterCount={Number(Boolean(filterStatus)) + Number(pageSize !== 20)}
         refreshing={loading || isRefreshing} onRefresh={() => void loadPurchases(true)} onCreate={onOpenCreateModal} />
-      <FilterChips items={statuses.map(status => ({ ...status, count: status.value ? purchases.filter(item => item.status === status.value).length : purchases.length }))}
+      <FilterChips description="Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại." items={statuses.map(status => ({ ...status, count: status.value ? purchases.filter(item => item.status === status.value).length : purchases.length }))}
         value={filterStatus} onChange={setFilterStatus} onPageChange={() => { if (page !== 1) void loadPurchases(false, 1); }} />
-      <p className="text-sm text-neutral-500 dark:text-neutral-400">Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại.</p>
       <RecordList label="Danh sách đề nghị mua hàng" rows={filtered} columns={tableColumns} rowId={item => item.id}
-        card={item => ({ code: item.code, title: item.purpose, meta: [item.date, item.creator, item.totalAmount], status: { label: statusLabels[item.status], tone: statusTones[item.status], statusForeColor: item.statusForeColor, statusBackColor: item.statusBackColor } })}
+        card={item => ({ code: item.code, title: item.purpose, meta: [formatDateTime(item.date), item.creator, item.totalAmount === "—" ? null : item.totalAmount], status: { label: statusLabels[item.status], tone: statusTones[item.status], statusForeColor: item.statusForeColor, statusBackColor: item.statusBackColor } })}
         onOpen={handleOpenDetail} loading={loading} error={error} onRetry={() => void loadPurchases(false)}
         empty={{ message: "Chưa có chứng từ khớp với tìm kiếm hoặc bộ lọc.", onCreate: onOpenCreateModal }}
         pagination={{ page, pageSize, rowCount: purchases.length, visibleRowCount: filtered.length, hasMore, busy: loading || isRefreshing, maxPage: 1000,
           onPageChange: nextPage => void loadPurchases(false, nextPage), onPageSizeChange: size => void loadPurchases(false, 1, size) }} />
       <FilterSheet id="purchases-filters" open={filterOpen} onClose={() => setFilterOpen(false)} value={{ status: filterStatus, pageSize }} statuses={statuses}
         onApply={value => { setFilterStatus(value.status); void loadPurchases(false, 1, value.pageSize); }} />
-      {onOpenCreateModal && <CreateFab allowed label="Tạo đề nghị PR" onClick={onOpenCreateModal} />}
+      {onOpenCreateModal && <CreateFab allowed={isActive && !activeItem && !filterOpen} label="Tạo đề nghị PR" onClick={onOpenCreateModal} />}
 
       {/* Item Detail Bottom Sheet */}
       <UntitledBottomSheet
@@ -356,7 +358,7 @@ export function TabPurchases({
             <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xs space-y-3">
               <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-neutral-100 dark:border-neutral-800">
                 <div className="space-y-0.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
                     Mã đề nghị PR
                   </span>
                   <p className="font-mono text-sm sm:text-base font-bold text-neutral-900 dark:text-white">
@@ -371,10 +373,10 @@ export function TabPurchases({
                 </div>
               </div>
 
-              {/* Tên đối tượng / Mục đích đề nghị (ObjectName) */}
+              {/* Tên đối tượng / Mục đích đề nghị */}
               <div className="py-1 border-b border-neutral-100 dark:border-neutral-800/60">
-                <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold block mb-1">
-                  Mục đích đề xuất / Đối tượng (ObjectName)
+                <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 block mb-1">
+                  Mục đích đề xuất / Đối tượng
                 </span>
                 <p className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white leading-relaxed break-words">
                   {activeItem.purpose || activeItem.objectId || "Mua sắm Dược phẩm theo kế hoạch"}
@@ -384,32 +386,32 @@ export function TabPurchases({
               {/* Chi tiết thông số thuộc tính */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                 <div className="flex flex-col py-1">
-                  <span className="text-[10px] text-neutral-400">Người đề nghị</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">Người đề nghị</span>
                   <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                     {activeItem.creator}
                   </span>
                 </div>
                 <div className="flex flex-col py-1">
-                  <span className="text-[10px] text-neutral-400">Phòng ban đề xuất</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">Phòng ban đề xuất</span>
                   <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                     {activeItem.department}
                   </span>
                 </div>
                 <div className="flex flex-col py-1">
-                  <span className="text-[10px] text-neutral-400">Ngày lập phiếu</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">Ngày lập phiếu</span>
                   <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                    {activeItem.date}
+                    {formatDateTime(activeItem.date)}
                   </span>
                 </div>
                 <div className="flex flex-col py-1">
-                  <span className="text-[10px] text-neutral-400">Chi nhánh trực thuộc</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">Chi nhánh trực thuộc</span>
                   <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                     {activeItem.branch}
                   </span>
                 </div>
                 {activeItem.objectId && (
                   <div className="flex flex-col py-1">
-                    <span className="text-[10px] text-neutral-400">Đối tượng liên kết</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Đối tượng liên kết</span>
                     <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                       {activeItem.objectId}
                     </span>
@@ -417,7 +419,7 @@ export function TabPurchases({
                 )}
                 {activeItem.notes && (
                   <div className="flex flex-col py-1 sm:col-span-2">
-                    <span className="text-[10px] text-neutral-400">Ghi chú</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Ghi chú</span>
                     <span className="font-medium text-neutral-700 dark:text-neutral-300 break-words">
                       {activeItem.notes}
                     </span>
