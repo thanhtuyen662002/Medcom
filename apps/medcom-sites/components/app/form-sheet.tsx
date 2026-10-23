@@ -45,7 +45,10 @@ export function FormSheet({ open, onClose, title, description, children, submitL
         </AppButton> : <span className={index === currentStep ? "font-semibold text-brand-700 dark:text-brand-300" : "text-neutral-500 dark:text-neutral-400"}>{index + 1}. {step.label}</span>}
       </li>)}
     </ol>}
-    <form id={formId} noValidate aria-label={title} aria-busy={busy} className="flex min-h-0 flex-1 flex-col overflow-hidden" onSubmit={event => {
+    <form id={formId} noValidate aria-label={title} aria-busy={busy} className="flex min-h-0 flex-1 flex-col overflow-hidden" onKeyDown={event => {
+      const target = event.target as HTMLElement;
+      if (event.key === "Enter" && (target.tagName === "INPUT" || target.tagName === "SELECT")) event.preventDefault();
+    }} onSubmit={event => {
       event.preventDefault();
       if (busy) return;
       if (hasNext) { if (!nextDisabled) onNext?.(); }

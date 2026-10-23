@@ -40,7 +40,8 @@ const portalStub = `export const AppSheet=({open,title,onClose,children})=>open?
 await build({
   stdin: { contents: `export {PurchaseRequestCreateSheet} from './components/untitledui/purchase-request-create-sheet';
     export {PurchaseOrderCreateSheet} from './components/untitledui/purchase-order-create-sheet';
-    export {TabErpScreen} from './components/untitledui/tab-erp-screen';`, loader: 'tsx', resolveDir: app },
+    export {TabErpScreen} from './components/untitledui/tab-erp-screen';
+    export {FormSheet} from './components/app/form-sheet';`, loader: 'tsx', resolveDir: app },
   outfile: path.join(output, 'fixture.cjs'), bundle: true, platform: 'node', format: 'cjs', packages: 'external',
   alias: { '@': app }, jsx: 'automatic', logLevel: 'warning',
   plugins: [{ name: 'form-fixtures', setup(builder) {
@@ -56,7 +57,7 @@ await build({
 const require = createRequire(import.meta.url);
 const React = require('react');
 const { create, act } = require('react-test-renderer');
-const { PurchaseRequestCreateSheet: PR, PurchaseOrderCreateSheet: PO, TabErpScreen } = require(path.join(output, 'fixture.cjs'));
+const { PurchaseRequestCreateSheet: PR, PurchaseOrderCreateSheet: PO, TabErpScreen, FormSheet } = require(path.join(output, 'fixture.cjs'));
 const h = React.createElement;
 const text = node => typeof node === 'string' ? node : node.children.map(text).join('');
 const native = tree => tree.root.findAll(node => typeof node.type === 'string');
@@ -94,6 +95,61 @@ async function mounted(component, mobile, run, props = {}) {
     delete globalThis.__formHold;
   }
 }
+
+// react-test-renderer has no native defaults: model submit-button activation
+// and implicit input submission only after an uncancelled Enter keydown.
+async function activateFooter(tree) {
+  const primary = footer(tree).findAllByType('button').find(node => node.props.type === 'submit');
+  assert.ok(primary);
+  assert.equal(primary.props.form, form(tree).props.id);
+  assert.equal(primary.props.disabled, false);
+  await submit(tree);
+}
+async function keyDown(tree, control, key = 'Enter') {
+  const event = { key, target: { tagName: control.type.toUpperCase() }, defaultPrevented: false,
+    preventDefault() { this.defaultPrevented = true; } };
+  await act(async () => form(tree).props.onKeyDown?.(event));
+  if (!event.defaultPrevented && key === 'Enter' &&
+    (control.type === 'input' || (control.type === 'button' && control.props.type === 'submit'))) await activateFooter(tree);
+  return event.defaultPrevented;
+}
+
+for (const currentStep of [0, 1]) test(`FormSheet: Enter in input/select never submits or advances at step ${currentStep + 1}`, async () => {
+  let submissions = 0, advances = 0;
+  await mounted(FormSheet, false, async tree => {
+    for (const control of native(tree).filter(node => node.type === 'input' || node.type === 'select')) {
+      assert.equal(await keyDown(tree, control), true, `${control.type} Enter cancels its default`);
+      assert.equal(await keyDown(tree, control, 'ArrowDown'), false, 'other keys keep their defaults');
+      assert.equal(submissions, 0); assert.equal(advances, 0);
+    }
+    await activateFooter(tree);
+    assert.equal(submissions, currentStep === 1 ? 1 : 0);
+    assert.equal(advances, currentStep === 0 ? 1 : 0);
+  }, { title: 'Tạo chứng từ', submitLabel: 'Tạo chứng từ', currentStep,
+    steps: [{ id: 'header', label: 'Thông tin' }, { id: 'review', label: 'Kiểm tra' }],
+    onSubmit() { submissions++; }, onNext() { advances++; },
+    children: h('div', null, h('input', { type: 'text' }), h('input', { type: 'search' }),
+      h('select', null, h('option', { value: 'QA' }, 'Tổng hợp'))) });
+});
+
+test('FormSheet: textarea Enter keeps newline behavior; footer click submits exactly once', async () => {
+  let submissions = 0, advances = 0;
+  await mounted(FormSheet, false, async tree => {
+    assert.equal(await keyDown(tree, tree.root.findByType('textarea')), false, 'textarea Enter is not cancelled');
+    assert.equal(submissions, 0); assert.equal(advances, 0);
+    await activateFooter(tree);
+    assert.equal(submissions, 1); assert.equal(advances, 0);
+  }, { title: 'Tạo chứng từ', submitLabel: 'Tạo chứng từ', children: h('textarea'),
+    onSubmit() { submissions++; }, onNext() { advances++; } });
+});
+
+test('FormSheet: Enter on the focused footer submit button still submits exactly once', async () => {
+  let submissions = 0;
+  await mounted(FormSheet, false, async tree => {
+    assert.equal(await keyDown(tree, button(tree, 'Tạo chứng từ')), false, 'button Enter is not cancelled');
+    assert.equal(submissions, 1);
+  }, { title: 'Tạo chứng từ', submitLabel: 'Tạo chứng từ', children: h('input'), onSubmit() { submissions++; } });
+});
 
 for (const mobile of [true, false]) for (const [name, component, props, label] of [
   ['PR', PR, {}, 'Tạo đề nghị mua'], ['PO', PO, {}, 'Tạo đơn mua'],
