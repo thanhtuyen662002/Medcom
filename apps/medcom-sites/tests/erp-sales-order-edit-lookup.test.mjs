@@ -20,7 +20,7 @@ const stubs={
   'record-dialog':`export const RecordActionBar=({children})=><div>{children}</div>;export const RecordDetailHeading=()=>null;export const RecordDetailStatus=()=>null;`,
   'request-presentation':`import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton=({children,variant,...props})=><button {...props}>{children}</button>;export const RequestInput=props=><input {...props}/>;export const RequestTextarea=props=><textarea {...props}/>;export const requestDate=value=>value;export const requestStyles={actions:''};`,
   'sales-order-attachment-list':`export const SalesOrderAttachmentList=()=>null;`,
-  'sales-order-detail-tabs':`export const SalesOrderDetailTabs=()=>null;`,
+  'document-detail-tabs':`export const DocumentDetailTabs=()=>null;`,
   'sales-order-action-dialog':`export const SalesOrderActionDialog=()=>null;`,
   'sales-order-line-editor':`export const SalesOrderLineEditor=()=>null;`,
 };
@@ -29,7 +29,7 @@ await build({
   outfile:path.join(output,'fixture.cjs'),bundle:true,platform:'node',format:'cjs',packages:'external',alias:{'@':app},jsx:'automatic',logLevel:'warning',
   plugins:[{name:'edit-lookup-transport',setup(builder){
     builder.onResolve({filter:/.*/},args=>{
-      if(!/(sales-order-form|lookup-field)\.tsx$/.test(args.importer.replaceAll('\\','/')))return;
+      if(!/(?:sales-order-form\.tsx|lookup-field\.tsx|use-sales-order-detail\.ts|document-detail\/[^/]+\.tsx)$/.test(args.importer.replaceAll('\\','/')))return;
       for(const key of Object.keys(stubs))if(args.path.endsWith(key))return{path:key,namespace:'qa-edit'};
     });
     builder.onLoad({filter:/.*/,namespace:'qa-edit'},args=>({contents:stubs[args.path],loader:'tsx',resolveDir:app}));

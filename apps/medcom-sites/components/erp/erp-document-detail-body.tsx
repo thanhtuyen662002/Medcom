@@ -1,0 +1,1131 @@
+"use client";
+
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useEffectEvent } from "react";
+import { Trash2, Send, QrCode, CheckCircle2, Camera, X, Pencil, Loader2 } from "lucide-react";
+import { erpClient, type ErpDocumentDetail, type ErpActionState, type ErpChoice, type ErpCommandResult, type ErpContractInfo } from "@/lib/erp/erp-client";
+import { UntitledBottomSheet } from "@/components/untitledui/bottom-sheet";
+import { UntitledButton } from "@/components/untitledui/button";
+import { QrCamera } from "@/lib/erp/qr-camera";
+import { SalesCommandSession } from "@/lib/erp/sales-order-workflow";
+import { getDocumentDetailEntry, type DocumentDetailBodyProps } from "@/lib/erp/document-detail/registry";
+import { DocumentDetailView } from "./document-detail/document-detail-view";
+import { detailStatus } from "@/lib/erp/document-detail/status";
+import { ErpLineEditor } from "./erp-line-editor";
+import { editableDetailConfig } from "@/lib/erp/document-detail/controllers/erp-detail-model";
+import type { DetailAction, DocumentDetailHandlers, DocumentDetailModel } from "@/lib/erp/document-detail/model";
+import { WRITE_GATED_MODULES, MENU_ACTION_IDS, SAVE_HEADER_BY_MODULE, editableHeaderKeys, requiredEditKeys, editLookupId, saveLineKeys, lockBadgeState, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
+
+// Event-only key generation, with the same clock/random evaluation as the original handlers.
+function editCommandKey(prefix: "save" | "del") {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+export function ErpDocumentDetailBody({ module, branchId: currentBranch, documentId: selectedDocId,
+  onClose, onChanged, onCloseGuardChange, onOpenGuardChange, onEditPurchaseRequest, onDeleted, reloadVersion,
+}: DocumentDetailBodyProps) {
+  const isQrModule = module === "warehouse-qr" || module === "sales-qr";
+  const writesGated = WRITE_GATED_MODULES.has(module);
+  const [detail, setDetail] = useState<ErpDocumentDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+
+  // Contract Info Modal
+  const [contractInfo, setContractInfo] = useState<ErpContractInfo | null>(null);
+
+  // PM Selection Modal
+  const [pmModalOpen, setPmModalOpen] = useState(false);
+  const pmChoices: ErpChoice[] = [];
+  const [selectedPmId, setSelectedPmId] = useState("");
+  const [pmNotes, setPmNotes] = useState("");
+  const loadingPm = false;
+
+  // Action Execution State
+  const [executingAction, setExecutingAction] = useState<string | null>(null);
+  // Detail action dropdown + inline header edit state
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editHeader, setEditHeader] = useState<Record<string, string>>({});
+  const [editLines, setEditLines] = useState<Record<string, Record<string, string>>>({});
+  const [editChoices, setEditChoices] = useState<Record<string, ErpChoice | null>>({});
+  const [editMulti, setEditMulti] = useState<Record<string, ErpChoice[]>>({});
+  const [editRate, setEditRate] = useState<string | null>(null);
+  const [deleteArmed, setDeleteArmed] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: "success" | "warning" | "error";
+    message: string;
+  } | null>(null);
+
+  // General Action Prompt Modal (Notes / Confirmation)
+  const [actionPromptModal, setActionPromptModal] = useState<{
+    open: boolean;
+    action: ErpActionState | null;
+    notes: string;
+  }>({ open: false, action: null, notes: "" });
+
+  // Return Step Modal (sales-order-sa, internal-transfer-sa, accounting, warehouse-out)
+  const [returnStepModalOpen, setReturnStepModalOpen] = useState(false);
+  const returnStepChoices: ErpChoice[] = [];
+  const [selectedReturnStatusId, setSelectedReturnStatusId] = useState("");
+  const [returnNotes, setReturnNotes] = useState("");
+  const loadingReturnStep = false;
+
+  // Send SA Modal (internal-transfer-tech)
+  const [sendSaModalOpen, setSendSaModalOpen] = useState(false);
+  const saChoices: ErpChoice[] = [];
+  const [selectedPrimarySaId, setSelectedPrimarySaId] = useState("");
+  const [selectedSupportingSaId, setSelectedSupportingSaId] = useState("");
+  const [sendSaNotes, setSendSaNotes] = useState("");
+  const loadingSendSa = false;
+
+  // QR Camera Modal State
+  const [cameraModalOpen, setCameraModalOpen] = useState(false);
+  const [cameraScanMode, setCameraScanMode] = useState<"add" | "delete">("add");
+  const [cameraScanStatus, setCameraScanStatus] = useState("Đang khởi tạo máy ảnh...");
+  const [manualBarcode, setManualBarcode] = useState("");
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const qrCameraRef = useRef<QrCamera | null>(null);
+  const [qrOperationLoading, setQrOperationLoading] = useState(false);
+  const salesQrCommand = React.useMemo(() => new SalesCommandSession("sales-qr", {
+    send: (operation, intent) => erpClient.scanQr("sales-qr", operation === "scan-add" ? "add" : "delete", intent as unknown as Parameters<typeof erpClient.scanQr>[2]),
+    lookup: (operation, originalIntent) => erpClient.lookupCommand("sales-qr", { operation, originalIntent }),
+  }, {branchId: currentBranch}), [currentBranch]);
+  useEffect(() => {
+    if (module !== "sales-qr" || !salesQrCommand.pending) return;
+    const protect = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", protect);
+    return () => window.removeEventListener("beforeunload", protect);
+  }, [module, salesQrCommand, qrOperationLoading]);
+
+
+  const openDetailRequestSeqRef = useRef<number>(0);
+  // Open Document Detail (Race-free: only applies response for latest requested documentId)
+  const handleOpenDetail = useCallback(async (documentId: string) => {
+    const seq = ++openDetailRequestSeqRef.current;
+    setLoadingDetail(true);
+    setDetailError(null);
+    setActionFeedback(null);
+    setEditing(false);
+    setMenuOpen(false);
+    setDeleteArmed(false);
+    setEditChoices({});
+    setEditMulti({});
+    setEditLines({});
+    setEditRate(null);
+    try {
+      const data = await erpClient.getErpModuleDetail(module, {
+        branchId: currentBranch,
+        documentId,
+        page: 1,
+        pageSize: 50,
+      });
+      if (seq === openDetailRequestSeqRef.current) {
+        setDetail(data);
+      }
+    } catch {
+      if (seq === openDetailRequestSeqRef.current) {
+        setDetailError("Không thể tải chi tiết chứng từ. Vui lòng thử lại.");
+      }
+    } finally {
+      if (seq === openDetailRequestSeqRef.current) {
+        setLoadingDetail(false);
+      }
+    }
+  }, [module, currentBranch]);
+
+  const invalidateDetailRequest = useCallback(() => { openDetailRequestSeqRef.current++; }, []);
+  useEffect(() => {
+    let active = true;
+    // Start the subscription asynchronously; the existing loader owns all state resets and sequence checks.
+    void Promise.resolve().then(() => { if (active) void handleOpenDetail(selectedDocId); });
+    return () => { active = false; invalidateDetailRequest(); };
+  }, [handleOpenDetail, selectedDocId, reloadVersion, invalidateDetailRequest]);
+
+  // Load More Lines for Detail
+  const [loadingMoreLines, setLoadingMoreLines] = useState(false);
+  const handleLoadMoreLines = async () => {
+    if (!detail || loadingMoreLines || !detail.lines?.hasMore) return;
+    setLoadingMoreLines(true);
+    try {
+      const nextPage = (detail.lines.page || 1) + 1;
+      const nextData = await erpClient.getErpModuleDetail(module, {
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        page: nextPage,
+        pageSize: 50,
+      });
+      if (nextData && nextData.lines) {
+        setDetail((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            lines: {
+              ...nextData.lines,
+              rows: [...(prev.lines.rows || []), ...(nextData.lines.rows || [])],
+            },
+          };
+        });
+      }
+    } catch (err) {
+      console.error("Failed to load more detail lines:", err);
+    } finally {
+      setLoadingMoreLines(false);
+    }
+  };
+
+  useLayoutEffect(() => {
+    onCloseGuardChange?.(() => {
+      if (module === "sales-qr" && (salesQrCommand.pending || salesQrCommand.busy)) {
+        setActionFeedback({ type: "warning", message: "Hãy xác nhận kết quả mã QR đang chờ trước khi đóng phiếu." }); return false;
+      }
+      return true;
+    });
+    onOpenGuardChange?.(() => {
+      if (module === "sales-qr" && (salesQrCommand.pending || salesQrCommand.busy)) {
+        setActionFeedback({ type: "warning", message: "Hãy xác nhận kết quả mã QR đang chờ trước khi mở phiếu khác." }); return false;
+      }
+      return true;
+    });
+    return () => { onCloseGuardChange?.(null); onOpenGuardChange?.(null); };
+  }, [module, salesQrCommand, onCloseGuardChange, onOpenGuardChange]);
+
+  const handleCloseDetail = onClose;
+
+  // Detail action dropdown helpers: inline header edit, delete (two-step
+  // confirm), and workflow prompts reuse the existing prompt modal.
+  const startEditing = () => {
+    if (!detail) return;
+    if (module === "purchase-requests") {
+      if (!detail.actions.some(action => action.id === "save" && action.visible && action.enabled) || executingAction) return;
+      onEditPurchaseRequest?.(detail.documentId);
+      setMenuOpen(false);
+      return;
+    }
+    const h = (detail.header || {}) as Record<string, unknown>;
+    const isoDate = (v: unknown) => (typeof v === "string" ? v.slice(0, 10) : "");
+    const text = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
+    const initial: Record<string, string> = {};
+    for (const key of editableHeaderKeys(module)) {
+      const raw = h[key];
+      initial[key] = key.toLowerCase().includes("date") ? isoDate(raw) : text(raw);
+    }
+    setEditHeader(initial);
+    const lineKeys = saveLineKeys(module);
+    const lineDrafts: Record<string, Record<string, string>> = {};
+    if (lineKeys.length > 0) {
+      for (const row of detail.lines?.rows || []) {
+        const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+        const draft: Record<string, string> = {};
+        for (const k of lineKeys) {
+          const v = f[k];
+          draft[k] = v == null ? "" : String(v);
+        }
+        lineDrafts[row.lineId] = draft;
+      }
+    }
+    setEditLines(lineDrafts);
+    setEditChoices({});
+    setEditMulti({});
+    setEditRate(null);
+    setEditing(true);
+    setMenuOpen(false);
+    setActionFeedback(null);
+  };
+
+  const patchEditLine = (lineId: string, k: string, v: string) =>
+    setEditLines((prev) => ({ ...prev, [lineId]: { ...(prev[lineId] || {}), [k]: v } }));
+
+  const handleSaveHeader = async () => {
+    if (!detail) return;
+    const keys = editableHeaderKeys(module);
+    const missing = requiredEditKeys(module).filter((k) => !(editHeader[k] ?? "").trim());
+    if (missing.length > 0) {
+      setActionFeedback({
+        type: "warning",
+        message: "Vui lòng nhập đủ các trường bắt buộc trước khi lưu.",
+      });
+      return;
+    }
+    if (
+      keys.includes("price") &&
+      (editHeader.price ?? "").trim() !== "" &&
+      !/^\d+(\.\d+)?$/.test(editHeader.price.trim())
+    ) {
+      setActionFeedback({ type: "warning", message: "Giá bán phải là số." });
+      return;
+    }
+    setExecutingAction("save");
+    setActionFeedback(null);
+    const idempotencyKey = editCommandKey("save");
+    try {
+      const edited: Record<string, unknown> = {};
+      for (const k of keys) {
+        const v = (editHeader[k] ?? "").trim();
+        if (k === "purposeId") edited[k] = v ? Number(v) : null;
+        else
+          edited[k] = k.toLowerCase().includes("date") ? (v ? `${v}T00:00:00.000` : null) : v ? v : null;
+      }
+      const base = (detail.header || {}) as Record<string, unknown>;
+      const allow = SAVE_HEADER_BY_MODULE[module];
+      const header: Record<string, unknown> = {};
+      if (allow) {
+        for (const k of allow) {
+          if (k in edited) {
+            header[k] = edited[k];
+            continue;
+          }
+          if (k === "rateExchange" && editRate !== null) {
+            const n = Number(editRate);
+            header[k] = Number.isFinite(n) && n > 0 ? n : (k in base ? base[k] : null);
+            continue;
+          }
+          let raw: unknown = k in base ? base[k] : null;
+          if (
+            typeof raw === "string" &&
+            k.toLowerCase().includes("date") &&
+            /T\d{2}:\d{2}:\d{2}$/.test(raw)
+          ) {
+            raw = `${raw}.000`;
+          }
+          header[k] = raw ?? null;
+        }
+      } else {
+        Object.assign(header, base, edited);
+      }
+      // Line edits: Update only changed rows, exact input DTO keys.
+      const lineKeys = saveLineKeys(module);
+      const lineChanges: Array<{ kind: "Update"; lineId: string; values: Record<string, unknown> }> = [];
+      if (lineKeys.length > 0) {
+        for (const row of detail.lines?.rows || []) {
+          const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+          const draft = editLines[row.lineId];
+          if (!draft) continue;
+          const itemId = (draft.itemId ?? "").trim();
+          const qty = (draft.quantity ?? "").trim();
+          const priceVal = (draft.unitPrice ?? "").trim();
+          if (!itemId || !/^\d+(\.\d+)?$/.test(qty) || !/^\d+(\.\d+)?$/.test(priceVal)) {
+            setActionFeedback({
+              type: "warning",
+              message: "Mỗi dòng cần Mã hàng, Số lượng và Đơn giá hợp lệ.",
+            });
+            setExecutingAction(null);
+            return;
+          }
+          const values: Record<string, unknown> = {};
+          let changed = false;
+          for (const k of lineKeys) {
+            const cur = f[k] == null ? "" : String(f[k]).trim();
+            const next = (draft[k] ?? "").trim();
+            values[k] = next ? next : null;
+            if (next !== cur) changed = true;
+          }
+          if (changed) lineChanges.push({ kind: "Update", lineId: row.lineId, values });
+        }
+      }
+      const res = await erpClient.saveDocument(module, {
+        idempotencyKey,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+        header,
+        lineChanges,
+      });
+      if (res.outcome === "Committed" || res.outcome === "Replayed") setEditing(false);
+      handleCommandOutcome(res);
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi lưu chứng từ.",
+      });
+    } finally {
+      setExecutingAction(null);
+    }
+  };
+
+  const handleDeleteDocument = async () => {
+    if (!detail) return;
+    if (!deleteArmed) {
+      setDeleteArmed(true);
+      return;
+    }
+    setDeleteArmed(false);
+    setMenuOpen(false);
+    setExecutingAction("delete");
+    setActionFeedback(null);
+    const idempotencyKey = editCommandKey("del");
+    try {
+      const res = await erpClient.deleteDocument(module, {
+        idempotencyKey,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+      });
+      handleCommandOutcome(res);
+      if (res.receipt?.deleted) onDeleted?.();
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi xóa chứng từ.",
+      });
+    } finally {
+      setExecutingAction(null);
+    }
+  };
+
+  const openWorkflowPrompt = (act: ErpActionState) => {
+    setMenuOpen(false);
+    setDeleteArmed(false);
+    setActionPromptModal({ open: true, action: act, notes: "" });
+  };
+
+  const menuActs = writesGated
+    ? []
+    : (detail?.actions || []).filter(
+        (a): a is ErpActionState =>
+          a.visible && (MENU_ACTION_IDS as readonly string[]).includes(a.id)
+      );
+
+  const menuLabel = (act: ErpActionState): string => {
+    if (act.id === "save") return editing ? "Lưu thay đổi" : "Sửa thông tin";
+    if (act.id === "delete") return deleteArmed ? "Bấm lần nữa để xóa" : "Xóa chứng từ";
+    if (act.id === "submit") return "Gửi đề nghị";
+    if (act.id === "send-purchase-order") return "Gửi đặt mua hàng";
+    if (act.id === "approve") return "Duyệt";
+    if (act.id === "reject") return module === "purchase-approvals" ? "Không duyệt" : "Từ chối";
+    return act.caption || act.id;
+  };
+
+  const handleMenuClick = (act: ErpActionState) => {
+    if (act.id === "save") {
+      if (editing) void handleSaveHeader();
+      else startEditing();
+    } else if (act.id === "delete") {
+      void handleDeleteDocument();
+    } else {
+      openWorkflowPrompt(act);
+    }
+  };
+
+  // Process Command Outcome
+  const handleCommandOutcome = (res: ErpCommandResult) => {
+    if (res.outcome === "Committed" || res.outcome === "Replayed") {
+      setActionFeedback({
+        type: "success",
+        message: "Thao tác thành công. Dữ liệu chứng từ đã được cập nhật.",
+      });
+      onChanged();
+      if (detail && !res.receipt?.deleted) {
+        handleOpenDetail(detail.documentId);
+      } else if (res.receipt?.deleted) {
+        handleCloseDetail();
+      }
+    } else if (res.outcome === "QualificationRequired") {
+      setActionFeedback({
+        type: "warning",
+        message:
+          "Hệ thống đang ở chế độ kiểm soát an toàn. Dữ liệu chưa được ghi trực tiếp vào cơ sở dữ liệu.",
+      });
+    } else {
+      setActionFeedback({
+        type: "error",
+        message: getActionErrorMessage(res.outcome, res.code),
+      });
+    }
+  };
+
+  // Execute QR Scan (Add or Delete)
+  const handleExecuteQrScan = async (actionType: "add" | "delete", barcodeValue: string) => {
+    if (!detail || !barcodeValue.trim()) return;
+    if (module === "sales-qr" && (salesQrCommand.pending || salesQrCommand.busy || !detail.actions.some(action => action.id === `scan-${actionType}` && action.visible && action.enabled))) return;
+    setQrOperationLoading(true);
+    setActionFeedback(null);
+    const idempotencyKey = `qr-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    try {
+      const intent = {
+        idempotencyKey,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+        barcode: barcodeValue.trim(),
+      };
+      const res = module === "sales-qr" ? await salesQrCommand.submit(`scan-${actionType}`, intent) : await erpClient.scanQr("warehouse-qr", actionType, intent);
+      handleCommandOutcome(res);
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi gửi mã QR tới hệ thống.",
+      });
+    } finally {
+      setQrOperationLoading(false);
+    }
+  };
+
+  // Open QR Camera Scanner Modal
+  const openQrScannerModal = (mode: "add" | "delete") => {
+    setCameraScanMode(mode);
+    setManualBarcode("");
+    setCameraScanStatus("Đang mở máy ảnh...");
+    setCameraModalOpen(true);
+  };
+
+  const cameraScanHandler = useEffectEvent(() => handleExecuteQrScan);
+  // Camera Lifecycle
+  useEffect(() => {
+    if (!cameraModalOpen) {
+      if (qrCameraRef.current) {
+        qrCameraRef.current.stop();
+        qrCameraRef.current = null;
+      }
+      return;
+    }
+
+    const cam = new QrCamera();
+    qrCameraRef.current = cam;
+    const executeCameraScan = cameraScanHandler();
+
+    const timer = setTimeout(() => {
+      if (videoRef.current) {
+        cam.start(
+          videoRef.current,
+          (state) => {
+            if (state === "scanning") setCameraScanStatus("Đang quét: Hãy đưa mã QR vào khung ngắm...");
+            else if (state === "found") setCameraScanStatus("Đã nhận diện mã QR!");
+            else if (state === "denied") setCameraScanStatus("Quyền truy cập máy ảnh bị từ chối.");
+            else if (state === "unavailable") setCameraScanStatus("Không tìm thấy camera trên thiết bị.");
+            else if (state === "failed") setCameraScanStatus("Không thể khởi động camera.");
+          },
+          (code) => {
+            executeCameraScan(cameraScanMode, code);
+            setCameraModalOpen(false);
+          }
+        );
+      }
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      cam.stop();
+    };
+  }, [cameraModalOpen, cameraScanMode]);
+
+
+
+  // Submit Prompt Action (notes / reason)
+  const handleConfirmPromptAction = async () => {
+    if (!detail || !actionPromptModal.action) return;
+    const act = actionPromptModal.action;
+    const op = act.id;
+    if (op === "reject" && !actionPromptModal.notes.trim()) {
+      setActionFeedback({
+        type: "warning",
+        message: "Vui lòng nhập lý do từ chối.",
+      });
+      return;
+    }
+    setExecutingAction(op);
+    setActionFeedback(null);
+    const notesValue = actionPromptModal.notes.trim();
+    setActionPromptModal({ open: false, action: null, notes: "" });
+    const idempotencyKey = `act-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    try {
+      const res = await erpClient.executeWorkflowAction(module, op, {
+        idempotencyKey,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+        payload: notesValue ? { notes: notesValue } : {},
+      });
+      handleCommandOutcome(res);
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi gửi thao tác tới máy chủ.",
+      });
+    } finally {
+      setExecutingAction(null);
+    }
+  };
+
+  // Submit Return Step
+  const handleConfirmReturnStep = async () => {
+    if (!detail || !selectedReturnStatusId) return;
+    setExecutingAction("return-step");
+    setActionFeedback(null);
+    const idempotencyKey = `ret-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    try {
+      const res = await erpClient.executeWorkflowAction(module, "return-step", {
+        idempotencyKey,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+        payload: {
+          statusId: Number(selectedReturnStatusId),
+          notes: returnNotes.trim() || undefined,
+        },
+      });
+      setReturnStepModalOpen(false);
+      handleCommandOutcome(res);
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi thực hiện gửi trả về bước trước.",
+      });
+    } finally {
+      setExecutingAction(null);
+    }
+  };
+
+  // Submit Send SA (tech -> SA)
+  const handleConfirmSendSa = async () => {
+    if (!detail || !selectedPrimarySaId || !selectedSupportingSaId) return;
+    if (selectedPrimarySaId === selectedSupportingSaId) {
+      setActionFeedback({
+        type: "warning",
+        message: "Hai SA phải khác nhau (một TPAdminHN và một TPAdminHCM).",
+      });
+      return;
+    }
+    setExecutingAction("send-sa");
+    setActionFeedback(null);
+    const idempotencyKey = `sa-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    try {
+      const res = await erpClient.executeWorkflowAction(module, "send-sa", {
+        idempotencyKey,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+        payload: {
+          primarySaId: selectedPrimarySaId,
+          supportingSaId: selectedSupportingSaId,
+          notes: sendSaNotes.trim() || undefined,
+        },
+      });
+      setSendSaModalOpen(false);
+      handleCommandOutcome(res);
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi chuyển cho TP SA duyệt.",
+      });
+    } finally {
+      setExecutingAction(null);
+    }
+  };
+
+  // Submit Send PM
+  const handleConfirmSendPm = async () => {
+    if (!detail || !selectedPmId) return;
+    setExecutingAction("send-pm");
+    const idempotencyKey = `pm-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    try {
+      let res: ErpCommandResult;
+      if (module === "sales-orders") {
+        res = await erpClient.executeWorkflowAction(module, "send-pm", {
+          idempotencyKey,
+          branchId: currentBranch,
+          documentId: detail.documentId,
+          expectedStateToken: detail.stateToken,
+          payload: { pmId: selectedPmId, notes: pmNotes || null },
+        });
+      } else {
+        res = await erpClient.executeWorkflowAction(module, "send-pm", {
+          idempotencyKey,
+          branchId: currentBranch,
+          documentId: detail.documentId,
+          expectedStateToken: detail.stateToken,
+          payload: { primaryPmId: selectedPmId, supportingPmId: "", notes: pmNotes || null },
+        });
+      }
+      setPmModalOpen(false);
+      handleCommandOutcome(res);
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi gửi phê duyệt PM.",
+      });
+    } finally {
+      setExecutingAction(null);
+    }
+  };
+
+  // The former pending-QR button callback; command custody and retry intent are unchanged.
+  const recoverQr = async (resend: boolean) => {
+    if (salesQrCommand.busy) return;
+    setQrOperationLoading(true);
+    try { handleCommandOutcome(await (resend ? salesQrCommand.retry() : salesQrCommand.recover())); }
+    finally { setQrOperationLoading(false); }
+  };
+
+  const entry = getDocumentDetailEntry(module);
+  if (!entry) return null;
+  const config = editableDetailConfig(entry.config, module, editing);
+  const actions: DetailAction[] = menuActs.map(act => ({
+    id: act.id, label: menuLabel(act), placement: "menu", visible: true,
+    enabled: !(!act.enabled || Boolean(executingAction) || (editing && act.id !== "save")),
+    reason: !act.enabled ? getActionReasonMessage(act.reason) : "",
+    title: getActionReasonMessage(act.reason) || undefined,
+    tone: act.id === "delete" ? "danger" : "default", keepMenuOpen: true, showReason: true,
+    icon: act.id === "save" ? <Pencil className="size-4" />
+      : act.id === "delete" ? <Trash2 className="size-4" />
+        : act.id === "approve" ? <CheckCircle2 className="size-4" />
+          : act.id === "reject" ? <X className="size-4" /> : <Send className="size-4" />,
+  }));
+  if (editing) actions.push(
+    { id: "save-header", label: executingAction === "save" ? "Đang lưu..." : "Lưu thay đổi",
+      placement: "primary", visible: true, enabled: executingAction !== "save", disableWhileBusy: false,
+      icon: <CheckCircle2 className="size-4" /> },
+    { id: "discard-edit", label: "Hủy sửa", placement: "primary", tone: "outline",
+      visible: true, enabled: true, disableWhileBusy: false },
+  );
+  const header = detail?.header || {};
+  const model: DocumentDetailModel = {
+    documentId: detail?.documentId ?? null, header,
+    lines: detail?.lines ?? { rows: [], hasMore: false }, sections: detail?.sections ?? undefined,
+    comparison: detail?.comparison ? { hasMore: false, rows: detail.comparison.rows.map(row => ({
+      ...row, fields: { ...row.fields, itemId: row.fields.itemId || row.fields.itemCode || row.lineId || "" },
+    })) } : undefined,
+    summary: detail?.summary,
+    status: detailStatus(header, detail ? String(header.statusName || (header.isLocked ? "Đã khóa" : "Đang mở")) : null,
+      lockBadgeState(header)),
+    loading: loadingDetail, error: detailError, editing, dirty: false,
+    busy: Boolean(executingAction), draft: editHeader,
+    // Preserve the inherited editor's input and cancel availability during commands.
+    fieldBusy: false,
+    lookupFields: Object.fromEntries(editableHeaderKeys(module).filter(key => editLookupId(module, key)).map(key => {
+      const isMultiKey = key === "personSuggest" || key === "department";
+      const knownName = key === "objectId" && typeof header.objectName === "string" ? header.objectName
+        : key === "purposeId" && typeof header.purposeName === "string" ? header.purposeName : "";
+      return [key, { branchId: currentBranch, choice: editChoices[key] ?? null, displayValue: knownName || undefined,
+        compact: true, selected: isMultiKey ? (editMulti[key] ?? (editHeader[key] ?? "").split(",").map(s => s.trim())
+          .filter(Boolean).map(s => ({ id: s, label: s }) as ErpChoice)) : undefined }];
+    })),
+    fieldHints: { currencyId: `Tỷ giá: ${editRate ?? String(header.rateExchange ?? "—")} (tự động theo loại tiền)` },
+    paginationBusy: loadingMoreLines, paginationDisabled: editing, feedback: actionFeedback, actions,
+    busyMessage: "Đang xử lý thao tác, vui lòng chờ phản hồi từ máy chủ...",
+    pending: module === "sales-qr" && salesQrCommand.pending ? {
+      title: "Chưa xác nhận được lần quét. Kiểm tra kết quả trước khi quét mã khác.", body: "",
+      actions: [false, true].map(resend => ({
+        id: resend ? "qr-retry" : "qr-recover", label: resend ? "Gửi lại cùng mã" : "Kiểm tra kết quả",
+        placement: "primary", visible: true, enabled: !qrOperationLoading, disableWhileBusy: false,
+      })),
+    } : undefined,
+  };
+  const handlers: DocumentDetailHandlers = {
+    onAction: id => {
+      if (id === "save-header") void handleSaveHeader();
+      else if (id === "discard-edit") setEditing(false);
+      else if (id === "qr-retry" || id === "qr-recover") void recoverQr(id === "qr-retry");
+      else {
+        const act = menuActs.find(act => act.id === id);
+        if (act) handleMenuClick(act);
+      }
+    },
+    onFieldChange: (key, value) => setEditHeader(prev => ({ ...prev, [key]: value })),
+    onLookupSelect: (key, c) => {
+      setEditHeader(prev => ({ ...prev, [key]: c ? c.id : "" }));
+      setEditChoices(prev => ({ ...prev, [key]: c }));
+      if (key === "currencyId") {
+        const rate = c?.fields?.["RateExchange"];
+        setEditRate(typeof rate === "number" && Number.isFinite(rate) && rate > 0 ? String(rate) : null);
+      }
+    },
+    onLookupMultiSelect: (key, cs) => {
+      setEditMulti(prev => ({ ...prev, [key]: cs }));
+      setEditHeader(prev => ({ ...prev, [key]: cs.map(c => c.id).join(", ") }));
+    },
+    onLoadMore: section => { if (section === "lines") void handleLoadMoreLines(); },
+    onRetry: () => { void handleOpenDetail(selectedDocId); },
+  };
+  return <>
+    <DocumentDetailView config={config} model={model} handlers={handlers} module={module}
+      menuLabel="Thao tác chứng từ" menuDisabled={false} menuOpen={menuOpen}
+      onMenuOpenChange={open => { setMenuOpen(open); setDeleteArmed(false); }}
+      slots={{
+        "lines-editor": detail && editing && saveLineKeys(module).length > 0
+          ? <ErpLineEditor module={module} detail={detail} editLines={editLines}
+              patchEditLine={patchEditLine} columns={config.lines.columns} /> : undefined,
+        "qr-scan": isQrModule && detail ? (
+<div className="p-4 rounded-2xl bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/40 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-base font-bold text-brand-900 dark:text-brand-300 flex items-center gap-1.5">
+                        <QrCode className="w-4 h-4 text-brand-600" />
+                        Thao tác quét mã vạch / QR tem kiện
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {(() => {
+                        const scanAddAct = detail?.actions?.find((a) => a.id === "scan-add");
+                        const scanDelAct = detail?.actions?.find((a) => a.id === "scan-delete");
+                        const canScanAdd = scanAddAct ? scanAddAct.enabled : true;
+                        const canScanDel = scanDelAct ? scanDelAct.enabled : true;
+                        return (
+                          <>
+                            <UntitledButton
+                              variant="primary"
+                              size="md"
+                              onClick={() => openQrScannerModal("add")}
+                              disabled={qrOperationLoading || !!salesQrCommand.pending || !canScanAdd}
+                              title={scanAddAct?.reason ? getActionReasonMessage(scanAddAct.reason) : undefined}
+                              iconLeading={<Camera className="size-4" />}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs disabled:opacity-50"
+                            >
+                              Quét thêm mã QR
+                            </UntitledButton>
+                            <UntitledButton
+                              variant="primary"
+                              size="md"
+                              onClick={() => openQrScannerModal("delete")}
+                              disabled={qrOperationLoading || !!salesQrCommand.pending || !canScanDel}
+                              title={scanDelAct?.reason ? getActionReasonMessage(scanDelAct.reason) : undefined}
+                              iconLeading={<Camera className="size-4" />}
+                              className="bg-red-600 hover:bg-red-700 text-white shadow-xs disabled:opacity-50"
+                            >
+                              Quét xóa mã QR
+                            </UntitledButton>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+        ) : undefined,
+      }}
+    />
+
+      {/* QR CAMERA SCANNER BOTTOM SHEET MODAL */}
+      {cameraModalOpen && (
+        <UntitledBottomSheet
+          open={cameraModalOpen}
+          onClose={() => setCameraModalOpen(false)}
+          title={cameraScanMode === "add" ? "Quét thêm mã QR" : "Quét xóa mã QR"}
+        >
+          <div className="space-y-4 p-2 text-xs">
+            <div className="relative aspect-square max-w-sm mx-auto overflow-hidden rounded-2xl bg-black border border-neutral-800 flex items-center justify-center">
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                autoPlay
+                muted
+                playsInline
+              />
+              {/* Scanner Reticle Overlay */}
+              <div className="absolute inset-0 border-2 border-brand-500/60 rounded-2xl pointer-events-none flex items-center justify-center">
+                <div className="size-48 border-2 border-dashed border-brand-400 rounded-xl" />
+              </div>
+            </div>
+
+            <p className="text-center font-medium text-neutral-600 dark:text-neutral-400">
+              {cameraScanStatus}
+            </p>
+
+            {/* Manual Barcode Input Fallback */}
+            <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-2">
+              <label className="text-[11px] font-semibold text-neutral-500">
+                Nhập mã thủ công nếu thiết bị không có camera:
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={manualBarcode}
+                  onChange={(e) => setManualBarcode(e.target.value)}
+                  placeholder="Mã ItemID;ItemCode;Lot hoặc PKG1;..."
+                  className="flex-1 px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (manualBarcode.trim()) {
+                      handleExecuteQrScan(cameraScanMode, manualBarcode.trim());
+                      setCameraModalOpen(false);
+                    }
+                  }}
+                  disabled={!manualBarcode.trim() || qrOperationLoading}
+                  className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50"
+                >
+                  Xác nhận
+                </button>
+              </div>
+            </div>
+          </div>
+        </UntitledBottomSheet>
+      )}
+
+      {/* CONTRACT INFO MODAL */}
+      {contractInfo && (
+        <UntitledBottomSheet
+          open={Boolean(contractInfo)}
+          onClose={() => setContractInfo(null)}
+          title={`Hợp đồng: ${contractInfo.contractId}`}
+        >
+          <div className="space-y-3 p-2 text-xs">
+            <div className="p-3 rounded-2xl bg-brand-50 dark:bg-brand-950/30 border border-brand-200 dark:border-brand-900 space-y-1.5">
+              <span className="font-semibold text-brand-900 dark:text-brand-300 block">
+                Số / Mã hợp đồng: {contractInfo.contractNo || contractInfo.contractId}
+              </span>
+              {contractInfo.objectName && (
+                <p className="text-neutral-700 dark:text-neutral-300">
+                  Đối tác: <span className="font-semibold">{contractInfo.objectName}</span>
+                </p>
+              )}
+              {contractInfo.notes && (
+                <p className="text-neutral-500">Ghi chú: {contractInfo.notes}</p>
+              )}
+              {contractInfo.totalAmount && (
+                <p className="font-bold text-neutral-900 dark:text-white">
+                  Giá trị hợp đồng: {contractInfo.totalAmount}
+                </p>
+              )}
+            </div>
+          </div>
+        </UntitledBottomSheet>
+      )}
+
+      {/* PM SELECTION MODAL */}
+      {pmModalOpen && (
+        <UntitledBottomSheet
+          open={pmModalOpen}
+          onClose={() => setPmModalOpen(false)}
+          title="Chọn PM để gửi duyệt"
+        >
+          <div className="space-y-3 p-2 text-xs">
+            <div>
+              <label className="block text-neutral-500 mb-1 font-medium">
+                Chọn người quản lý PM (*):
+              </label>
+              {loadingPm ? (
+                <p className="text-neutral-400 py-2">Đang tải danh sách PM...</p>
+              ) : (
+                <select
+                  value={selectedPmId}
+                  onChange={(e) => setSelectedPmId(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white"
+                >
+                  {pmChoices.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label || c.id} ({c.id})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div>
+              <label className="block text-neutral-500 mb-1 font-medium">Ghi chú gửi duyệt:</label>
+              <textarea
+                value={pmNotes}
+                onChange={(e) => setPmNotes(e.target.value)}
+                placeholder="Nội dung lưu ý khi gửi PM..."
+                rows={3}
+                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setPmModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleConfirmSendPm}
+                disabled={!selectedPmId || executingAction === "send-pm"}
+                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50"
+              >
+                {executingAction === "send-pm" ? "Đang gửi..." : "Xác nhận gửi PM"}
+              </button>
+            </div>
+          </div>
+        </UntitledBottomSheet>
+      )}
+
+      {/* ACTION PROMPT MODAL (For general actions like reject, send-management, approve, dispatch, etc.) */}
+      {actionPromptModal.open && actionPromptModal.action && (
+        <UntitledBottomSheet
+          open={actionPromptModal.open}
+          onClose={() => setActionPromptModal({ open: false, action: null, notes: "" })}
+          title={`Thao tác: ${actionPromptModal.action.caption}`}
+        >
+          <div className="space-y-3.5 p-2 text-xs">
+            <div className="p-3 rounded-xl bg-brand-50/60 dark:bg-brand-950/30 border border-brand-200/60 dark:border-brand-900/40">
+              <p className="text-xs font-semibold text-brand-900 dark:text-brand-300">
+                Xác nhận thực hiện thao tác &ldquo;{actionPromptModal.action.caption}&rdquo; trên chứng từ {detail?.documentId}
+              </p>
+            </div>
+            <div>
+              <label className="block text-neutral-500 mb-1 font-medium">
+                {actionPromptModal.action.id === "reject" ? "Lý do từ chối (*):" : "Ghi chú / Diễn giải:"}
+              </label>
+              <textarea
+                value={actionPromptModal.notes}
+                onChange={(e) => setActionPromptModal((prev) => ({ ...prev, notes: e.target.value }))}
+                placeholder={
+                  actionPromptModal.action.id === "reject"
+                    ? "Nhập lý do từ chối (bắt buộc theo quy định ERP)..."
+                    : "Ghi chú thêm nếu có (tối đa 1.000 ký tự)..."
+                }
+                rows={3}
+                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setActionPromptModal({ open: false, action: null, notes: "" })}
+                className="px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 text-xs"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmPromptAction}
+                disabled={executingAction === actionPromptModal.action.id}
+                className={`px-4 py-2 rounded-xl text-white font-semibold text-xs disabled:opacity-50 inline-flex items-center gap-1.5 ${actionPromptModal.action.id === "reject"
+                    ? "bg-rose-600 hover:bg-rose-700"
+                    : "bg-brand-600 hover:bg-brand-700"
+                  }`}
+              >
+                {executingAction === actionPromptModal.action.id && (
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                )}
+                {executingAction === actionPromptModal.action.id ? "Đang xử lý..." : `Xác nhận ${actionPromptModal.action.caption}`}
+              </button>
+            </div>
+          </div>
+        </UntitledBottomSheet>
+      )}
+
+      {/* RETURN STEP MODAL */}
+      {returnStepModalOpen && (
+        <UntitledBottomSheet
+          open={returnStepModalOpen}
+          onClose={() => setReturnStepModalOpen(false)}
+          title="Chọn bước gửi về"
+        >
+          <div className="space-y-3.5 p-2 text-xs">
+            <div>
+              <label className="block text-neutral-500 mb-1 font-medium">
+                Bước / Trạng thái muốn gửi về (*):
+              </label>
+              {loadingReturnStep ? (
+                <p className="text-neutral-400 py-2">Đang tải danh sách bước hợp lệ...</p>
+              ) : returnStepChoices.length === 0 ? (
+                <p className="text-amber-600 py-2">Không có trạng thái nào đủ điều kiện để quay lại.</p>
+              ) : (
+                <select
+                  value={selectedReturnStatusId}
+                  onChange={(e) => setSelectedReturnStatusId(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                >
+                  {returnStepChoices.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label || c.id} (Status {c.id})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div>
+              <label className="block text-neutral-500 mb-1 font-medium">Lý do gửi về:</label>
+              <textarea
+                value={returnNotes}
+                onChange={(e) => setReturnNotes(e.target.value)}
+                placeholder="Nhập lý do gửi về..."
+                rows={3}
+                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setReturnStepModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 text-xs"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReturnStep}
+                disabled={!selectedReturnStatusId || executingAction === "return-step"}
+                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 text-xs"
+              >
+                {executingAction === "return-step" ? "Đang gửi..." : "Xác nhận gửi về"}
+              </button>
+            </div>
+          </div>
+        </UntitledBottomSheet>
+      )}
+
+      {/* SEND SA MODAL (internal-transfer-tech) */}
+      {sendSaModalOpen && (
+        <UntitledBottomSheet
+          open={sendSaModalOpen}
+          onClose={() => setSendSaModalOpen(false)}
+          title="Gửi TP SA duyệt điều chuyển"
+        >
+          <div className="space-y-3.5 p-2 text-xs">
+            <div>
+              <label className="block text-neutral-500 mb-1 font-medium">
+                TP SA chính (Primary SA - TPAdminHN) (*):
+              </label>
+              {loadingSendSa ? (
+                <p className="text-neutral-400 py-2">Đang tải danh sách SA...</p>
+              ) : (
+                <select
+                  value={selectedPrimarySaId}
+                  onChange={(e) => setSelectedPrimarySaId(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                >
+                  {saChoices.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label || c.id}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div>
+              <label className="block text-neutral-500 mb-1 font-medium">
+                TP SA hỗ trợ (Supporting SA - TPAdminHCM) (*):
+              </label>
+              <select
+                value={selectedSupportingSaId}
+                onChange={(e) => setSelectedSupportingSaId(e.target.value)}
+                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+              >
+                {saChoices.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label || c.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-neutral-500 mb-1 font-medium">Ghi chú kỹ thuật:</label>
+              <textarea
+                value={sendSaNotes}
+                onChange={(e) => setSendSaNotes(e.target.value)}
+                placeholder="Ghi chú kết quả kiểm tra thiết bị..."
+                rows={3}
+                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setSendSaModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 text-xs"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSendSa}
+                disabled={!selectedPrimarySaId || !selectedSupportingSaId || executingAction === "send-sa"}
+                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 text-xs"
+              >
+                {executingAction === "send-sa" ? "Đang gửi..." : "Xác nhận gửi SA"}
+              </button>
+            </div>
+          </div>
+        </UntitledBottomSheet>
+      )}
+
+  </>;
+}
