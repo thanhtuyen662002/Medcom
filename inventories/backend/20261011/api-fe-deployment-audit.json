@@ -1,0 +1,386 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "84932715b5d78bcd00ef44bf6b90a0a328d62ee6",
+  "observedAtUtc": "2026-10-11T15:37:48.291377+00:00",
+  "kind": "read-only-deployment-and-synthetic-contract-audit",
+  "frontendModified": false,
+  "businessWritesPerformed": false,
+  "authenticatedEndToEndAcceptance": "UNKNOWN",
+  "deployments": {
+    "backend": {
+      "id": "f9c2fa21-5300-41d1-b13f-649217ca92f3",
+      "status": "SUCCESS"
+    },
+    "frontend": {
+      "id": "84bcb632-0345-4f02-b408-287a33c7e3ed",
+      "status": "SUCCESS"
+    }
+  },
+  "openApi": {
+    "url": "https://medcom-production.up.railway.app/api/contracts/openapi.json",
+    "version": "3.0.0",
+    "operations": 243,
+    "equalsSourceCommit": true,
+    "responseBytesSha256": "94691c22a3369352ca8766266f2b3007995fc69757085e34b3b76e9009f0ccc0"
+  },
+  "sources": {
+    "backendContract": "docs/backend/medcom-openapi.json",
+    "frontend": "apps/medcom-sites/lib/erp",
+    "frontendScreens": "apps/medcom-sites/components/untitledui",
+    "responseProjection": "src/backend/Medcom.Api/CanonicalResponseProjection.cs",
+    "inputRules": "src/backend/Medcom.Application/ErpInputRules.cs",
+    "commandRules": "src/backend/Medcom.Application/ErpCommandRules.cs"
+  },
+  "method": {
+    "responseFixtures": 17,
+    "fixtureValidation": "OpenAPI required/type/pattern/enum/const/additional-property constraints checked by local script; not full runtime acceptance",
+    "frontendExecution": "Unmodified deployed TypeScript bundled with esbuild, executed with synthetic fetch responses; no ERP account impersonation",
+    "createSamples": "Eight module-specific examples reconstructed from current UI create handler with one entered line; contract validation only, no POST to live ERP"
+  },
+  "readResults": [
+    {
+      "name": "purchase-orders facade list",
+      "success": false,
+      "issues": [
+        {
+          "path": "rows.0.documentDate",
+          "code": "invalid_string",
+          "message": "Invalid"
+        }
+      ],
+      "lost": []
+    },
+    {
+      "name": "purchase-orders facade detail",
+      "success": false,
+      "issues": [
+        {
+          "path": "document.documentDate",
+          "code": "invalid_string",
+          "message": "Invalid"
+        }
+      ],
+      "lost": []
+    },
+    {
+      "name": "inbound-requests facade list",
+      "success": false,
+      "issues": [
+        {
+          "path": "rows.0.documentDate",
+          "code": "invalid_string",
+          "message": "Invalid"
+        },
+        {
+          "path": "rows.0.branchId",
+          "code": "invalid_type",
+          "message": "Expected string, received null"
+        }
+      ],
+      "lost": []
+    },
+    {
+      "name": "inbound-requests facade detail",
+      "success": false,
+      "issues": [
+        {
+          "path": "document.documentDate",
+          "code": "invalid_string",
+          "message": "Invalid"
+        },
+        {
+          "path": "document.branchId",
+          "code": "invalid_type",
+          "message": "Expected string, received null"
+        }
+      ],
+      "lost": []
+    },
+    {
+      "name": "ERP purchase-order detail",
+      "success": true,
+      "issues": [],
+      "lost": []
+    },
+    {
+      "name": "Non-business properties copied into ERP header",
+      "keys": [
+        "lines",
+        "history",
+        "comparison",
+        "actions",
+        "sections",
+        "header",
+        "stateToken"
+      ]
+    },
+    {
+      "name": "Notification list",
+      "success": true,
+      "issues": [],
+      "lost": [
+        "rows.0.fromUserName",
+        "rows.0.toUserName",
+        "rows.0.statusName",
+        "rows.0.msgTimeDisplay"
+      ]
+    },
+    {
+      "name": "Item price",
+      "success": true,
+      "issues": [],
+      "lost": [
+        "itemCode",
+        "itemName",
+        "unit",
+        "unitPriceDisplay"
+      ]
+    },
+    {
+      "name": "Contract info",
+      "success": true,
+      "issues": [],
+      "lost": [
+        "contractDate"
+      ]
+    },
+    {
+      "name": "Malformed generic list accepted as empty page",
+      "success": true,
+      "issues": [],
+      "lost": []
+    },
+    {
+      "name": "Purchase facade list",
+      "success": false,
+      "status": 502,
+      "code": "invalid_api_response"
+    },
+    {
+      "name": "Purchase facade detail",
+      "success": false,
+      "status": 502,
+      "code": "invalid_api_response"
+    },
+    {
+      "name": "Purchase facade workspace",
+      "success": true
+    },
+    {
+      "name": "Purchase branch lookup",
+      "success": false,
+      "status": 502,
+      "code": "invalid_api_response"
+    },
+    {
+      "name": "Inbound draft classic",
+      "success": false,
+      "status": 502
+    },
+    {
+      "name": "Branches",
+      "success": true
+    },
+    {
+      "name": "BE routes blocked by FE proxy",
+      "total": 243,
+      "blocked": []
+    },
+    {
+      "name": "Incorrect generic UI command paths",
+      "paths": [
+        {
+          "path": "api/erp/purchase-orders/actions/save",
+          "proxyAllowed": false,
+          "beExists": false
+        },
+        {
+          "path": "api/erp/purchase-orders/actions/create",
+          "proxyAllowed": false,
+          "beExists": false
+        },
+        {
+          "path": "api/erp/inbound-requests/actions/save-costs",
+          "proxyAllowed": false,
+          "beExists": false
+        },
+        {
+          "path": "api/erp/internal-transfer-tech/actions/save-assets",
+          "proxyAllowed": false,
+          "beExists": false
+        },
+        {
+          "path": "api/erp/warehouse-qr/actions/scan-add",
+          "proxyAllowed": false,
+          "beExists": false
+        },
+        {
+          "path": "api/erp/sales-qr/actions/scan-delete",
+          "proxyAllowed": false,
+          "beExists": false
+        }
+      ]
+    },
+    {
+      "name": "Proxy maps upstream timeout to 503",
+      "status": 503,
+      "body": {
+        "code": "backend_unavailable"
+      }
+    }
+  ],
+  "createResults": [
+    {
+      "path": "/api/erp/inbound-requests/create",
+      "issues": [
+        ".header.invoiceNo:required",
+        ".header.departurePoint:required",
+        ".header.destinationPoint:required",
+        ".header.orderTypeId:required",
+        ".header.qrPrintType:required",
+        ".lines.0.values.quantity:additional"
+      ],
+      "schemaValid": false
+    },
+    {
+      "path": "/api/erp/internal-transfer-batches/create",
+      "issues": [
+        ".lines.0.values.requestId:required",
+        ".lines.0.values.itemId:additional",
+        ".lines.0.values.quantity:additional",
+        ".lines.0.values.unitPrice:additional"
+      ],
+      "schemaValid": false
+    },
+    {
+      "path": "/api/erp/internal-transfer-requests/create",
+      "issues": [
+        ".header.fromBranchId:required",
+        ".header.toBranchId:required",
+        ".header.objectName:additional",
+        ".lines.0.values.requestedQty:required",
+        ".lines.0.values.isEquipment:required",
+        ".lines.0.values.quantity:additional",
+        ".lines.0.values.unitPrice:additional"
+      ],
+      "schemaValid": false
+    },
+    {
+      "path": "/api/erp/machine-movements/create",
+      "issues": [
+        ".header.moveTypeId:required",
+        ".header.objectName:additional",
+        ".lines.0.values.assetId:required",
+        ".lines.0.values.itemId:additional",
+        ".lines.0.values.unitPrice:additional"
+      ],
+      "schemaValid": false
+    },
+    {
+      "path": "/api/erp/machine-repairs/create",
+      "issues": [
+        ".header.serviceTypeId:required",
+        ".header.objectName:additional",
+        ".lines.0.values.assetId:required",
+        ".lines.0.values.itemId:additional",
+        ".lines.0.values.unitPrice:additional"
+      ],
+      "schemaValid": false
+    },
+    {
+      "path": "/api/erp/purchase-orders/create",
+      "issues": [
+        ".header.rateExchange:type number"
+      ],
+      "schemaValid": false
+    },
+    {
+      "path": "/api/erp/purchase-requests/create",
+      "issues": [
+        ".header.department:required",
+        ".header.currencyId:required",
+        ".header.objectId:required",
+        ".header.rateExchange:required"
+      ],
+      "schemaValid": false
+    },
+    {
+      "path": "/api/erp/sales-orders/create",
+      "issues": [
+        ".header.objectId:required",
+        ".header.employeeId:required",
+        ".header.isOrder:required",
+        ".header.currencyId:required",
+        ".header.rateExchange:required",
+        ".header.objectName:additional"
+      ],
+      "schemaValid": false
+    }
+  ],
+  "httpEvidence": {
+    "kind": "sanitized-service-http-log-snapshot",
+    "queryFilterNote": "Provider returned mixed status codes; rows selected locally, no reliance on filter completeness",
+    "requestCorrelation": "Same timestamp/path comparison; no cross-service request identifier retained",
+    "pairs": [
+      {
+        "utc": "2026-10-11T15:16:09Z",
+        "path": "/api/notifications",
+        "frontendStatus": 503,
+        "frontendDurationMs": 20252,
+        "backendStatus": 499,
+        "backendDurationMs": 19909
+      },
+      {
+        "utc": "2026-10-11T15:16:09Z",
+        "path": "/api/lookups/branches",
+        "frontendStatus": 503,
+        "frontendDurationMs": 20269,
+        "backendStatus": 499,
+        "backendDurationMs": 19910
+      }
+    ],
+    "successes": [
+      {
+        "utc": "2026-10-11T15:15:44Z",
+        "path": "/api/notifications",
+        "status": 200,
+        "durationMs": 13201
+      },
+      {
+        "utc": "2026-10-11T15:15:45Z",
+        "path": "/api/lookups/branches",
+        "status": 200,
+        "durationMs": 13883
+      },
+      {
+        "utc": "2026-10-11T15:17:56Z",
+        "path": "/api/lookups/branches",
+        "status": 200,
+        "durationMs": 11253
+      },
+      {
+        "utc": "2026-10-11T15:17:56Z",
+        "path": "/api/notifications",
+        "status": 200,
+        "durationMs": 12048
+      },
+      {
+        "utc": "2026-10-11T15:19:23Z",
+        "path": "/api/notifications",
+        "status": 200,
+        "durationMs": 11352
+      },
+      {
+        "utc": "2026-10-11T15:19:24Z",
+        "path": "/api/lookups/branches",
+        "status": 200,
+        "durationMs": 12382
+      }
+    ]
+  },
+  "remainingUnknowns": [
+    "SQL latency root cause",
+    "Post-fix authenticated FE CUD acceptance",
+    "Any 503 not represented by the selected timeout pairs"
+  ]
+}
