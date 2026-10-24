@@ -25041,6 +25041,16 @@
             "items": {
               "type": "string"
             }
+          },
+          "roleName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -25051,7 +25061,8 @@
           "authorityVersion",
           "idleExpiresAt",
           "absoluteExpiresAt",
-          "capabilities"
+          "capabilities",
+          "roleName"
         ]
       },
       "LoginRequest": {
@@ -116114,6 +116125,16 @@
             "items": {
               "type": "string"
             }
+          },
+          "roleName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -116124,7 +116145,8 @@
           "authorityVersion",
           "idleExpiresAt",
           "absoluteExpiresAt",
-          "capabilities"
+          "capabilities",
+          "roleName"
         ],
         "x-medcom-response-contract": 3
       },

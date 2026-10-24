@@ -21,8 +21,8 @@ export interface LoginScreenProps {
 }
 
 export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("123456");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,13 +42,8 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         setUsername(savedUsername);
       }
 
-      const savedCredsStr = localStorage.getItem("medcom.auth.credentials");
-      if (savedCredsStr && savedRemember !== "false") {
-        const creds = JSON.parse(savedCredsStr);
-        if (creds && typeof creds.password === "string") {
-          setPassword(creds.password);
-        }
-      }
+      // Passwords are never kept in the browser; drop one saved by an older build.
+      localStorage.removeItem("medcom.auth.credentials");
     } catch { }
   }, []);
 
@@ -56,9 +51,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     setRememberMe(checked);
     try {
       localStorage.setItem("medcom.auth.remember", String(checked));
-      if (!checked) {
-        localStorage.removeItem("medcom.auth.credentials");
-      }
+      if (!checked) localStorage.removeItem("medcom.auth.username");
     } catch { }
   };
 
@@ -71,16 +64,14 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       const result = await erpClient.login(username, password);
       if (result.success && result.user) {
         try {
+          // "Remember" keeps only the username; staying signed in is the server session cookie.
+          localStorage.removeItem("medcom.auth.credentials");
           if (rememberMe) {
             localStorage.setItem("medcom.auth.remember", "true");
             localStorage.setItem("medcom.auth.username", username.trim());
-            localStorage.setItem(
-              "medcom.auth.credentials",
-              JSON.stringify({ username: username.trim(), password })
-            );
           } else {
             localStorage.setItem("medcom.auth.remember", "false");
-            localStorage.removeItem("medcom.auth.credentials");
+            localStorage.removeItem("medcom.auth.username");
           }
         } catch { }
         onLoginSuccess(result.user, rememberMe);
@@ -192,7 +183,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   onChange={(e) => handleRememberToggle(e.target.checked)}
                   className="size-4 rounded text-brand-600 focus:ring-brand-500 border-neutral-300 dark:border-neutral-700"
                 />
-                <span>Ghi nhớ phiên đăng nhập</span>
+                <span>Ghi nhớ tên đăng nhập</span>
               </label>
               <a
                 href="#help"

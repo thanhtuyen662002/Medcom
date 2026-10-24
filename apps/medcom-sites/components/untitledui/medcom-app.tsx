@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useLayoutEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
+import { Toaster } from "sonner";
 import { DesktopHeader } from "./desktop-header";
 import { DesktopSidebar } from "./desktop-sidebar";
 import { UntitledMobileHeader, type BranchOption } from "./mobile-header";
@@ -236,38 +237,23 @@ export function MedcomApp() {
         }
       } catch {}
 
-      const isRemember = localStorage.getItem("medcom.auth.remember") !== "false";
-      const savedCredsStr = localStorage.getItem("medcom.auth.credentials");
+      // Passwords are never kept in the browser; drop one saved by an older build.
+      try { localStorage.removeItem("medcom.auth.credentials"); } catch {}
 
       try {
-        // Test existing server session
-        await erpClient.getSession();
+        // Test existing server session; refresh the cached name/role from it so a
+        // role saved by an older build (or a changed ERP group) is not kept.
+        const session = await erpClient.getSession();
+        if (cachedUser && isMounted) {
+          const refreshed = { ...cachedUser, displayName: session.displayName || cachedUser.displayName, role: session.roleName?.trim() || "" };
+          setCurrentUser(refreshed);
+          try { localStorage.setItem("medcom.auth.user", JSON.stringify(refreshed)); } catch {}
+        }
       } catch (err: unknown) {
         const status = typeof err === "object" && err !== null && "status" in err ? (err as { status: number }).status : 0;
         const code = typeof err === "object" && err !== null && "code" in err ? (err as { code: string }).code : "";
 
-        // If session expired or unauthorized on server, but user chose rememberMe with saved credentials
-        if ((status === 401 || code === "session_expired" || code === "unauthorized" || !cachedUser) && isRemember && savedCredsStr) {
-          try {
-            const creds = JSON.parse(savedCredsStr);
-            if (creds && typeof creds.username === "string" && typeof creds.password === "string") {
-              const res = await erpClient.login(creds.username, creds.password);
-              if (res.success && res.user && isMounted) {
-                setCurrentUser(res.user);
-                if (res.user.branchId) {
-                  setCurrentBranch(res.user.branchId);
-                }
-                try {
-                  localStorage.setItem("medcom.auth.user", JSON.stringify(res.user));
-                } catch {}
-                if (isMounted) setIsAuthLoaded(true);
-                return;
-              }
-            }
-          } catch {}
-        }
-
-        // If not rememberMe or auto-login failed
+        // An expired server session means signing in again; no stored password is replayed.
         if (status === 401 || code === "session_expired" || code === "unauthorized") {
           try {
             localStorage.removeItem("medcom.auth.user");
@@ -286,36 +272,9 @@ export function MedcomApp() {
     };
   }, []);
 
-  // Listen for unauthorized 401 events with silent reauthentication fallback
+  // A 401 means the server session ended: show the sign-in screen.
   useEffect(() => {
-    let isAttemptingReauth = false;
-
-    const handleUnauthorized = async () => {
-      if (isAttemptingReauth) return;
-      const isRemember = localStorage.getItem("medcom.auth.remember") !== "false";
-      const savedCredsStr = localStorage.getItem("medcom.auth.credentials");
-
-      if (isRemember && savedCredsStr) {
-        isAttemptingReauth = true;
-        try {
-          const creds = JSON.parse(savedCredsStr);
-          if (creds && typeof creds.username === "string" && typeof creds.password === "string") {
-            const res = await erpClient.login(creds.username, creds.password);
-            if (res.success && res.user) {
-              setCurrentUser(res.user);
-              try {
-                localStorage.setItem("medcom.auth.user", JSON.stringify(res.user));
-              } catch {}
-              isAttemptingReauth = false;
-              return;
-            }
-          }
-        } catch {
-        } finally {
-          isAttemptingReauth = false;
-        }
-      }
-
+    const handleUnauthorized = () => {
       try {
         localStorage.removeItem("medcom.auth.user");
       } catch {}
@@ -699,6 +658,10 @@ export function MedcomApp() {
             ))}
           </main>
         </div>
+
+        {/* Action results pop up where the user is; above the phone bottom bar and detail action bar. */}
+        <Toaster dir="ltr" theme={isDarkMode ? "dark" : "light"} position="bottom-center" richColors closeButton duration={4000}
+          offset={24} mobileOffset={{ bottom: "88px" }} />
 
         {/* Mobile Sticky Bottom Navigation (Fixed at bottom on screens < 768px) */}
         <div className="md:hidden">

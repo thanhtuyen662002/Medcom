@@ -170,7 +170,7 @@ public sealed class LocalWebSessions : IWebSessions
         new SessionView(entry.Identity.DisplayName, entry.Identity.TenantId, entry.Identity.CompanyId,
             entry.Identity.CompanyName, entry.Identity.AuthorityVersion,
             Min(entry.LastActivity + policy.IdleTimeout, entry.AbsoluteExpiry), entry.AbsoluteExpiry,
-            entry.Identity.Capabilities));
+            entry.Identity.Capabilities, entry.Identity.RoleName));
 
     private static DateTimeOffset Min(DateTimeOffset left, DateTimeOffset right) => left < right ? left : right;
     private static string Hash(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));

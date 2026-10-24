@@ -31,14 +31,16 @@ public sealed class ErpCudPresentationTests
     [Theory]
     [InlineData("sales-orders",12)] [InlineData("purchase-requests",3)]
     [InlineData("internal-transfer-requests",10)] [InlineData("machine-movements",0)]
-    public void Authorized_CUD_controls_stay_enabled_for_testing_while_actual_writes_still_check_document_state(string module,int status)
+    public void Displayed_CUD_controls_follow_the_same_document_state_rules_as_writes(string module,int status)
     {
         var state=new ErpActionContext(module,"actor","synthetic",status,true,"actor",null,1,false,false,
             new(true,true,true,true),true);
         var save=ErpActionRules.ForDisplay(state).Single(a=>a.Id=="save");
-        Assert.True(save.Visible);Assert.True(save.Enabled);Assert.Null(save.Reason);
-        var enforced=ErpActionRules.Evaluate(state).Single(a=>a.Id=="save");
-        Assert.False(enforced.Enabled);Assert.Equal("state_or_assignment_not_allowed",enforced.Reason);
+        Assert.True(save.Visible);Assert.False(save.Enabled);Assert.Equal("state_or_assignment_not_allowed",save.Reason);
+        Assert.Equal(ErpActionRules.Evaluate(state),ErpActionRules.ForDisplay(state));
+        var editable=ErpActionRules.ForDisplay(state with{IsLocked=false,StatusId=module switch
+            {"sales-orders"=>-1,"purchase-requests"=>1,"internal-transfer-requests"=>0,_=>status}}).Single(a=>a.Id=="save");
+        Assert.True(editable.Enabled);Assert.Null(editable.Reason);
     }
     [Fact]
     public void Permission_controls_only_advertise_existing_web_routes()

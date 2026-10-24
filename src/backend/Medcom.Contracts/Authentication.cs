@@ -4,7 +4,9 @@ public sealed record LoginRequest(string Username, string Password);
 
 public sealed record SessionView(string DisplayName, string TenantId, string CompanyId,
     string CompanyName, long AuthorityVersion, DateTimeOffset IdleExpiresAt,
-    DateTimeOffset AbsoluteExpiresAt, IReadOnlyList<string> Capabilities);
+    DateTimeOffset AbsoluteExpiresAt, IReadOnlyList<string> Capabilities,
+    // ERP user group name (SY_UserGroup.UserGroupName); display only, never a grant.
+    string? RoleName = null);
 
 public sealed record NavigationItem(string Id, string Label, string Href);
 
