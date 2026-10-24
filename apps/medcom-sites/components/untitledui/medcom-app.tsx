@@ -16,6 +16,7 @@ import { LoginScreen } from "./login-screen";
 import { PurchaseOrderCreateSheet } from "./purchase-order-create-sheet";
 import { PurchaseRequestCreateSheet } from "./purchase-request-create-sheet";
 import { ScreenHeader } from "@/components/app/screen-header";
+import { navigationLabel } from "@/components/app/app-navigation";
 import { NotificationsSheet } from "./notifications-sheet";
 import { SidebarDrawer } from "./sidebar-drawer";
 import { TabErpScreen } from "./tab-erp-screen";
@@ -33,6 +34,11 @@ const QUICK_TAB_MODULES = {
   inbound: "inbound-requests",
 } as const satisfies Partial<Record<NavTabId, ErpScreenModule>>;
 type QuickTabId = keyof typeof QUICK_TAB_MODULES;
+
+// Modules whose open document scans codes into ERP (api/erp/{module}/scan),
+// and modules where a scanned code can be looked up in the list search.
+const SCAN_INTO_MODULES: readonly ErpScreenModule[] = ["warehouse-qr", "sales-qr"];
+const SCAN_SEARCH_MODULES: readonly ErpScreenModule[] = ["warehouse-qr", "sales-qr", "inbound-requests", "purchase-requests", "sales-orders"];
 
 export function quickTabModule(tab: string, allowed: readonly string[] | null): ErpScreenModule | null {
   const mod = QUICK_TAB_MODULES[tab as QuickTabId];
@@ -157,6 +163,12 @@ export function MedcomApp() {
   const canCreate = (module: string) => createAccess?.user === currentUser && createAccess?.branch === currentBranch && createAccess.modules.includes(module);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [targetDocPerModule, setTargetDocPerModule] = useState<{ module: ErpScreenModule; documentId: string } | null>(null);
+  const [scanSearch, setScanSearch] = useState<{ module: ErpScreenModule; text: string; nonce: number } | null>(null);
+  const allowedModule = (mod: ErpScreenModule) => Boolean(tabAccess.allowed?.includes(mod));
+  const scanTarget = (mod: ErpScreenModule) => ({ id: mod, label: navigationLabel(mod) ?? mod });
+  // A module that has a quick tab opens through it, so the bottom nav stays highlighted.
+  const tabForModule = (mod: ErpScreenModule): NavTabId =>
+    (Object.keys(QUICK_TAB_MODULES) as QuickTabId[]).find(tab => quickModule(tab) === mod) ?? (mod as NavTabId);
 
   // Check saved session, theme, and layout on initial mount with automatic reauthentication
   useEffect(() => {
@@ -619,12 +631,17 @@ export function MedcomApp() {
             {/* TAB 5: QR / Barcode Scanner */}
             <div className={activeTab === "scan" ? "block" : "hidden"}>
               <div className="space-y-4 max-w-2xl mx-auto">
-                <ScreenHeader title="Quét mã QR" subtitle="Đọc bằng camera hoặc nhập mã thủ công" />
+                <ScreenHeader title="Quét mã QR" subtitle="Chọn việc cần quét" />
                 {activeTab === "scan" && <UntitledQrScannerView
                   key={currentUser.username + ":" + currentBranch}
                   scopeKey={currentUser.username + ":" + currentBranch}
-                  onOpenPurchases={() => setActiveTab("purchases")}
-                  onOpenInbound={() => setActiveTab("inbound")}
+                  scanTargets={SCAN_INTO_MODULES.filter(allowedModule).map(scanTarget)}
+                  searchTargets={SCAN_SEARCH_MODULES.filter(allowedModule).map(scanTarget)}
+                  onOpenTarget={mod => setActiveTab(tabForModule(mod as ErpScreenModule))}
+                  onSearchIn={(mod, text) => {
+                    setScanSearch(previous => ({ module: mod as ErpScreenModule, text, nonce: (previous?.nonce ?? 0) + 1 }));
+                    setActiveTab(tabForModule(mod as ErpScreenModule));
+                  }}
                 />}
               </div>
             </div>
@@ -651,6 +668,7 @@ export function MedcomApp() {
                   currentBranch={currentBranch}
                   isActive={shownTab === mod}
                   targetDocumentId={targetDocPerModule?.module === mod ? targetDocPerModule.documentId : undefined}
+                  searchRequest={scanSearch?.module === mod ? scanSearch : undefined}
                   onOpenScanner={() => setActiveTab("scan")}
                 />
               </div>

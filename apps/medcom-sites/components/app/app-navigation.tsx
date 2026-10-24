@@ -60,7 +60,7 @@ export function navigationLabel(id: string): string | undefined {
 }
 
 export function navigationItemClassName(active: boolean) {
-  return `flex min-h-11 min-w-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${active
+  return `flex min-h-11 min-w-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-base md:text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${active
     ? "bg-brand-50 font-semibold text-brand-700 ring-1 ring-inset ring-brand-200 dark:bg-brand-950/60 dark:text-brand-300 dark:ring-brand-800"
     : "font-medium text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"}`;
 }

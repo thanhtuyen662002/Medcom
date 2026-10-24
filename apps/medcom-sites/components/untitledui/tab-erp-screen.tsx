@@ -46,6 +46,8 @@ interface TabErpScreenProps {
   isActive: boolean;
   targetDocumentId?: string;
   onOpenScanner?: () => void;
+  /** A code to look up from the QR screen; a new nonce runs the search again. */
+  searchRequest?: { text: string; nonce: number };
 }
 
 function getModuleTitle(mod: ErpScreenModule): string {
@@ -116,6 +118,7 @@ export function TabErpScreen({
   currentBranch,
   isActive,
   targetDocumentId,
+  searchRequest,
 }: TabErpScreenProps) {
   const hasCreate = [
     "purchase-requests",
@@ -837,6 +840,15 @@ export function TabErpScreen({
     }
     if (isActive) void loadListRef.current(1);
   }, [search, isActive]);
+  // A code looked up from the QR screen searches every status, not only the role queue.
+  const handledSearchRequest = useRef<number | null>(null);
+  useEffect(() => {
+    if (!searchRequest || handledSearchRequest.current === searchRequest.nonce) return;
+    handledSearchRequest.current = searchRequest.nonce;
+    setQueueMode(false); setStatusFilter("all"); setStatusId(null);
+    immediateSearch.current = true;
+    setSearch(searchRequest.text);
+  }, [searchRequest]);
 
   const rowStatus = (row: ErpDocumentRow) => isSalesOrderModule
     ? documentStatusLabel(typeof row.header?.statusId === "number" ? row.header.statusId : null, listText(row, "statusName"))

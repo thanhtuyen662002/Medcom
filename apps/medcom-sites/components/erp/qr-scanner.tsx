@@ -3,6 +3,7 @@
 import { useId, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScanLine } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QrCamera, type QrCameraState } from "@/lib/erp/qr-camera";
 import { MAX_QR_TEXT_LENGTH, validateQrText } from "@/lib/erp/qr-decoder";
@@ -15,6 +16,8 @@ export type QrScannerProps = {
   onOpenChange: (open: boolean) => void;
   onConfirm: (text: string) => void;
   title?: string;
+  /** What the confirmed code is used for, shown under the title. */
+  purpose?: string;
 };
 type State = QrCameraState | "idle";
 type ScannerHandle = { cancel: () => void };
@@ -29,7 +32,8 @@ const messages: Record<State, string> = {
   invalid: "Mã trống, quá dài hoặc chứa ký tự không hợp lệ. Hãy quét lại hoặc nhập mã thủ công.",
 };
 
-export function QrScanner({ open, scopeKey, onOpenChange, onConfirm, title = "Quét mã QR" }: QrScannerProps) {
+export function QrScanner({ open, scopeKey, onOpenChange, onConfirm, title = "Quét mã QR",
+  purpose = "Camera chỉ dùng để đọc mã trên thiết bị. Kiểm tra và xác nhận trước khi dùng mã." }: QrScannerProps) {
   const opener = useRef<HTMLElement | null>(null);
   const body = useRef<ScannerHandle | null>(null);
   const [camera] = useState(() => new QrCamera());
@@ -40,12 +44,13 @@ export function QrScanner({ open, scopeKey, onOpenChange, onConfirm, title = "Qu
     onOpenChange(false);
   };
   return <Dialog open={visible} onOpenChange={next => { if (!next) requestClose(); else onOpenChange(true); }}>
-    <DialogContent showCloseButton={false} className="max-h-[90dvh] overflow-y-auto"
+    {/* Full screen on phones so the camera frame is as large as possible. */}
+    <DialogContent showCloseButton={false} className="flex h-dvh max-h-dvh w-full max-w-full flex-col gap-4 overflow-y-auto rounded-none border-0 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:h-auto sm:max-h-[90dvh] sm:max-w-md sm:rounded-2xl sm:border sm:p-6"
       onOpenAutoFocus={() => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }}
       onCloseAutoFocus={event => { event.preventDefault(); if (opener.current?.isConnected) opener.current.focus(); }}>
-      <DialogHeader>
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>Camera chỉ dùng để đọc mã trên thiết bị. Kiểm tra và xác nhận trước khi dùng mã.</DialogDescription>
+      <DialogHeader className="text-left">
+        <DialogTitle className="text-lg">{title}</DialogTitle>
+        <DialogDescription className="text-sm">{purpose}</DialogDescription>
       </DialogHeader>
       {visible && <ScannerBody key={scopeKey} ref={body} camera={camera} onConfirm={onConfirm} onClose={requestClose} />}
     </DialogContent>
@@ -99,23 +104,37 @@ function ScannerBody({ ref, camera, onConfirm, onClose }: { ref: Ref<ScannerHand
     onClose();
   };
   if (closeRequested) return <p role="status" aria-live="polite" className="text-sm">Đã dừng quét. Đang đóng cửa sổ.</p>;
-  return <div className="space-y-4">
-    {!manual && <video ref={video} muted playsInline aria-label="Khung camera quét QR" className="aspect-square w-full rounded-md bg-black object-contain" />}
-    <p id={statusId} role="status" aria-live="polite" className="text-sm">{messages[state]}</p>
+  const found = valid && !busy;
+  return <div className="flex min-h-0 flex-1 flex-col gap-4">
+    {!manual && <div className="relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-2xl bg-neutral-950">
+      <video ref={video} muted playsInline aria-label="Khung camera quét QR" className="size-full object-cover" />
+      {/* Aiming frame; purely visual, the decoder reads the whole image. */}
+      <div aria-hidden="true" className={`pointer-events-none absolute inset-[14%] rounded-2xl border-2 ${state === "found" ? "border-emerald-400" : "border-white/80"}`} />
+      {!busy && !text && <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center text-white/70"><ScanLine className="size-12" /></div>}
+    </div>}
+    <p id={statusId} role="status" aria-live="polite" className="text-base text-neutral-700 dark:text-neutral-300">{messages[state]}</p>
     {manual ? <div className="space-y-2">
       <label htmlFor={manualId} className="text-sm font-medium">Mã nhập thủ công</label>
       <Input id={manualId} autoFocus value={text} maxLength={MAX_QR_TEXT_LENGTH} autoComplete="off" spellCheck={false}
         aria-describedby={statusId} aria-invalid={!!text && !valid}
-        onChange={event => setText(event.target.value)} className="min-h-11" />
-    </div> : text && <div className="space-y-1"><p className="text-sm font-medium">Mã đã đọc</p><p className="break-all rounded-md border p-3 text-sm">{text}</p></div>}
-    <div className="flex flex-wrap gap-2">
-      {!manual && <Button type="button" className="min-h-11" disabled={busy} onClick={start}>{text ? "Quét lại" : "Bắt đầu quét"}</Button>}
-      {busy && <Button type="button" variant="outline" className="min-h-11" onClick={() => { camera.stop(); setState("idle"); }}>Dừng camera</Button>}
-      <Button type="button" variant="outline" className="min-h-11" onClick={() => { camera.stop(); setText(""); setState("idle"); setManual(value => !value); }}>
-        {manual ? "Dùng camera" : "Nhập mã thủ công"}
-      </Button>
-      <Button type="button" className="min-h-11" disabled={!valid || busy} onClick={confirm}>Dùng mã này</Button>
-      <Button type="button" variant="ghost" className="min-h-11" onClick={onClose}>Hủy</Button>
+        onChange={event => setText(event.target.value)} className="min-h-11 text-base" />
+    </div> : text && <div className="space-y-1"><p className="text-sm font-medium">Mã đã đọc</p><p className="break-all rounded-xl border p-3 font-mono text-base">{text}</p></div>}
+    <div className="mt-auto grid gap-2">
+      {/* One primary action at a time: start/rescan, or use the code read. */}
+      {found
+        ? <Button type="button" className="min-h-12 w-full text-base" onClick={confirm}>Dùng mã này</Button>
+        : <>
+          {!manual && !busy && <Button type="button" className="min-h-12 w-full text-base" onClick={start}>{text ? "Quét lại" : "Bắt đầu quét"}</Button>}
+          {busy && <Button type="button" variant="outline" className="min-h-12 w-full text-base" onClick={() => { camera.stop(); setState("idle"); }}>Dừng camera</Button>}
+          {manual && <Button type="button" className="min-h-12 w-full text-base" disabled onClick={confirm}>Dùng mã này</Button>}
+        </>}
+      {found && !manual && <Button type="button" variant="outline" className="min-h-11 w-full" onClick={start}>Quét lại</Button>}
+      <div className="grid grid-cols-2 gap-2">
+        <Button type="button" variant="outline" className="min-h-11" onClick={() => { camera.stop(); setText(""); setState("idle"); setManual(value => !value); }}>
+          {manual ? "Dùng camera" : "Nhập mã thủ công"}
+        </Button>
+        <Button type="button" variant="ghost" className="min-h-11" onClick={onClose}>Hủy</Button>
+      </div>
     </div>
   </div>;
 }
