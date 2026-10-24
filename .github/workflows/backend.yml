@@ -28,6 +28,10 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: src/frontend/package-lock.json
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '11.25.0'
+          run_install: false
       - name: Verify project boundaries
         run: python tools/backend/check_architecture.py
       - name: Install pinned guard and policy dependencies
@@ -108,6 +112,22 @@ jobs:
       - name: Test packaged HTTPS app in browser
         working-directory: src/frontend
         run: npm run test:e2e
+      # The deployed web app (apps/medcom-sites): contracts, screens and real
+      # browser checks, using src/frontend's playwright-core and runner Chrome.
+      - name: Install web app dependencies
+        working-directory: apps/medcom-sites
+        run: pnpm install --frozen-lockfile
+      - name: Test web app contracts, screens and browser checks
+        working-directory: apps/medcom-sites
+        env:
+          MEDCOM_BROWSER_TOOLCHAIN: ${{ github.workspace }}/src/frontend
+          MEDCOM_EDGE_PATH: /usr/bin/google-chrome
+        run: pnpm test
+      - name: Typecheck and build web app
+        working-directory: apps/medcom-sites
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: pnpm typecheck && pnpm build
       - name: Record tested merge provenance
         if: github.event_name == 'pull_request'
         env:
