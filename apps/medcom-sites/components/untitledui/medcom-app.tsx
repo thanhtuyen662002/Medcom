@@ -237,8 +237,8 @@ export function MedcomApp() {
         }
       } catch {}
 
-      const isRemember = localStorage.getItem("medcom.auth.remember") !== "false";
-      const savedCredsStr = localStorage.getItem("medcom.auth.credentials");
+      // Passwords are never kept in the browser; drop one saved by an older build.
+      try { localStorage.removeItem("medcom.auth.credentials"); } catch {}
 
       try {
         // Test existing server session; refresh the cached name/role from it so a
@@ -253,28 +253,7 @@ export function MedcomApp() {
         const status = typeof err === "object" && err !== null && "status" in err ? (err as { status: number }).status : 0;
         const code = typeof err === "object" && err !== null && "code" in err ? (err as { code: string }).code : "";
 
-        // If session expired or unauthorized on server, but user chose rememberMe with saved credentials
-        if ((status === 401 || code === "session_expired" || code === "unauthorized" || !cachedUser) && isRemember && savedCredsStr) {
-          try {
-            const creds = JSON.parse(savedCredsStr);
-            if (creds && typeof creds.username === "string" && typeof creds.password === "string") {
-              const res = await erpClient.login(creds.username, creds.password);
-              if (res.success && res.user && isMounted) {
-                setCurrentUser(res.user);
-                if (res.user.branchId) {
-                  setCurrentBranch(res.user.branchId);
-                }
-                try {
-                  localStorage.setItem("medcom.auth.user", JSON.stringify(res.user));
-                } catch {}
-                if (isMounted) setIsAuthLoaded(true);
-                return;
-              }
-            }
-          } catch {}
-        }
-
-        // If not rememberMe or auto-login failed
+        // An expired server session means signing in again; no stored password is replayed.
         if (status === 401 || code === "session_expired" || code === "unauthorized") {
           try {
             localStorage.removeItem("medcom.auth.user");
@@ -293,36 +272,9 @@ export function MedcomApp() {
     };
   }, []);
 
-  // Listen for unauthorized 401 events with silent reauthentication fallback
+  // A 401 means the server session ended: show the sign-in screen.
   useEffect(() => {
-    let isAttemptingReauth = false;
-
-    const handleUnauthorized = async () => {
-      if (isAttemptingReauth) return;
-      const isRemember = localStorage.getItem("medcom.auth.remember") !== "false";
-      const savedCredsStr = localStorage.getItem("medcom.auth.credentials");
-
-      if (isRemember && savedCredsStr) {
-        isAttemptingReauth = true;
-        try {
-          const creds = JSON.parse(savedCredsStr);
-          if (creds && typeof creds.username === "string" && typeof creds.password === "string") {
-            const res = await erpClient.login(creds.username, creds.password);
-            if (res.success && res.user) {
-              setCurrentUser(res.user);
-              try {
-                localStorage.setItem("medcom.auth.user", JSON.stringify(res.user));
-              } catch {}
-              isAttemptingReauth = false;
-              return;
-            }
-          }
-        } catch {
-        } finally {
-          isAttemptingReauth = false;
-        }
-      }
-
+    const handleUnauthorized = () => {
       try {
         localStorage.removeItem("medcom.auth.user");
       } catch {}
