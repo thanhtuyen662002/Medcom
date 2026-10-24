@@ -23,7 +23,7 @@ export const transferRequestDetailConfig = {
       columns: 2,
       fields: [
         { key: "transferReason", label: "Lý do điều chuyển", format: "multiline" },
-        { key: "transportMethod", label: "Phương thức vận chuyển", format: "text" },
+        { key: "transportMethod", label: "Phương thức vận chuyển", format: "enum", enumId: "transportMethod" },
       ],
     },
     {
@@ -115,7 +115,7 @@ export const transferPmDetailConfig = {
         { key: "toBranchName", label: "Chi nhánh nhận", format: "text" },
         { key: "batchId", label: "Đợt điều chuyển", format: "reference", displayKey: "batchName", secondaryKey: "batchId" },
         { key: "transferReason", label: "Lý do điều chuyển", format: "multiline" },
-        { key: "transportMethod", label: "Phương thức vận chuyển", format: "text" },
+        { key: "transportMethod", label: "Phương thức vận chuyển", format: "enum", enumId: "transportMethod" },
       ],
     },
     {
@@ -216,7 +216,7 @@ export const transferBatchDetailConfig = {
       title: "Vận chuyển & chứng từ",
       columns: 2,
       fields: [
-        { key: "transportMethod", label: "Phương thức vận chuyển", format: "text" },
+        { key: "transportMethod", label: "Phương thức vận chuyển", format: "enum", enumId: "transportMethod" },
         { key: "carrierName", label: "Đơn vị vận chuyển", format: "text" },
         { key: "carrierPhone", label: "Số điện thoại vận chuyển", format: "text" },
         { key: "vehicleNo", label: "Biển số xe", format: "text" },
@@ -336,7 +336,7 @@ export const transferTechnicalDetailConfig = {
       title: "Vận chuyển & chứng từ",
       columns: 2,
       fields: [
-        { key: "transportMethod", label: "Phương thức vận chuyển", format: "text" },
+        { key: "transportMethod", label: "Phương thức vận chuyển", format: "enum", enumId: "transportMethod" },
       ],
     },
     {
@@ -585,7 +585,7 @@ export const transferWarehouseOutDetailConfig = {
       title: "Vận chuyển & chứng từ",
       columns: 2,
       fields: [
-        { key: "transportMethod", label: "Phương thức vận chuyển", format: "text" },
+        { key: "transportMethod", label: "Phương thức vận chuyển", format: "enum", enumId: "transportMethod" },
         { key: "carrierName", label: "Đơn vị vận chuyển", format: "text" },
         { key: "carrierPhone", label: "Số điện thoại vận chuyển", format: "text" },
         { key: "vehicleNo", label: "Biển số xe", format: "text" },
@@ -705,7 +705,7 @@ export const transferWarehouseInDetailConfig = {
       title: "Vận chuyển & chứng từ",
       columns: 2,
       fields: [
-        { key: "transportMethod", label: "Phương thức vận chuyển", format: "text" },
+        { key: "transportMethod", label: "Phương thức vận chuyển", format: "enum", enumId: "transportMethod" },
         { key: "carrierName", label: "Đơn vị vận chuyển", format: "text" },
         { key: "vehicleNo", label: "Biển số xe", format: "text" },
         { key: "outputDocumentId", label: "Phiếu xuất kho liên kết", format: "reference", displayKey: "outputDocumentName", secondaryKey: "outputDocumentId" },

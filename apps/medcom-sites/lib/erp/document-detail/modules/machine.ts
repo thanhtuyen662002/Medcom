@@ -139,7 +139,7 @@ export const machineRepairDetailConfig = {
         { key: "startDate", label: "Ngày bắt đầu", format: "date" },
         { key: "endDate", label: "Ngày kết thúc", format: "date" },
         { key: "technician", label: "Kỹ thuật viên", format: "text" },
-        { key: "serviceStatus", label: "Tình trạng dịch vụ", format: "text" },
+        { key: "serviceStatus", label: "Tình trạng dịch vụ", format: "enum", enumId: "serviceStatus" },
         { key: "referenceNo", label: "Số tham chiếu", format: "text" },
         { key: "referenceDate", label: "Ngày tham chiếu", format: "date" },
         { key: "documentLink", label: "Tham chiếu tài liệu", format: "text" },

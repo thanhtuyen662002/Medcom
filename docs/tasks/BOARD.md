@@ -95,3 +95,10 @@ Mọi phiếu T-001…T-007 Done trên `ui-sync/main`. Tổng kết: `docs/ui-sy
 - **D7 (leader):** trước khi push, đã che dữ liệu thật trong tài liệu phiếu (mảnh email nhân viên, tên đối tác, mã sản phẩm và số tiền của một chứng từ thật, chi tiết login DB). Vì lịch sử commit vẫn còn bản cũ, PR sẽ dùng **một commit squash sạch** từ `origin/main`, không push lịch sử `ui-sync/main`.
 - `origin/main` đã tiến tới `11b9981` (PR #171–#174, ~20 commit), có thay đổi FE vào đúng vùng ui-sync viết lại (`status-colors`, `document-summary`, `sales-order-lines`, `tab-erp-screen.tsx`, `sales-order-form.tsx`, `sales-order-detail-tabs.tsx`). Mở [T-008](T-008.md) để tích hợp và chuyển tính năng mới sang kiến trúc mới.
 - T-008 Đạt, merge `96c1186`: `ui-sync/main` đã chứa `origin/main` `11b9981`; 811 test / 798 pass / 13 fail (trùng baseline), build pass. Tiếp theo: nhánh squash sạch `ui-sync/document-detail` từ `origin/main`, push và mở PR (chưa merge).
+
+## Đợt F — đề xuất sau ui-sync (2026-10-24)
+
+- F-02 đã xong trong P2-05 (menu có "Đề nghị nhập hàng").
+- Chủ dự án giao thêm Muse (chat MCP) làm coder bên cạnh Codex. Leader giao F-04 cho Muse làm lượt thử.
+- Chủ dự án mở runner chỉ đọc MedData (`.agent-runs/db/sql-runner.ps1`, nhập mật khẩu 1 lần). q04 đọc `SY_FrmDrdwTbl`.
+- [F-04](F-04.md) Đạt: nhãn enum ERP cho `transportMethod`/`serviceStatus`; mở PR vào `main`.
