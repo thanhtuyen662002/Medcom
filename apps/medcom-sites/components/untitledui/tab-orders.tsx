@@ -10,6 +10,7 @@ import type { DocumentDetail, PurchaseOrderHeader, PurchaseOrderLineFields } fro
 import { errorMessage } from "@/lib/erp/api";
 
 import { formatDateTime } from "@/lib/erp/document-detail/format";
+import { erpStatusChips, erpStatusDisplay, matchesErpStatus } from "@/lib/erp/status-chips";
 import {formatMoney} from "@/lib/erp/money";
 
 function formatVND(value?: string | null, currency = "VND"): string {
@@ -24,7 +25,8 @@ export interface OrderItem {
   documentDate: string;
   branchId: string;
   statusId: number | null;
-  statusName: string;
+  /** AP_OrderStatusTbl label for statusId. */
+  statusName: string | null;
   /** Màu trạng thái BE cung cấp (#RRGGBB) hoặc null; thiếu màu thì dùng màu mặc định. */
   statusForeColor?: string | null;
   statusBackColor?: string | null;
@@ -130,14 +132,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                   : "—"),
               branchId: (raw.branchName as string) || (h as any)?.branchName || r.branchId || selectedBranch || "CN01",
               statusId: r.statusId,
-              statusName:
-                (raw.statusName as string) ||
-                r.statusName ||
-                (r.statusId === 2
-                  ? "Đã duyệt"
-                  : r.statusId === 1
-                  ? "Chờ phê duyệt"
-                  : "Bản nháp"),
+              statusName: (raw.statusName as string) || r.statusName || null,
               statusForeColor: (raw.statusForeColor as string) || null,
               statusBackColor: (raw.statusBackColor as string) || null,
               isLocked: r.isLocked ?? false,
@@ -276,23 +271,17 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
 
   // Filter orders
   const filtered = orders.filter((o) => {
-    if (statusFilter === "pending") return o.statusId === 1;
-    if (statusFilter === "approved") return o.statusId === 2;
-    if (statusFilter === "completed") return o.statusId === 3;
-    return true;
+    return matchesErpStatus(o, statusFilter);
   });
 
-  const getStatusBadge = (statusId: number | null, statusName?: string | null, colors?: { statusForeColor?: string | null; statusBackColor?: string | null }) => (
-    <StatusBadge label={statusName || (statusId === 2 ? "Đã duyệt" : statusId === 3 ? "Hoàn tất" : statusId === 1 ? "Chờ phê duyệt" : "Bản nháp")} tone={statusId === 2 ? "success" : statusId === 3 ? "info" : statusId === 1 ? "warning" : "neutral"} statusForeColor={colors?.statusForeColor} statusBackColor={colors?.statusBackColor} />
-  );
-  const statuses = [{ value: "", label: "Tất cả" }, { value: "pending", label: "Chờ duyệt" }, { value: "approved", label: "Đã duyệt" }, { value: "completed", label: "Hoàn tất" }];
-  const statusIds: Record<string, number> = { pending: 1, approved: 2, completed: 3 };
+  const getStatusBadge = (order: OrderItem) => <StatusBadge {...erpStatusDisplay(order)} statusForeColor={order.statusForeColor} statusBackColor={order.statusBackColor} />;
+  const statuses = erpStatusChips(orders);
 
   const tableColumns: RecordColumn<OrderItem>[] = [
     { id: "document", label: "Mã PO", className: "min-w-40 whitespace-nowrap", render: order => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{order.documentId}</span> },
     { id: "date", label: "Ngày chứng từ", className: "whitespace-nowrap tabular-nums", render: order => formatDateTime(order.documentDate) },
     { id: "supplier", label: "Nhà cung cấp", className: "min-w-60 max-w-sm", render: order => <span className="line-clamp-2 break-words font-medium" title={order.supplier}>{order.supplier}</span> },
-    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: order => <div className="flex items-center gap-2">{getStatusBadge(order.statusId, order.statusName, order)}{order.isLocked && <LockKeyhole aria-label="Đã khóa" className="size-4" />}</div> },
+    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: order => <div className="flex items-center gap-2">{getStatusBadge(order)}{order.isLocked && <LockKeyhole aria-label="Đã khóa" className="size-4" />}</div> },
     { id: "creator", label: "Người lập", className: "min-w-40 max-w-52", render: order => <span className="line-clamp-2 break-words">{order.creator}</span> },
     { id: "amount", label: "Tổng tiền", className: "whitespace-nowrap text-right font-semibold tabular-nums", render: order => order.totalAmount },
   ];
@@ -304,10 +293,10 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
         onFilter={() => setFilterOpen(true)} filterOpen={filterOpen} filterId="orders-filters"
         filterCount={Number(Boolean(statusFilter)) + Number(pageSize !== 20)}
         refreshing={loading || isRefreshing} onRefresh={() => void loadOrders(true)} onCreate={onOpenCreateModal} />
-      <FilterChips description="Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại." items={statuses.map(status => ({ ...status, count: status.value ? orders.filter(order => order.statusId === statusIds[status.value]).length : orders.length }))}
+      <FilterChips description="Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại." items={statuses}
         value={statusFilter} onChange={setStatusFilter} onPageChange={() => { if (page !== 1) void loadOrders(false, 1); }} />
       <RecordList label="Danh sách đặt mua hàng" rows={filtered} columns={tableColumns} rowId={order => order.documentId}
-        card={order => ({ code: order.documentId, title: order.supplier, meta: [formatDateTime(order.documentDate), order.creator, order.totalAmount === "—" ? null : order.totalAmount, order.isLocked ? "Đã khóa" : null], status: { label: order.statusName, tone: order.statusId === 2 ? "success" : order.statusId === 1 ? "warning" : order.statusId === 3 ? "info" : "neutral", statusForeColor: order.statusForeColor, statusBackColor: order.statusBackColor } })}
+        card={order => ({ code: order.documentId, title: order.supplier, meta: [formatDateTime(order.documentDate), order.creator, order.totalAmount === "—" ? null : order.totalAmount, order.isLocked ? "Đã khóa" : null], status: { ...erpStatusDisplay(order), statusForeColor: order.statusForeColor, statusBackColor: order.statusBackColor } })}
         onOpen={handleOpenDetail} loading={loading} error={error} onRetry={() => void loadOrders(false)}
         empty={{ message: "Chưa có chứng từ khớp với tìm kiếm hoặc bộ lọc.", onCreate: onOpenCreateModal }}
         pagination={{ page, pageSize, rowCount: orders.length, visibleRowCount: filtered.length, hasMore, busy: loading || isRefreshing, maxPage: 1000,
@@ -351,7 +340,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                   </p>
                 </div>
                 <div className="text-right flex flex-col items-end gap-1">
-                  {getStatusBadge(selectedOrder.statusId, selectedOrder.statusName, selectedOrder)}
+                  {getStatusBadge(selectedOrder)}
                   <span className="text-sm font-mono font-extrabold text-brand-700 dark:text-brand-300">
                     {selectedOrder.totalAmount}
                   </span>
