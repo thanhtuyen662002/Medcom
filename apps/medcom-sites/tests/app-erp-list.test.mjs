@@ -31,7 +31,8 @@ const leaves = {
 await build({
   stdin: { contents: `export {TabErpScreen} from './components/untitledui/tab-erp-screen';
     export {ERP_LIST_COLUMNS} from './lib/erp/list-columns'; export {erpScreenModules} from './lib/erp/proxy-policy';
-    export {FilterSheet} from './components/app/filter-sheet'; export {CreateFab} from './components/app/create-fab';`, resolveDir: app, loader: 'tsx' },
+    export {FilterSheet} from './components/app/filter-sheet'; export {CreateFab} from './components/app/create-fab';
+    export {ROLE_QUEUE_STATUSES} from './lib/erp/role-queue';`, resolveDir: app, loader: 'tsx' },
   outfile: path.join(output, 'fixture.cjs'), bundle: true, platform: 'node', format: 'cjs', packages: 'external',
   alias: { '@': app }, jsx: 'automatic', logLevel: 'warning', plugins: [{
     name: 'synthetic-erp-transport', setup(builder) {
@@ -44,13 +45,15 @@ await build({
 });
 const require = createRequire(import.meta.url), React = require('react');
 const { create, act } = require('react-test-renderer');
-const { TabErpScreen, ERP_LIST_COLUMNS, erpScreenModules, FilterSheet, CreateFab } = require(path.join(output, 'fixture.cjs'));
+const { TabErpScreen, ERP_LIST_COLUMNS, erpScreenModules, FilterSheet, CreateFab, ROLE_QUEUE_STATUSES } = require(path.join(output, 'fixture.cjs'));
 const h = React.createElement;
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const flush = async () => { for (let i = 0; i < 6; i++) await act(async () => {}); };
 const text = node => typeof node === 'string' ? node : (node.children ?? []).map(text).join('');
 const hosts = (tree, type) => tree.root.findAll(node => node.type === type);
-const button = (tree, label) => hosts(tree, 'button').find(node => node.props['aria-label'] === label || text(node) === label);
+// Chips may append a count after their label; match the label text itself too.
+const button = (tree, label) => hosts(tree, 'button').find(node => node.props['aria-label'] === label || text(node) === label
+  || node.children.filter(child => typeof child === 'string').join('') === label);
 const click = async (tree, label) => { await act(async () => button(tree, label).props.onClick()); await flush(); };
 const row = { documentId: 'SYNTHETIC-001', header: {
   documentDateDisplay: '24/10/2026', purchaseDateDisplay: '24/10/2026', batchDateDisplay: '24/10/2026',
@@ -89,8 +92,12 @@ test('column configurations cover exactly 19 modules and use only existing list 
 });
 
 for (const screenModule of erpScreenModules) test(`${screenModule}: common toolbar order, mobile cards, desktop columns, refresh and 44px controls`, async () => {
+  // Role screens open on "Chờ tôi xử lý": one read per queued ERP status.
+  const queue = ROLE_QUEUE_STATUSES[screenModule];
+  const reads = queue?.length ?? 1;
   await mounted(screenModule, async tree => {
-    assert.equal(globalThis.__p2Calls.length, 1, 'mount makes exactly one list request');
+    assert.equal(globalThis.__p2Calls.length, reads, 'mount reads the list once (once per queued status)');
+    if (queue) assert.deepEqual(globalThis.__p2Calls.map(call => call.statusId), [...queue]);
     const toolbar = tree.root.find(node => node.type === 'div' && node.props['data-app-toolbar'] !== undefined);
     const controls = toolbar.findAll(node => ['form', 'button'].includes(node.type));
     assert.equal(controls[0].props.role, 'search');
@@ -112,18 +119,22 @@ for (const screenModule of erpScreenModules) test(`${screenModule}: common toolb
     const chips = tree.root.findAllByProps({ role: 'group' }).find(node => node.props['aria-label']?.startsWith('Lọc'));
     assert.match(chips.props.className, /overflow-x-auto/);
     await click(tree, 'Làm mới');
-    assert.equal(globalThis.__p2Calls.length, 2);
+    assert.equal(globalThis.__p2Calls.length, 2 * reads);
     assert.equal(globalThis.__p2Calls.at(-1).page, 1);
   });
 });
 
-for (const screenModule of ['sales-orders', 'sales-order-pm', 'sales-order-sa']) test(`${screenModule}: lookup chips send native statusId once, page 1, then retain it on pagination`, async () => {
+for (const screenModule of ['sales-orders', 'sales-order-pm', 'sales-order-sa']) test(`${screenModule}: sheet statuses send native statusId once, page 1, then retain it on pagination`, async () => {
   await mounted(screenModule, async tree => {
     assert.deepEqual(globalThis.__p2Lookups, [{ module: screenModule, branchId: 'P2-SYNTHETIC', lookupId: 'header.StatusID', page: 1, pageSize: 100 }]);
+    assert.equal(button(tree, 'Chờ tôi xử lý').props['aria-pressed'], true, 'role queue is the default');
+    await click(tree, 'Tất cả');
     await click(tree, 'Trang sau');
     for (const id of [-1, 0, 12]) {
       const count = globalThis.__p2Calls.length;
-      await click(tree, `Trạng thái ${id}`);
+      await click(tree, 'Trạng thái khác…');
+      assert.equal(tree.root.findByType(FilterSheet).props.open, true);
+      await act(async () => tree.root.findByType(FilterSheet).props.onApply({ status: String(id), pageSize: 20 })); await flush();
       assert.equal(globalThis.__p2Calls.length, count + 1, 'no duplicate read from chip page reset');
       assert.equal(globalThis.__p2Calls.at(-1).page, 1);
       assert.equal(globalThis.__p2Calls.at(-1).statusId, id);
@@ -133,12 +144,15 @@ for (const screenModule of ['sales-orders', 'sales-order-pm', 'sales-order-sa'])
     assert.equal(globalThis.__p2Calls.at(-1).page, 2); assert.equal(globalThis.__p2Calls.at(-1).statusId, 12);
     await click(tree, 'Tất cả');
     assert.equal(globalThis.__p2Calls.at(-1).page, 1); assert.equal(globalThis.__p2Calls.at(-1).statusId, undefined);
+    const count = globalThis.__p2Calls.length;
+    await click(tree, 'Chờ tôi xử lý');
+    assert.deepEqual(globalThis.__p2Calls.slice(count).map(call => call.statusId), [...ROLE_QUEUE_STATUSES[screenModule]]);
   }, { statuses: () => ({ items: [-1, 0, 12].map(id => ({ id: String(id), label: `Trạng thái ${id}` })), hasMore: false, requiredParameters: [] }) });
 });
 
 test('typing retains 400ms debounce; Enter and clear search immediately once with the current value', async context => {
   context.mock.timers.enable({ apis: ['setTimeout'] });
-  await mounted('internal-transfer-batches', async tree => {
+  await mounted('machine-repairs', async tree => {
     const input = () => hosts(tree, 'input')[0];
     await act(async () => input().props.onChange({ target: { value: 'QA' } }));
     await act(async () => context.mock.timers.tick(399)); await flush();

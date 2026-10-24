@@ -185,6 +185,8 @@ test('late pagination responses cannot overwrite a newer query or branch',async(
  let renderer;
  try{
   await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:'sales-orders',...props,isActive:true}));});await flush();
+  // The role queue opens first and is one page; "Tất cả" is the paged server list.
+  await act(async()=>renderer.root.findAll(node=>node.type==='button'&&node.children.includes('Tất cả'))[0].props.onClick());await flush();
   await act(async()=>{renderer.root.findByProps({'aria-label':'Trang sau'}).props.onClick();});
   assert.equal(renderer.root.findByProps({'aria-label':'Trang sau'}).props.disabled,true,'navigation is blocked while loading');
   await act(async()=>{renderer.update(React.createElement(TabErpScreen,{module:'sales-orders',currentBranch:'MN',isActive:true}));});await flush();
@@ -202,21 +204,29 @@ for(const screenModule of ['sales-orders','sales-order-pm','sales-order-sa'])tes
  try{
   await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:screenModule,...props,isActive:true}));});await flush();
   assert.equal(lookups.length,1);assert.equal(lookups[0].scope,screenModule);assert.equal(lookups[0].branchId,'MB');assert.equal(lookups[0].lookupId,'header.StatusID');
-  // P2-03: native lookup IDs/labels now render as pressed chips, without counts.
+  // UX-05: the chip row keeps the role queue, "Tất cả", the chosen status and
+  // "Trạng thái khác…"; every native lookup status is offered in the filter sheet.
   const chips=()=>renderer.root.findByProps({'aria-label':'Lọc trạng thái đơn hàng'}).findAllByType('button');
-  const chip=label=>chips().find(node=>node.children.includes(label));
-  assert.deepEqual(chips().map(node=>node.children.join('')),['Tất cả','Trạng thái minh họa A','Trạng thái minh họa B','Trạng thái minh họa C']);
+  const label=node=>node.children.filter(child=>typeof child==='string').join('');
+  const chip=name=>chips().find(node=>label(node)===name);
+  const sheet=()=>renderer.root.find(node=>typeof node.props?.onApply==='function'&&Array.isArray(node.props.statuses));
+  assert.deepEqual(chips().map(label),['Chờ tôi xử lý','Tất cả','Trạng thái khác…']);
+  assert.equal(chip('Chờ tôi xử lý').props['aria-pressed'],true);
+  assert.ok(calls.length>0&&calls.every(call=>call.page===1&&call.statusId!==undefined),'the role queue reads by status');
+  assert.deepEqual(sheet().props.statuses.map(status=>status.label),['Chờ tôi xử lý','Tất cả','Trạng thái minh họa A','Trạng thái minh họa B','Trạng thái minh họa C']);
   assert.doesNotMatch(collect(renderer).text,/Đang mở \/ Chưa khóa|Đã khóa \/ Hoàn tất|Phân hệ ERP/);
   assert.match(collect(renderer).text,/Tên trạng thái từ API/);
-  for(const [label,id] of [['Trạng thái minh họa A',-1],['Trạng thái minh họa B',0],['Trạng thái minh họa C',12]]){
-   await act(async()=>chip(label).props.onClick());await flush();
+  for(const [name,id] of [['Trạng thái minh họa A',-1],['Trạng thái minh họa B',0],['Trạng thái minh họa C',12]]){
+   await act(async()=>sheet().props.onApply({status:String(id),pageSize:20}));await flush();
    assert.equal(calls.at(-1).scope,screenModule);assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).statusId,id);
-   assert.equal(chip(label).props['aria-pressed'],true);
+   assert.equal(chip(name).props['aria-pressed'],true);
   }
   await act(async()=>renderer.root.findByProps({'aria-label':'Trang sau'}).props.onClick());await flush();
   assert.equal(calls.at(-1).page,2);assert.equal(calls.at(-1).statusId,12);
   await act(async()=>chip('Tất cả').props.onClick());await flush();
   assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).statusId,undefined);
+  await act(async()=>chip('Trạng thái khác…').props.onClick());await flush();
+  assert.equal(sheet().props.open,true);
  }finally{delete globalThis.__erpListHandler;delete globalThis.__erpStatusHandler;if(renderer)await act(async()=>renderer.unmount());}
 });
 
@@ -231,13 +241,15 @@ test('status lookup paging retries failures and ignores responses for a previous
   await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:'sales-order-pm',...props,isActive:true}));});await flush();
   await act(async()=>renderer.update(React.createElement(TabErpScreen,{module:'sales-order-pm',currentBranch:'MN',isActive:true})));await flush();
   await act(async()=>resolveOld({items:[{id:'99',label:'STALE-STATUS'}],page:1,hasMore:false,requiredParameters:[]}));await flush();
-  assert.doesNotMatch(collect(renderer).text,/STALE-STATUS/);
+  // Statuses are offered in the filter sheet, not the chip row.
+  const sheetText=()=>renderer.root.find(node=>typeof node.props?.onApply==='function'&&Array.isArray(node.props.statuses)).props.statuses.map(status=>status.label).join('|');
+  assert.doesNotMatch(sheetText(),/STALE-STATUS/);
   const button=label=>renderer.root.findAll(node=>node.type==='button'&&node.children.includes(label))[0];
   // Lookup pagination is an explicit 44px action instead of a sentinel option.
   await act(async()=>button('Thêm trạng thái').props.onClick());await flush();
-  assert.match(collect(renderer).text,/Chưa tải được danh sách trạng thái/);assert.match(collect(renderer).text,/Trạng thái mới 1/);
+  assert.match(collect(renderer).text,/Chưa tải được danh sách trạng thái/);assert.match(sheetText(),/Trạng thái mới 1/);
   fail=false;await act(async()=>button('Thử lại').props.onClick());await flush();
-  assert.match(collect(renderer).text,/Trạng thái mới 2/);
+  assert.match(sheetText(),/Trạng thái mới 2/);
   assert.equal(button('Thêm trạng thái'),undefined);
  }finally{delete globalThis.__erpStatusHandler;if(renderer)await act(async()=>renderer.unmount());}
 });
