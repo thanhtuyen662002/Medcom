@@ -282,13 +282,17 @@ await build({ entryPoints: ['components/untitledui/medcom-app.tsx'], outfile: ou
     name: 'parent-presentation-fixtures',
     setup(builder) {
       builder.onResolve({ filter: /erp-client$/ }, () => ({ path: 'erp-client', namespace: 'parent-fixture' }));
+      // The toast host needs a real DOM; the parent tests only check it is mounted.
+      builder.onResolve({ filter: /^sonner$/ }, () => ({ path: 'sonner', namespace: 'parent-fixture' }));
       builder.onResolve({ filter: /^\.\// }, args => {
         if (!args.importer.replaceAll('\\', '/').endsWith('/medcom-app.tsx')) return null;
         const key = args.path.slice(2);
         return parentLeaves[key] ? { path: key, namespace: 'parent-fixture' } : null;
       });
       builder.onLoad({ filter: /.*/, namespace: 'parent-fixture' }, args => ({
-        contents: args.path === 'erp-client' ? client : 'export const ' + parentLeaves[args.path] + '=props=><parent-fixture name="' + args.path + '" {...props}/>;',
+        contents: args.path === 'erp-client' ? client
+          : args.path === 'sonner' ? 'export const Toaster=props=><parent-fixture name="toaster" {...props}/>; export const toast=Object.assign(()=>{},{success(){},warning(){},error(){}});'
+          : 'export const ' + parentLeaves[args.path] + '=props=><parent-fixture name="' + args.path + '" {...props}/>;',
         loader: 'tsx', resolveDir: process.cwd(),
       }));
     },
@@ -395,6 +399,7 @@ test('F-01: quick tabs show the unified ERP screen of an allowed module and keep
     globalThis.__p2Api = parentApi();
     await mounted(h(MedcomApp), async tree => {
       for (const legacy of ['tab-orders', 'tab-purchases']) assert.equal(leaf(tree, legacy), undefined, legacy + ' is not mounted beside its ERP screen');
+      assert.ok(leaf(tree, 'toaster'), 'the app mounts one toast host so action results are announced');
       assert.ok(leaf(tree, 'tab-inbound'), 'inbound-requests is not allowed here, so the legacy tab stays as fallback');
       const shown = (tab, module) => {
         assert.equal(leaf(tree, 'bottom-nav').props.activeTab, tab, 'bottom nav keeps the quick tab highlighted');

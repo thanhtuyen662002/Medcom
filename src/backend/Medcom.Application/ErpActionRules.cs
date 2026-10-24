@@ -13,9 +13,10 @@ public static class ErpActionRules
 {
     public static bool IsCudOperation(string operation)=>operation is "create" or "save" or "delete"
         or "scan-add" or "scan-delete" or "save-costs" or "save-assets";
-    public static IReadOnlyList<ErpActionState> ForDisplay(ErpActionContext state)=>Array.AsReadOnly(Evaluate(state).Select(action=>
-        action.Visible&&ErpScreenCatalog.Get(state.Module)!.Actions.Any(d=>d.Id==action.Id&&IsCudOperation(d.Operation))
-            ?action with{Enabled=true,Reason=null}:action).ToArray());
+    // Screens show exactly what a command would accept, as ERP does: a locked or
+    // non-editable document disables save/delete/scan with its reason. (The
+    // UI-testing override from #154 that enabled every CUD control is removed.)
+    public static IReadOnlyList<ErpActionState> ForDisplay(ErpActionContext state)=>Evaluate(state);
     public static ErpScreenDescription ForDisplay(ErpScreenDescription screen)=>screen with
     {Fields=screen.Fields.ToDictionary(s=>s.Key,s=>ErpVisibleFields.Visible(screen.Id,s.Key,s.Value),StringComparer.Ordinal)};
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useId } from "react";
 import { Plus, AlertCircle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { erpClient, type ErpScreenModule, type ErpScreenDescription, type ErpDocumentRow, type ErpActionState, type ErpChoice, type ErpCommandResult } from "@/lib/erp/erp-client";
 import { FormSheet } from "@/components/app/form-sheet";
 import { FormField, FormSection } from "@/components/app/form-field";
@@ -205,6 +206,12 @@ export function TabErpScreen({
     type: "success" | "warning" | "error";
     message: string;
   } | null>(null);
+  // Create results also pop up: the inline line sits inside a long form.
+  useEffect(() => {
+    if (!createFeedback) return;
+    const show = createFeedback.type === "success" ? toast.success : createFeedback.type === "warning" ? toast.warning : toast.error;
+    show(createFeedback.message, { id: "erp-create-feedback" });
+  }, [createFeedback]);
 
   // General Action Prompt Modal (Notes / Confirmation)
   // Create Modal State (for non-QR modules)

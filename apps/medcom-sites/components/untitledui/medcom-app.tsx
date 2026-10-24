@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useLayoutEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
+import { Toaster } from "sonner";
 import { DesktopHeader } from "./desktop-header";
 import { DesktopSidebar } from "./desktop-sidebar";
 import { UntitledMobileHeader, type BranchOption } from "./mobile-header";
@@ -240,8 +241,14 @@ export function MedcomApp() {
       const savedCredsStr = localStorage.getItem("medcom.auth.credentials");
 
       try {
-        // Test existing server session
-        await erpClient.getSession();
+        // Test existing server session; refresh the cached name/role from it so a
+        // role saved by an older build (or a changed ERP group) is not kept.
+        const session = await erpClient.getSession();
+        if (cachedUser && isMounted) {
+          const refreshed = { ...cachedUser, displayName: session.displayName || cachedUser.displayName, role: session.roleName?.trim() || "" };
+          setCurrentUser(refreshed);
+          try { localStorage.setItem("medcom.auth.user", JSON.stringify(refreshed)); } catch {}
+        }
       } catch (err: unknown) {
         const status = typeof err === "object" && err !== null && "status" in err ? (err as { status: number }).status : 0;
         const code = typeof err === "object" && err !== null && "code" in err ? (err as { code: string }).code : "";
@@ -699,6 +706,10 @@ export function MedcomApp() {
             ))}
           </main>
         </div>
+
+        {/* Action results pop up where the user is; above the phone bottom bar and detail action bar. */}
+        <Toaster dir="ltr" theme={isDarkMode ? "dark" : "light"} position="bottom-center" richColors closeButton duration={4000}
+          offset={24} mobileOffset={{ bottom: "88px" }} />
 
         {/* Mobile Sticky Bottom Navigation (Fixed at bottom on screens < 768px) */}
         <div className="md:hidden">

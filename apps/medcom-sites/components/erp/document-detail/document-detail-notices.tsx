@@ -1,11 +1,20 @@
 "use client";
 
+import { useEffect } from "react";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import type { DocumentDetailHandlers, DocumentDetailModel } from "@/lib/erp/document-detail/model";
 import { DetailActionButton } from "./presentation";
 
 export function DocumentDetailNotices({ model, handlers }: { model: DocumentDetailModel; handlers: DocumentDetailHandlers }) {
   const { feedback, pending, busy } = model;
+  // The inline notice sits at the top of a long sheet; a toast reaches the user
+  // wherever they pressed the button. One toast per feedback object.
+  useEffect(() => {
+    if (!feedback) return;
+    const show = feedback.type === "success" ? toast.success : feedback.type === "warning" ? toast.warning : toast.error;
+    show(feedback.message, { id: "document-detail-feedback" });
+  }, [feedback]);
   return <>
     {feedback && <div role={feedback.type === "error" ? "alert" : "status"} className={`flex min-w-0 items-start gap-2 rounded-xl border p-3 text-sm ${
       feedback.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300"

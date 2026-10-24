@@ -31,7 +31,8 @@ public sealed class WarehouseVisibilityTests
         Assert.Equal("/api/erp/"+module+"/qr/add",permission.Actions.Single(a=>a.Id=="scan-add").Route);
         Assert.Equal("/api/erp/"+module+"/qr/delete",permission.Actions.Single(a=>a.Id=="scan-delete").Route);
         var locked=new ErpActionContext(module,"actor","doc",0,true,"actor",null,1,false,false,rights,true);
-        Assert.All(ErpActionRules.ForDisplay(locked).Where(a=>a.Id.StartsWith("scan-",StringComparison.Ordinal)),a=>Assert.True(a.Enabled));
+        Assert.All(ErpActionRules.ForDisplay(locked).Where(a=>a.Id.StartsWith("scan-",StringComparison.Ordinal)),a=>Assert.False(a.Enabled));
+        Assert.All(ErpActionRules.ForDisplay(locked with{IsLocked=false}).Where(a=>a.Id.StartsWith("scan-",StringComparison.Ordinal)),a=>Assert.True(a.Enabled));
         Assert.All(ErpActionRules.Evaluate(locked).Where(a=>a.Id.StartsWith("scan-",StringComparison.Ordinal)),a=>Assert.False(a.Enabled));
         Assert.Equal(new ErpCrudPermission(true,false,false,false),ErpActionRules.Permissions(screen,new(true,true,false,true)).Crud);
     }

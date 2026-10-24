@@ -32,6 +32,17 @@ public sealed class LegacyAuthorityTests
         Assert.Equal("Canonical", result.Identity!.PrincipalId);
         Assert.Equal(["platform.status"], result.Identity.Capabilities);
         Assert.DoesNotContain("synthetic-hash", result.Identity.CredentialStamp!);
+        Assert.Null(result.Identity.RoleName);
+    }
+    [Fact]
+    public async Task ErpGroupNameBecomesTheDisplayedRoleWithoutGrantingAnything()
+    {
+        var users = new Users(); var passwords = new Passwords();
+        users.User = users.User! with { GroupName = "  Kế Toán Kho " };
+        var authority = new LegacyIdentityAuthority(users, passwords, new("tenant", "company", "Company"));
+        var result = await authority.AuthenticateAsync("alias", "input", default);
+        Assert.Equal("Kế Toán Kho", result.Identity!.RoleName);
+        Assert.Equal(["platform.status"], result.Identity.Capabilities);
     }
     [Theory]
     [InlineData(true, false, false)]

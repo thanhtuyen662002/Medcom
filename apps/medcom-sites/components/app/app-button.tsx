@@ -19,7 +19,7 @@ const sizes = { md: "min-h-11 min-w-11 px-4", lg: "min-h-12 min-w-12 px-5", icon
 
 export function AppButton({ variant = "primary", size = "md", busy = false, disabled, type = "button", className, children, ...props }: AppButtonProps) {
   return <button {...props} type={type} disabled={disabled || busy} aria-busy={busy || undefined}
-    className={cn("inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:focus-visible:outline-brand-300 disabled:cursor-not-allowed disabled:opacity-50", variants[variant], sizes[size], className)}>
+    className={cn("inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-[color,background-color,border-color,transform] duration-150 enabled:active:scale-[0.97] motion-reduce:transition-none motion-reduce:enabled:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:focus-visible:outline-brand-300 disabled:cursor-not-allowed disabled:opacity-50", variants[variant], sizes[size], className)}>
     {children}
   </button>;
 }

@@ -42,7 +42,7 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
     {
         await using var connection=CreateConnection();
         await connection.OpenAsync(cancellationToken);
-        var sql="SELECT TOP (0) U.UserName,U.HoTen,U.[Password],U.[Disable],U.UserGroupID,G.IsDisable FROM dbo.SY_User U LEFT JOIN dbo.SY_UserGroup G ON G.UserGroupID=U.UserGroupID;";
+        var sql="SELECT TOP (0) U.UserName,U.HoTen,U.[Password],U.[Disable],U.UserGroupID,G.IsDisable,G.UserGroupName FROM dbo.SY_User U LEFT JOIN dbo.SY_UserGroup G ON G.UserGroupID=U.UserGroupID;";
         if(enablePilots) sql+="""
             SELECT TOP (0) M.MenuID,M.FormName,M.Para,M.isDisable,P.IsRun,P.IsAdd,P.IsUpdate,P.IsDelete,P.isManager,P.isAdmin
             FROM dbo.SY_Menu M LEFT JOIN dbo.SY_UserGroupPermisstion P ON P.MenuID=M.MenuID;
@@ -65,7 +65,7 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
         await using var connection = CreateConnection();
         await connection.OpenAsync(cancellationToken);
         await using var command = new SqlCommand("""
-            SELECT TOP (2) U.UserName, U.HoTen, U.[Password], U.[Disable], U.UserGroupID, G.IsDisable
+            SELECT TOP (2) U.UserName, U.HoTen, U.[Password], U.[Disable], U.UserGroupID, G.IsDisable, G.UserGroupName
             FROM dbo.SY_User AS U
             LEFT JOIN dbo.SY_UserGroup AS G ON G.UserGroupID = U.UserGroupID
             WHERE U.UserName = @username;
@@ -75,7 +75,8 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
         if (!await reader.ReadAsync(cancellationToken)) return null;
         var user = new LegacyUser(reader.GetString(0), reader.GetString(1),
             reader.IsDBNull(2) ? "" : reader.GetString(2), reader.IsDBNull(3) || reader.GetBoolean(3),
-            reader.IsDBNull(4) ? null : reader.GetString(4), !reader.IsDBNull(5) && !reader.GetBoolean(5));
+            reader.IsDBNull(4) ? null : reader.GetString(4), !reader.IsDBNull(5) && !reader.GetBoolean(5),
+            GroupName: reader.IsDBNull(6) ? null : reader.GetString(6));
         // Ambiguous user/group matches cannot select an arbitrary identity.
         if (await reader.ReadAsync(cancellationToken)) return null;
         await reader.CloseAsync();

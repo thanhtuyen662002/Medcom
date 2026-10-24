@@ -227,7 +227,7 @@ export class ErpClientService {
         user: {
           displayName: session.displayName || username.trim(),
           username: username.trim(),
-          role: "Dược sĩ / Quản lý",
+          role: session.roleName?.trim() || "",
           branchId: effectiveBranch,
           companyName: session.companyName || "Công ty Cổ phần Dược phẩm Medcom",
         },
