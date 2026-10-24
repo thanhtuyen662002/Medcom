@@ -8,6 +8,8 @@ public interface IErpScreenService
     Task<ErpReadResult<ErpPermissions>> PermissionsAsync(string branch,CancellationToken token)
         =>Task.FromResult(new ErpReadResult<ErpPermissions>(ErpReadOutcome.Unavailable));
     Task<ErpReadResult<ErpDocumentPage>> ListAsync(string module,ErpPageQuery query,CancellationToken token);
+    Task<ErpReadResult<ErpStatusCounts>> StatusCountsAsync(string module,string branch,CancellationToken token)
+        =>Task.FromResult(new ErpReadResult<ErpStatusCounts>(ErpReadOutcome.Unavailable,Code:"erp_runtime_unavailable"));
     Task<ErpReadResult<ErpDocumentDetail>> DetailAsync(string module,string branch,string document,int page,int size,CancellationToken token);
     Task<ErpReadResult<IReadOnlyList<ErpActionState>>> ActionsAsync(string module,string branch,string? document,CancellationToken token);
     Task<ErpReadResult<ErpContractInfo>> ContractAsync(string module,string branch,string document,CancellationToken token);

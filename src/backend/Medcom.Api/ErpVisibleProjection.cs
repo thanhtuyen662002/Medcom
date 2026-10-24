@@ -29,6 +29,7 @@ internal static class ErpVisibleProjection
                     &&!ErpVisibleFields.IsHidden(module,section,f.Name)))yield return name;
                 yield return FeDisplayProjection.StateField(field.Name);
             }
+            if(FeDisplayProjection.IsAccount(field.Name))yield return FeDisplayProjection.AccountNameField(field.Name);
             if(FeDisplayProjection.IsDisplay(field.Name))yield return field.Name+"Display";
             if(FeDisplayProjection.IsStatusId(field.Name))
             {yield return field.Name[..^2]+"ForeColor";yield return field.Name[..^2]+"BackColor";}

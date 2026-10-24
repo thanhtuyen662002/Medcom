@@ -26,6 +26,11 @@ export function roleQueueStatuses(module: ErpScreenModule): readonly number[] | 
   return ROLE_QUEUE_STATUSES[module] ?? null;
 }
 
+/** Documents waiting on a role: the sum of its statuses in a status-count response. */
+export function roleQueueCount(items: readonly { statusId: number; count: number }[], statuses: readonly number[]): number {
+  return items.filter(item => statuses.includes(item.statusId)).reduce((sum, item) => sum + item.count, 0);
+}
+
 interface QueueRow { documentId?: string; header?: Record<string, unknown> }
 
 function documentDate(row: QueueRow): string {

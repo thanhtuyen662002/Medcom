@@ -24,10 +24,11 @@ export interface SidebarDrawerProps {
   pendingInboundCount?: number;
   tabAccess?: NavigationAccess | null;
   onRetryTabs?: () => void;
+  queueBadges?: Readonly<Record<string, number>>;
 }
 
 export function SidebarDrawer({ open, onClose, activeTab, onSelectTab, userName = "", userRole = "", currentBranch = "", branchName,
-  isDarkMode = false, onToggleDarkMode, onLogout, tabAccess, onRetryTabs }: SidebarDrawerProps) {
+  isDarkMode = false, onToggleDarkMode, onLogout, tabAccess, onRetryTabs, queueBadges }: SidebarDrawerProps) {
   const opener = useRef<HTMLElement | null>(null);
   return <Sheet open={open} modal onOpenChange={next => { if (!next) onClose(); }}>
     <SheetContent side="left" showCloseButton={false} aria-modal="true"
@@ -41,7 +42,7 @@ export function SidebarDrawer({ open, onClose, activeTab, onSelectTab, userName 
         </div>
         <AppButton variant="ghost" size="icon" aria-label="Đóng menu" onClick={onClose}><X aria-hidden="true" className="size-5" /></AppButton>
       </header>
-      <NavigationList key={open ? "open" : "closed"} activeTab={activeTab} onSelect={tab => { onSelectTab(tab); onClose(); }} tabAccess={tabAccess} onRetryTabs={onRetryTabs} />
+      <NavigationList key={open ? "open" : "closed"} activeTab={activeTab} onSelect={tab => { onSelectTab(tab); onClose(); }} tabAccess={tabAccess} onRetryTabs={onRetryTabs} badges={queueBadges} />
       <footer className="shrink-0 space-y-1 border-t border-neutral-200 bg-neutral-50 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-neutral-800 dark:bg-neutral-950">
         <div className="flex items-center gap-3 px-3 pb-2">
           <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-sm font-semibold text-brand-700 dark:bg-brand-950 dark:text-brand-300">{userName.charAt(0).toUpperCase()}</span>

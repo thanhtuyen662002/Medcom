@@ -21,6 +21,7 @@ import { SidebarDrawer } from "./sidebar-drawer";
 import { TabErpScreen } from "./tab-erp-screen";
 import { type ErpScreenModule, erpScreenModules } from "@/lib/erp/proxy-policy";
 import { REAL_BRANCHES, erpClient, type LoginResult } from "@/lib/erp/erp-client";
+import { ROLE_QUEUE_STATUSES, roleQueueCount } from "@/lib/erp/role-queue";
 
 const ERP_MODULES: readonly ErpScreenModule[] = erpScreenModules;
 
@@ -156,6 +157,28 @@ export function MedcomApp() {
   }, [currentUser, currentBranch]);
   const canCreate = (module: string) => createAccess?.user === currentUser && createAccess?.branch === currentBranch && createAccess.modules.includes(module);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  // "Chờ tôi xử lý" counts beside role screens in the menu: one status-count read
+  // per allowed role screen, at most once a minute per branch.
+  const [queueBadges, setQueueBadges] = useState<Record<string, number>>({});
+  const queueBadgesRead = useRef<{ branch: string; at: number } | null>(null);
+  const refreshQueueBadges = useCallback(async () => {
+    const allowed = tabAccess.allowed;
+    if (!allowed) return;
+    const branch = currentBranch;
+    if (queueBadgesRead.current?.branch === branch && Date.now() - queueBadgesRead.current.at < 60000) return;
+    if (queueBadgesRead.current?.branch !== branch) setQueueBadges({});
+    queueBadgesRead.current = { branch, at: Date.now() };
+    const modules = (Object.keys(ROLE_QUEUE_STATUSES) as ErpScreenModule[]).filter(mod => allowed.includes(mod));
+    const results = await Promise.allSettled(modules.map(mod => erpClient.getErpStatusCounts(mod, branch)));
+    if (queueBadgesRead.current?.branch !== branch) return;
+    const next: Record<string, number> = {};
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled") next[modules[index]] = roleQueueCount(result.value.items, ROLE_QUEUE_STATUSES[modules[index]]!);
+    });
+    setQueueBadges(next);
+  }, [tabAccess.allowed, currentBranch]);
+  useEffect(() => { if (currentUser && tabAccess.allowed) void refreshQueueBadges(); }, [currentUser, tabAccess.allowed, refreshQueueBadges]);
+  useEffect(() => { if (isSidebarOpen) void refreshQueueBadges(); }, [isSidebarOpen, refreshQueueBadges]);
   const [targetDocPerModule, setTargetDocPerModule] = useState<{ module: ErpScreenModule; documentId: string } | null>(null);
 
   // Check saved session, theme, and layout on initial mount with automatic reauthentication
@@ -545,6 +568,7 @@ export function MedcomApp() {
               onLogout={handleLogout}
               onToggleLayoutMode={handleToggleLayoutMode}
               tabAccess={tabAccess}
+              queueBadges={queueBadges}
               onRetryTabs={() => void retryTabAccess()}
             />
           </div>
@@ -692,6 +716,7 @@ export function MedcomApp() {
           pendingInboundCount={0}
           tabAccess={tabAccess}
           onRetryTabs={() => void retryTabAccess()}
+          queueBadges={queueBadges}
         />
 
         {createModule === "purchase-orders" && canCreate("purchase-orders") && <PurchaseOrderCreateSheet

@@ -85,6 +85,22 @@ public sealed class FeDisplayTests
         Retains(before,row);
     }
     [Fact]
+    public void Login_accounts_get_SY_User_names_and_keep_the_account()
+    {
+        var node=JsonNode.Parse("""{"rows":[{"documentId":"D1","userCreate":"account5@medcomtech.vn","salesUser":"ngoc"},{"documentId":"D2","userCreate":"ML_IMPORT","userCreateName":"Có sẵn"},{"documentId":"D3","userUpdate":null}]}""")!;
+        Assert.Equal(new[]{new ReferenceKey("user","account5@medcomtech.vn"),new ReferenceKey("user","ngoc"),new ReferenceKey("user","ML_IMPORT")},
+            FeDisplayProjection.Collect(node,"sales-orders"));
+        var before=node.DeepClone();
+        FeDisplayProjection.Apply(node,"sales-orders",new Dictionary<ReferenceKey,ReferenceValue>
+            {[new("user","account5@medcomtech.vn")]=new("Nguyễn Văn A","available",new Dictionary<string,string?>())});
+        var rows=node["rows"]!;
+        Assert.Equal("Nguyễn Văn A",rows[0]!["userCreateName"]!.GetValue<string>());
+        Assert.True(rows[0]!.AsObject().ContainsKey("salesUserName"));Assert.Null(rows[0]!["salesUserName"]);
+        Assert.Equal("Có sẵn",rows[1]!["userCreateName"]!.GetValue<string>());
+        Assert.Null(rows[2]!["userUpdateName"]);
+        Retains(before,node);
+    }
+    [Fact]
     public void Status_names_use_document_kind_including_notification_rows_and_contracts()
     {
         var node=JsonNode.Parse("""{"rows":[{"erpFormName":"AR_OrderByContractFrm","statusId":12},{"erpFormName":"AR_Invoice_QRCodeFrm","statusId":12},{"erpFormName":"UNKNOWN","statusId":12}]}""")!;

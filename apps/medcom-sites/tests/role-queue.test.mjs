@@ -20,7 +20,7 @@ await build({
   logLevel: 'warning',
 });
 const require = createRequire(import.meta.url);
-const { ROLE_QUEUE_STATUSES, roleQueueStatuses, mergeRoleQueuePages } = require(path.join(output, 'fixture.cjs'));
+const { ROLE_QUEUE_STATUSES, roleQueueStatuses, mergeRoleQueuePages, roleQueueCount } = require(path.join(output, 'fixture.cjs'));
 
 test('each role screen waits on the agreed ERP statuses', () => {
   assert.deepEqual(roleQueueStatuses('internal-transfer-tech'), [20, 21]);
@@ -53,4 +53,11 @@ test('per-status pages merge into one newest-first list without duplicates', () 
   assert.deepEqual(merged.rows.map(item => item.documentId), ['C', 'B', 'A']);
   assert.equal(merged.truncated, true);
   assert.deepEqual(mergeRoleQueuePages([]), { rows: [], truncated: false });
+});
+
+test('the menu badge sums only the role statuses from a status-count response', () => {
+  const items = [{ statusId: 0, count: 1 }, { statusId: 20, count: 2 }, { statusId: 21, count: 3 }, { statusId: 120, count: 9 }];
+  assert.equal(roleQueueCount(items, ROLE_QUEUE_STATUSES['internal-transfer-tech']), 5);
+  assert.equal(roleQueueCount(items, ROLE_QUEUE_STATUSES['internal-transfer-warehouse-in']), 0);
+  assert.equal(roleQueueCount([], [20]), 0);
 });

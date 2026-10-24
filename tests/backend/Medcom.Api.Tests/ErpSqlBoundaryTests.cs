@@ -16,6 +16,20 @@ public sealed class ErpSqlBoundaryTests
         Assert.Equal(requests.ListText,approvals.ListText);
     }
 
+    [Theory]
+    [InlineData("sales-orders")]
+    [InlineData("sales-order-pm")]
+    [InlineData("internal-transfer-pm")]
+    [InlineData("internal-transfer-tech")]
+    public void Status_counts_use_the_list_scope_and_group_only_by_native_status(string module)
+    {
+        var plan=ErpSqlPlan.Get(module)!;
+        // The same branch/actor predicate as the list, so counts never cover rows the list hides.
+        Assert.Contains("WHERE ("+plan.ScopePredicate+")",plan.StatusCountText);
+        Assert.Contains("WHERE ("+plan.ScopePredicate+")",plan.ListText);
+        Assert.Contains("GROUP BY H.StatusID",plan.StatusCountText);
+        Assert.DoesNotContain("@search",plan.StatusCountText);Assert.DoesNotContain("OFFSET",plan.StatusCountText);
+    }
     [Fact]
     public void Bare_native_lookup_procedure_remains_valid_after_the_rowcount_prefix()
     {

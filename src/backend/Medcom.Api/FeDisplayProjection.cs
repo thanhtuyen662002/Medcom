@@ -55,6 +55,12 @@ internal static partial class FeDisplayProjection
     private static string? Key(JsonNode? value)=>value is JsonValue v?v.GetValueKind() switch
     {JsonValueKind.String=>Text(v),JsonValueKind.Number=>v.ToJsonString(),_=>null}:null;
     internal static bool IsId(string field)=>field.EndsWith("Id",StringComparison.OrdinalIgnoreCase);
+    // ERP stores some people as their login account (SY_User.UserName), not as
+    // an *ID column; they get a "<field>Name" companion from SY_User.HoTen.
+    private static readonly HashSet<string> AccountNames=new(StringComparer.OrdinalIgnoreCase){"UserCreate","UserUpdate","SalesUser"};
+    internal const string AccountBinding="user";
+    internal static bool IsAccount(string field)=>AccountNames.Contains(field);
+    internal static string AccountNameField(string field)=>field+"Name";
     internal static string NameField(string field)=>field=="id"?"name":field=="ID"?"Name":field[..^2]+"Name";
     internal static string StateField(string field)=>field.Length==2?(field=="id"?"referenceState":"ReferenceState"):field[..^2]+"ReferenceState";
     internal static bool IsDisplay(string field)=>MoneyNames.Contains(field)||DateNames.Contains(field);
@@ -87,13 +93,20 @@ internal static partial class FeDisplayProjection
         return matches.Length==1?matches[0]:null;
     }
     internal static ReferenceKey[] Collect(JsonNode node,string? module,ISet<JsonNode>? protectedNodes=null,string? choiceBinding=null)=>Rows(node,module,protectedNodes:protectedNodes)
-        .SelectMany(x=>x.Row.Where(p=>IsId(p.Key)).Select(p=>(Binding:Binding(p.Key,x.Row,x.Module,choiceBinding),Key:Key(p.Value))))
+        .SelectMany(x=>x.Row.Where(p=>IsId(p.Key)||IsAccount(p.Key))
+            .Select(p=>(Binding:IsAccount(p.Key)?AccountBinding:Binding(p.Key,x.Row,x.Module,choiceBinding),Key:Key(p.Value))))
         .Where(x=>x.Binding is not null&&x.Key is {Length:>0 and <=250}).Select(x=>new ReferenceKey(x.Binding!,x.Key!)).Distinct().Take(1001).ToArray();
     internal static void Apply(JsonNode node,string? module,IReadOnlyDictionary<ReferenceKey,ReferenceValue> values,string fallback="unavailable",ISet<JsonNode>? protectedNodes=null,string? choiceBinding=null)
     {
         foreach(var (row,current,currency) in Rows(node,module,protectedNodes:protectedNodes).ToArray())
         foreach(var field in row.ToArray())
         {
+            if(IsAccount(field.Key))
+            {
+                ReferenceValue? person=null;
+                if(Key(field.Value) is {} account)values.TryGetValue(new(AccountBinding,account),out person);
+                var nameField=AccountNameField(field.Key);if(!row.ContainsKey(nameField)||row[nameField] is null)row[nameField]=person?.Name;
+            }
             if(IsId(field.Key))
             {
                 var binding=Binding(field.Key,row,current,choiceBinding);var key=Key(field.Value);

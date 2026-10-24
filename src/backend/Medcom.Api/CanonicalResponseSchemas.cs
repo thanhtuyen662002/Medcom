@@ -219,6 +219,7 @@ internal static class CanonicalResponseSchemas
         .Select(part => part switch { "sourceFields" => "document", "userAutoId" => "lineId", "purchaseRequestId" => "documentId", "isLock" => "isLocked", _ => part }));
     private static string[] Group(string field) => FeDisplayProjection.IsStatusId(field)
         ? [field,FeDisplayProjection.NameField(field),FeDisplayProjection.StateField(field),field[..^2]+"ForeColor",field[..^2]+"BackColor"] : FeDisplayProjection.IsId(field)
-        ? [field, FeDisplayProjection.NameField(field), FeDisplayProjection.StateField(field)] : [field];
+        ? [field, FeDisplayProjection.NameField(field), FeDisplayProjection.StateField(field)]
+        : FeDisplayProjection.IsAccount(field) ? [field, FeDisplayProjection.AccountNameField(field)] : [field];
     private static JsonArray Array(IEnumerable<string> fields) => new(fields.Select(x => (JsonNode?)JsonValue.Create(x)).ToArray());
 }

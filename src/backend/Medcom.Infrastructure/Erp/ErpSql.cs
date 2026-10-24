@@ -75,6 +75,12 @@ internal sealed class ErpSqlPlan
         ORDER BY H.[{DateColumn}] DESC,H.[{HeaderKey}] COLLATE Latin1_General_100_BIN2 DESC
         OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;
         """;
+    // Same branch/native scope as ListText, grouped by status instead of paged.
+    internal string StatusCountText=>$"""
+        SELECT H.StatusID, COUNT_BIG(*) FROM dbo.[{HeaderTable}] H WITH(HOLDLOCK) {ReadJoin("header","H")}
+        WHERE ({ScopePredicate}) AND H.StatusID IS NOT NULL
+        GROUP BY H.StatusID ORDER BY H.StatusID;
+        """;
     internal string LinesText(string section,bool full=false)
     {
         var table=Tables.GetValueOrDefault(section);
