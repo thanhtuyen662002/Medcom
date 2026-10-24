@@ -1,7 +1,9 @@
+import type { ErpEnumId } from "./enums";
+
 /** Presentation formats supported by document fields and line columns. */
 export type FieldFormat =
   | "text" | "multiline" | "date" | "datetime" | "number" | "money"
-  | "boolean" | "status" | "url" | "reference";
+  | "boolean" | "status" | "url" | "reference" | "enum";
 
 /** Fixed extension points available to document detail layouts. */
 export type DetailSlotId = "lines-editor" | "attachments" | "qr-scan" | "contract-info";
@@ -16,6 +18,8 @@ export interface DetailFieldConfig {
   label: string;
   /** Value presentation; defaults to text. */
   format?: FieldFormat;
+  /** ERP fixed-list identity; required when format is enum. */
+  enumId?: ErpEnumId;
   /** Header key whose value is displayed instead of key. */
   displayKey?: string;
   /** Header key displayed as a smaller secondary line. */
@@ -74,6 +78,8 @@ export interface LineColumnConfig {
   label: string;
   /** Value presentation; defaults to text. */
   format?: FieldFormat;
+  /** ERP fixed-list identity; required when format is enum. */
+  enumId?: ErpEnumId;
   /** Horizontal alignment of the column value. */
   align?: "start" | "end";
   /** Visual emphasis assigned to the column. */

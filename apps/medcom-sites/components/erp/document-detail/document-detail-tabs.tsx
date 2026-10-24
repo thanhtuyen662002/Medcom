@@ -20,7 +20,7 @@ function cell(row: DetailRow, column: LineColumnConfig) {
   const display = column.displayKey ? row.fields[column.displayKey] : undefined;
   if (typeof display === "string" && display.trim()) return display;
   if (isEmptyDetailValue(raw) && column.fallbackCalculation) return formatDetailValue(calculateDetailMoney(row.fields, column.fallbackCalculation), "money");
-  return formatDetailValue(raw, column.format);
+  return formatDetailValue(raw, column.format, { enumId: column.enumId });
 }
 
 function MoreButton({ page, busy, onMore, rowNoun = "dòng" }: { page: DetailPage; busy: boolean; onMore(): void; rowNoun?: string }) {

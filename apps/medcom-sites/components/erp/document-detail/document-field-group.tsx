@@ -22,7 +22,7 @@ function hasValue(field: DetailFieldConfig, header: Record<string, unknown>): bo
 function FieldValue({ field, header }: { field: DetailFieldConfig; header: Record<string, unknown> }) {
   const value = fieldValue(field, header);
   const secondary = field.secondaryKey ? header[field.secondaryKey] : undefined;
-  const formattedValue = formatDetailValue(field.format === "status" ? header[field.key] : value, field.format, { statusName: field.displayKey ? header[field.displayKey] : undefined });
+  const formattedValue = formatDetailValue(field.format === "status" ? header[field.key] : value, field.format, { statusName: field.displayKey ? header[field.displayKey] : undefined, enumId: field.enumId });
   const formattedSecondary = formatDetailValue(secondary);
   const showSecondary = !isEmptyDetailValue(secondary) && formattedSecondary.trim().toLowerCase() !== formattedValue.trim().toLowerCase();
   return <>
