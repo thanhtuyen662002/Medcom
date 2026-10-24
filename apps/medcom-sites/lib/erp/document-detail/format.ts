@@ -1,5 +1,6 @@
 import { documentStatusLabel } from "../document-status";
 import { formatMoney, multiplyMoney, sumMoney } from "../money";
+import { erpEnumLabel, type ErpEnumId } from "./enums";
 import type { DetailRow } from "./model";
 import type { DocumentDetailConfig, FieldFormat } from "./types";
 
@@ -70,7 +71,7 @@ export function formatNumber(value: unknown): string {
 export function formatDetailValue(
   value: unknown,
   format?: FieldFormat,
-  options?: { statusName?: unknown },
+  options?: { statusName?: unknown; enumId?: ErpEnumId },
 ): string {
   if (isEmptyDetailValue(value) || typeof value === "object") return EMPTY_VALUE;
   switch (format) {
@@ -89,6 +90,8 @@ export function formatDetailValue(
       return formatDateTime(value);
     case "number":
       return formatNumber(value);
+    case "enum":
+      return (options?.enumId ? erpEnumLabel(options.enumId, value) : null) ?? String(value);
     default:
       return String(value);
   }
