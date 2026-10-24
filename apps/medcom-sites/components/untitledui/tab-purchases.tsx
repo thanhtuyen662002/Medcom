@@ -114,12 +114,7 @@ export function TabPurchases({
             const statusBackColor = (raw.statusBackColor as string) || null;
 
             const branchId = r.branchId || (raw.branchId as string) || currentBranch || "CN01";
-            const branchLabel =
-              branchId === "CN01"
-                ? "Chi nhánh 1 (Trung tâm)"
-                : branchId === "CN02"
-                ? "Chi nhánh 2 (Kho Dược)"
-                : `Chi nhánh ${branchId}`;
+            const branchLabel = `Chi nhánh ${branchId}`;
 
             const dateStr =
               (raw.purchaseDateDisplay as string) ||
@@ -136,19 +131,19 @@ export function TabPurchases({
               f?.notes ||
               (raw.notes as string) ||
               (raw.purpose as string) ||
-              `Yêu cầu bổ sung thuốc / vật tư y tế [${r.documentId}]`;
+              "—";
             const creatorStr =
               f?.personSuggest ||
               (raw.personSuggest as string) ||
               r.personSuggest ||
               (raw.creator as string) ||
               (raw.userCreate as string) ||
-              "Dược sĩ phụ trách";
+              "—";
             const deptStr =
               f?.department ||
               (raw.department as string) ||
               r.department ||
-              "Kho Dược GSP";
+              "—";
 
             return {
               id: r.documentId,
@@ -243,16 +238,16 @@ export function TabPurchases({
           const lines = rawLines.map((l: any, idx: number) => {
             const vals = l.values ?? l;
             const rawLine = l as Record<string, any>;
-            const itemName = rawLine.itemName || vals.itemName || rawLine.name || (vals.itemId ? `Dược phẩm [${vals.itemId}]` : "Vật tư y tế");
+            const itemName = rawLine.itemName || vals.itemName || rawLine.name || (vals.itemId || "—");
             const itemCode = rawLine.itemCode || vals.itemCode || vals.itemId || "";
-            const unit = rawLine.unit || vals.unit || "Hộp";
+            const unit = rawLine.unit || vals.unit || "";
             const unitPrice = vals.unitPrice != null ? formatVND(vals.unitPrice, headerFields?.currencyId || "VND") : rawLine.unitPriceDisplay || vals.unitPriceDisplay || "—";
             const amount = vals.totalPrice != null ? formatVND(vals.totalPrice, headerFields?.currencyId || "VND") : rawLine.totalPriceDisplay || vals.totalPriceDisplay || unitPrice;
             return {
               lineId: l.lineId || rawLine.userAutoId || `line-${idx}`,
               itemId: vals.itemId || itemCode,
               itemName,
-              specification: vals.model || rawLine.specification || "Tiêu chuẩn Dược điển",
+              specification: vals.model || rawLine.specification || "—",
               unit,
               quantity: vals.quantity,
               unitPrice,
@@ -368,7 +363,7 @@ export function TabPurchases({
                   Mục đích đề xuất / Đối tượng
                 </span>
                 <p className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white leading-relaxed break-words">
-                  {activeItem.purpose || activeItem.objectId || "Mua sắm Dược phẩm theo kế hoạch"}
+                  {activeItem.purpose || activeItem.objectId || "—"}
                 </p>
               </div>
 

@@ -184,11 +184,11 @@ test('loading and empty pages use shared states with permission-controlled creat
   await mounted('machine-movements', async tree => {
     assert.equal(hosts(tree, 'table').length, 0);
     assert.ok(tree.root.findAllByProps({ 'aria-busy': 'true' }).length > 0, 'shared loading skeleton is announced');
-    assert.equal(button(tree, 'Trang sau').props.disabled, true);
+    assert.equal(button(tree, 'Trang sau'), undefined, 'a single default-size page shows no page controls');
     await act(async () => complete({ rows: [], page: 1, pageSize: 20, hasMore: false })); await flush();
     assert.ok(hosts(tree, 'p').some(node => text(node).includes('Chưa có chứng từ phù hợp')));
     assert.equal(button(tree, 'Tạo mới'), undefined, 'empty state cannot create without permission');
-    assert.equal(button(tree, 'Trang sau').props.disabled, true);
+    assert.equal(button(tree, 'Trang sau'), undefined, 'a single default-size page shows no page controls');
   }, { branch: 'P2-EMPTY', actions: () => [{ id: 'create', visible: false, enabled: false }], list: () => new Promise(resolve => { complete = resolve; }) });
 });
 
