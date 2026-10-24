@@ -1000,3 +1000,11 @@ body:has(.workspace-auth-layout > section[tabindex="-1"]) :is([data-slot="dialog
  .record-section{padding:16px;gap:12px}.record-field-grid{grid-template-columns:minmax(0,1fr)}
  .record-dialog-secondary-actions>.record-detail-toolbar{flex:1 1 auto}.record-dialog-secondary-actions .request-button{flex:1 1 160px}
 }
+
+/* Loading placeholders: a soft light sweep instead of loading text. */
+.medcom-shimmer{background:linear-gradient(90deg,#eceef1 0%,#f7f8fa 45%,#eceef1 90%);background-size:220% 100%;animation:medcom-shimmer 1.3s ease-in-out infinite}
+.dark .medcom-shimmer{background-image:linear-gradient(90deg,#24262b 0%,#33363c 45%,#24262b 90%)}
+@keyframes medcom-shimmer{from{background-position:120% 0}to{background-position:-100% 0}}
+.medcom-progress{animation:medcom-progress 1.2s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes medcom-progress{from{transform:translateX(-110%)}to{transform:translateX(260%)}}
+@media (prefers-reduced-motion:reduce){.medcom-shimmer,.medcom-progress{animation:none}}

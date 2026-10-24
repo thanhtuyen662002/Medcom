@@ -13,11 +13,11 @@ export function ListState(props: ListStateProps) {
   if (props.state === "loading") return <div role="status" aria-busy="true" aria-label={props.label ?? "Đang tải danh sách…"}>
     <span className="sr-only">{props.label ?? "Đang tải danh sách…"}</span>
     <div aria-hidden="true" className="space-y-3 lg:hidden">{Array.from({ length: 3 }, (_, index) => <div key={index} className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-      {["w-1/3", "w-2/3", "w-1/2"].map(width => <div key={width} className={`h-5 rounded bg-neutral-100 motion-safe:animate-pulse dark:bg-neutral-800 ${width}`} />)}
+      {["w-1/3", "w-2/3", "w-1/2"].map(width => <div key={width} className={`h-5 rounded medcom-shimmer ${width}`} />)}
     </div>)}</div>
     <div aria-hidden="true" className="hidden overflow-hidden rounded-2xl border border-neutral-200 bg-white lg:block dark:border-neutral-800 dark:bg-neutral-900">
       {Array.from({ length: 6 }, (_, row) => <div key={row} className="flex gap-4 border-b border-neutral-100 p-4 last:border-0 dark:border-neutral-800">
-        {Array.from({ length: props.columnCount ?? 4 }, (_, column) => <div key={column} className="h-5 flex-1 rounded bg-neutral-100 motion-safe:animate-pulse dark:bg-neutral-800" />)}
+        {Array.from({ length: props.columnCount ?? 4 }, (_, column) => <div key={column} className="h-5 flex-1 rounded medcom-shimmer" />)}
       </div>)}
     </div>
   </div>;

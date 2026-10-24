@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useLayoutEffect, useRef } from "react";
-import { Loader2 } from "lucide-react";
 import { Toaster } from "sonner";
 import { DesktopHeader } from "./desktop-header";
 import { DesktopSidebar } from "./desktop-sidebar";
@@ -17,6 +16,7 @@ import { LoginScreen } from "./login-screen";
 import { PurchaseOrderCreateSheet } from "./purchase-order-create-sheet";
 import { PurchaseRequestCreateSheet } from "./purchase-request-create-sheet";
 import { ScreenHeader } from "@/components/app/screen-header";
+import { AppSplash } from "@/components/app/loading-skeleton";
 import { navigationLabel } from "@/components/app/app-navigation";
 import { NotificationsSheet } from "./notifications-sheet";
 import { SidebarDrawer } from "./sidebar-drawer";
@@ -478,12 +478,7 @@ export function MedcomApp() {
   // If still checking initial authentication in localStorage, show clean loader
   if (!isAuthLoaded) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="size-10 text-brand-600 dark:text-brand-400 animate-spin" />
-          <p className="text-xs text-neutral-400 font-medium">Đang khởi tạo ERP Medcom...</p>
-        </div>
-      </div>
+      <AppSplash label="Đang khởi tạo ERP Medcom..." />
     );
   }
 
@@ -561,7 +556,7 @@ export function MedcomApp() {
           </div>
 
           {/* Reserve the fixed bottom nav, 56px FAB, breathing room and safe area. */}
-          <main className={`flex-1 min-w-0 w-full ${["orders", "purchases", "purchase-requests", "purchase-approvals", "purchase-orders", "sales-orders", "sales-order-pm", "sales-order-sa", "sales-qr", "inbound-requests"].includes(activeTab) ? "max-w-none" : "max-w-7xl"} mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-[calc(10rem_+_env(safe-area-inset-bottom))] md:pb-8 transition-all`}>
+          <main className={`flex-1 min-w-0 w-full ${["orders", "purchases", "purchase-requests", "purchase-approvals", "purchase-orders", "sales-orders", "sales-order-pm", "sales-order-sa", "sales-qr", "inbound-requests"].includes(activeTab) ? "max-w-none" : "max-w-7xl"} mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-[calc(10rem_+_env(safe-area-inset-bottom))] md:pb-8 transition-all`}>
             {/* Màn có bảng chứng từ dùng toàn bộ bề rộng; màn chỉ có biểu mẫu/thẻ giữ khung hẹp. */}
             {/* TAB 1: Home (Cached in DOM for instant response) */}
             <div className={activeTab === "home" ? "block" : "hidden"}>

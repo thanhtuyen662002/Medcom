@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useEffectEvent } from "react";
 import { Trash2, Send, QrCode, CheckCircle2, Camera, X, Pencil, Loader2 } from "lucide-react";
+import { ListSkeleton } from "@/components/app/loading-skeleton";
 import { erpClient, type ErpDocumentDetail, type ErpActionState, type ErpChoice, type ErpCommandResult, type ErpContractInfo } from "@/lib/erp/erp-client";
 import { UntitledBottomSheet } from "@/components/untitledui/bottom-sheet";
 import { UntitledButton } from "@/components/untitledui/button";
@@ -891,7 +892,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
                 Chọn người quản lý PM (*):
               </label>
               {loadingPm ? (
-                <p className="text-neutral-400 py-2">Đang tải danh sách PM...</p>
+                <ListSkeleton label="Đang tải danh sách PM..." />
               ) : (
                 <select
                   value={selectedPmId}
@@ -1004,7 +1005,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
                 Bước / Trạng thái muốn gửi về (*):
               </label>
               {loadingReturnStep ? (
-                <p className="text-neutral-400 py-2">Đang tải danh sách bước hợp lệ...</p>
+                <ListSkeleton label="Đang tải danh sách bước hợp lệ..." />
               ) : returnStepChoices.length === 0 ? (
                 <p className="text-amber-600 py-2">Không có trạng thái nào đủ điều kiện để quay lại.</p>
               ) : (
@@ -1065,7 +1066,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
                 TP SA chính (Primary SA - TPAdminHN) (*):
               </label>
               {loadingSendSa ? (
-                <p className="text-neutral-400 py-2">Đang tải danh sách SA...</p>
+                <ListSkeleton label="Đang tải danh sách SA..." />
               ) : (
                 <select
                   value={selectedPrimarySaId}

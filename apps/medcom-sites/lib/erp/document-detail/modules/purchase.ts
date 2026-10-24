@@ -11,7 +11,7 @@ export const purchaseRequestDetailConfig = {
       columns: 2,
       fields: [
         { key: "purchaseDate", label: "Ngày đề xuất", format: "date" },
-        { key: "branchId", label: "Chi nhánh", displayKey: "branchName", secondaryKey: "branchId" },
+        { key: "branchId", label: "Chi nhánh", displayKey: "branchName" },
         { key: "personSuggest", label: "Người đề nghị" },
         { key: "department", label: "Bộ phận" },
       ],
@@ -24,7 +24,7 @@ export const purchaseRequestDetailConfig = {
         { key: "purposeId", label: "Mục đích", displayKey: "purposeName" },
         { key: "purposeDescOrClient", label: "Mục đích / Khách hàng" },
         { key: "objectId", label: "Đối tượng liên quan", displayKey: "objectName" },
-        { key: "currencyId", label: "Loại tiền", displayKey: "currencyName", secondaryKey: "currencyId" },
+        { key: "currencyId", label: "Loại tiền", displayKey: "currencyName" },
         { key: "rateExchange", label: "Tỷ giá", format: "number" },
         { key: "price", label: "Giá bán", format: "money" },
       ],
@@ -94,7 +94,7 @@ export const purchaseOrderDetailConfig = {
       fields: [
         { key: "documentDate", label: "Ngày chứng từ", format: "date" },
         { key: "deliverDate", label: "Ngày giao hàng", format: "date" },
-        { key: "branchId", label: "Chi nhánh", displayKey: "branchName", secondaryKey: "branchId" },
+        { key: "branchId", label: "Chi nhánh", displayKey: "branchName" },
         { key: "contractId", label: "Hợp đồng", displayKey: "contractName", secondaryKey: "contractId" },
       ],
     },
@@ -104,7 +104,7 @@ export const purchaseOrderDetailConfig = {
       columns: 2,
       fields: [
         { key: "objectId", label: "Nhà cung cấp", displayKey: "objectName" },
-        { key: "currencyId", label: "Loại tiền", displayKey: "currencyName", secondaryKey: "currencyId" },
+        { key: "currencyId", label: "Loại tiền", displayKey: "currencyName" },
         { key: "rateExchange", label: "Tỷ giá", format: "number" },
         { key: "baseTotal", label: "Tổng tiền gốc", format: "money" },
       ],

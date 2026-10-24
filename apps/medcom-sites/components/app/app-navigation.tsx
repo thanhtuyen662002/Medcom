@@ -6,6 +6,7 @@ import type { NavTabId } from "@/components/untitledui/bottom-nav";
 import { SalesFeatureLinks } from "@/components/erp/sales-feature-links";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AppButton } from "./app-button";
+import { ListSkeleton } from "./loading-skeleton";
 
 export interface NavigationAccess { loading: boolean; error: boolean; allowed: readonly string[] | null }
 interface NavigationItem { id: NavTabId; label: string; icon: ComponentType<{ className?: string }> }
@@ -113,7 +114,7 @@ export function NavigationList({ activeTab, onSelect, tabAccess, onRetryTabs, ba
       </section>}
       {tabAccess?.allowed == null && <div role="status" className="rounded-xl bg-neutral-50 p-3 text-sm text-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-300">
         {tabAccess?.error ? <><p>Không tải được quyền phân hệ.</p><AppButton variant="secondary" className="mt-2 w-full" onClick={onRetryTabs} disabled={!onRetryTabs}>Thử lại</AppButton></>
-          : "Đang tải quyền màn hình…"}
+          : <ListSkeleton label="Đang tải quyền màn hình…" rows={4} />}
       </div>}
       {sections.map(section => <section key={section.title} aria-label={section.title} className="space-y-1">
         <h2 className="px-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{section.title}</h2>

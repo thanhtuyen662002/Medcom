@@ -13,7 +13,7 @@ export const machineMovementDetailConfig = {
       columns: 2,
       fields: [
         { key: "documentDate", label: "Ngày chứng từ", format: "date" },
-        { key: "moveTypeId", label: "Loại di chuyển", format: "reference", displayKey: "moveTypeName", secondaryKey: "moveTypeId" },
+        { key: "moveTypeId", label: "Loại di chuyển", format: "reference", displayKey: "moveTypeName" },
         { key: "nguoiGiao", label: "Người giao", format: "text" },
         { key: "nguoiNhan", label: "Người nhận", format: "text" },
       ],
@@ -123,7 +123,7 @@ export const machineRepairDetailConfig = {
       columns: 2,
       fields: [
         { key: "documentDate", label: "Ngày chứng từ", format: "date" },
-        { key: "serviceTypeId", label: "Loại dịch vụ", format: "reference", displayKey: "serviceTypeName", secondaryKey: "serviceTypeId" },
+        { key: "serviceTypeId", label: "Loại dịch vụ", format: "reference", displayKey: "serviceTypeName" },
         { key: "objectId", label: "Đối tượng dịch vụ", format: "reference", displayKey: "objectName", secondaryKey: "objectId" },
         { key: "serviceLocation", label: "Địa điểm dịch vụ", format: "text" },
         { key: "nguoiGiao", label: "Người giao", format: "text" },
