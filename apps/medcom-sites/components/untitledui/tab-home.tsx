@@ -6,6 +6,7 @@ import { AppButton, RecordCard, ListState } from "@/components/app";
 import { UntitledMetricCard } from "./metric-card";
 import { MetricCardSkeleton } from "./skeleton";
 import type { PurchaseItem } from "./tab-purchases";
+import { erpStatusDisplay } from "@/lib/erp/status-chips";
 import { formatDateTime } from "@/lib/erp/document-detail/format";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { NavTabId } from "./bottom-nav";
@@ -53,13 +54,14 @@ export function TabHome({
         const res = await erpClient.getPurchaseRequestsList(1, "", branch);
         if (!isCancelled && res && res.list && res.list.rows) {
           const pending = res.list.rows
-            .filter((r) => r.statusId === 1 || r.statusId === null)
+            // AP_PurchaseStatusTbl: 2 = "Chờ duyệt" (1 is "Nháp", not awaiting approval).
+            .filter((r) => r.statusId === 2)
             .map((r): PurchaseItem => ({
               id: r.documentId, code: r.documentId,
               purpose: r.fields?.purposeDescOrClient || r.fields?.notes || "Đề nghị mua sắm",
               department: r.department || "—", creator: r.personSuggest || "—", branch,
               date: formatDateTime(r.purchaseDate),
-              totalAmount: "Xem chi tiết", status: r.statusId === 1 ? "pending" : "draft", lines: [],
+              totalAmount: "—", statusId: r.statusId, statusName: r.statusName ?? null, lines: [],
               statusForeColor: typeof r.statusForeColor === "string" ? r.statusForeColor : null,
               statusBackColor: typeof r.statusBackColor === "string" ? r.statusBackColor : null,
             }));
@@ -241,7 +243,7 @@ export function TabHome({
             <ListState state="empty" empty={{ message: "Không có đề nghị chờ xử lý trên trang hiện tại." }} />
           ) : pendingItems.map(item => (
             <RecordCard key={item.id} code={item.code} title={item.purpose} meta={[item.date, item.department, item.creator]}
-              status={{ label: item.status === "pending" ? "Chờ duyệt" : "Dự thảo", tone: item.status === "pending" ? "warning" : "neutral", statusForeColor: item.statusForeColor, statusBackColor: item.statusBackColor }}
+              status={{ ...erpStatusDisplay(item), statusForeColor: item.statusForeColor, statusBackColor: item.statusBackColor }}
               onOpen={() => onSelectPurchaseItem?.(item)} />
           ))}
         </div>

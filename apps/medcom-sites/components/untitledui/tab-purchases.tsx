@@ -9,7 +9,8 @@ import type { PurchaseRequestHeaderFields, PurchaseRequestLineFields, PurchaseRe
 import { errorMessage } from "@/lib/erp/api";
 
 import { formatDateTime } from "@/lib/erp/document-detail/format";
-import {formatMoney} from "@/lib/erp/money";
+import {formatMoney, sumMoney} from "@/lib/erp/money";
+import { erpStatusChips, erpStatusDisplay, matchesErpStatus } from "@/lib/erp/status-chips";
 
 function formatVND(value?: string | null, currency = "VND"): string {
   const plainCurrency = value?.match(/^(-?\d+)\s*([A-Z]{3}|[₫$€])$/);
@@ -26,7 +27,9 @@ export interface PurchaseItem {
   department: string;
   branch: string;
   purpose: string;
-  status: "pending" | "approved" | "draft" | "rejected";
+  /** ERP status identity and status-table name (AP_PurchaseStatusTbl). */
+  statusId: number | null;
+  statusName?: string | null;
   /** Màu trạng thái BE cung cấp (#RRGGBB) hoặc null; thiếu màu thì dùng màu mặc định. */
   statusForeColor?: string | null;
   statusBackColor?: string | null;
@@ -107,10 +110,6 @@ export function TabPurchases({
           const mapped: PurchaseItem[] = res.list.rows.map((r) => {
             const raw = r as Record<string, unknown>;
             const f = r.fields;
-            let status: PurchaseItem["status"] = "draft";
-            if (r.statusId === 2) status = "approved";
-            else if (r.statusId === 1) status = "pending";
-            else if (r.statusId === 3 || r.statusId === -1) status = "rejected";
             const statusForeColor = (raw.statusForeColor as string) || null;
             const statusBackColor = (raw.statusBackColor as string) || null;
 
@@ -128,15 +127,9 @@ export function TabPurchases({
               (f?.purchaseDate ? f.purchaseDate : undefined) ||
               (r.purchaseDate ? r.purchaseDate : undefined) ||
               (raw.purchaseDate as string ? String(raw.purchaseDate) : "—");
-            const priceVal =
-              f?.price ||
-              (raw.price as string) ||
-              (raw.totalAmount as string) ||
-              (raw.baseTotal as string) ||
-              (raw.priceDisplay as string) ||
-              (raw.totalAmountDisplay as string);
-            const currencyVal = f?.currencyId || (raw.currencyId as string) || "VND";
-            const totalStr = priceVal ? formatVND(priceVal, currencyVal) : "—";
+            // Header Price is the ERP "Giá bán" field, not the request total; the
+            // total is the sum of line amounts and is only known once lines load.
+            const totalStr = "—";
             const purposeStr =
               f?.purposeDescOrClient ||
               (raw.purposeDescOrClient as string) ||
@@ -165,7 +158,8 @@ export function TabPurchases({
               department: deptStr,
               branch: (raw.branchName as string) || (f as any)?.branchName || branchLabel,
               purpose: purposeStr,
-              status,
+              statusId: r.statusId,
+              statusName: r.statusName ?? null,
               statusForeColor,
               statusBackColor,
               totalAmount: totalStr,
@@ -240,13 +234,12 @@ export function TabPurchases({
           const doc = detail.document;
           const src = detail.sourceFields;
           const headerFields = src?.header || item.headerFields;
-          const totalStr = headerFields?.price
-            ? formatVND(headerFields.price, headerFields.currencyId || "VND")
-            : doc.header.price
-            ? formatVND(doc.header.price, doc.header.currencyId || "VND")
-            : item.totalAmount;
-
           const rawLines = (src?.lines && src.lines.length > 0) ? src.lines : doc.lines;
+          const lineTotal = sumMoney(rawLines.map((l: any) => {
+            const value = (l.values ?? l).totalPrice;
+            return value == null ? null : String(value);
+          }));
+          const totalStr = lineTotal ? formatVND(lineTotal, headerFields?.currencyId || doc.header.currencyId || "VND") : "—";
           const lines = rawLines.map((l: any, idx: number) => {
             const vals = l.values ?? l;
             const rawLine = l as Record<string, any>;
@@ -303,22 +296,19 @@ export function TabPurchases({
       item.code.toLowerCase().includes(search.toLowerCase()) ||
       item.purpose.toLowerCase().includes(search.toLowerCase()) ||
       item.creator.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "" || item.status === filterStatus;
+    const matchStatus = matchesErpStatus(item, filterStatus);
     return matchSearch && matchStatus;
   });
 
-  const statusLabels = { pending: "Chờ duyệt", approved: "Đã duyệt", draft: "Dự thảo", rejected: "Từ chối" };
-  const statusTones = { pending: "warning", approved: "success", draft: "neutral", rejected: "danger" } as const;
-  const getStatusBadge = (status: PurchaseItem["status"], colors?: { statusForeColor?: string | null; statusBackColor?: string | null }) => <StatusBadge label={statusLabels[status]} tone={statusTones[status]} statusForeColor={colors?.statusForeColor} statusBackColor={colors?.statusBackColor} />;
-  const statuses = [{ value: "", label: "Tất cả" }, ...Object.entries(statusLabels).map(([value, label]) => ({ value, label }))];
+  const getStatusBadge = (item: PurchaseItem) => <StatusBadge {...erpStatusDisplay(item)} statusForeColor={item.statusForeColor} statusBackColor={item.statusBackColor} />;
+  const statuses = erpStatusChips(purchases);
 
   const tableColumns: RecordColumn<PurchaseItem>[] = [
     { id: "document", label: "Mã PR", className: "min-w-40 whitespace-nowrap", render: item => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{item.code}</span> },
     { id: "date", label: "Ngày đề nghị", className: "whitespace-nowrap tabular-nums", render: item => formatDateTime(item.date) },
     { id: "purpose", label: "Mục đích / Nội dung", className: "min-w-60 max-w-sm", render: item => <span className="line-clamp-2 break-words font-medium" title={item.purpose}>{item.purpose}</span> },
-    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: item => getStatusBadge(item.status, item) },
+    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: getStatusBadge },
     { id: "creator", label: "Người đề nghị", className: "min-w-40 max-w-52", render: item => <span className="line-clamp-2 break-words">{item.creator}</span> },
-    { id: "amount", label: "Tổng tiền", className: "whitespace-nowrap text-right font-semibold tabular-nums", render: item => item.totalAmount },
   ];
 
   return (
@@ -328,10 +318,10 @@ export function TabPurchases({
         onFilter={() => setFilterOpen(true)} filterOpen={filterOpen} filterId="purchases-filters"
         filterCount={Number(Boolean(filterStatus)) + Number(pageSize !== 20)}
         refreshing={loading || isRefreshing} onRefresh={() => void loadPurchases(true)} onCreate={onOpenCreateModal} />
-      <FilterChips description="Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại." items={statuses.map(status => ({ ...status, count: status.value ? purchases.filter(item => item.status === status.value).length : purchases.length }))}
+      <FilterChips description="Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại." items={statuses}
         value={filterStatus} onChange={setFilterStatus} onPageChange={() => { if (page !== 1) void loadPurchases(false, 1); }} />
       <RecordList label="Danh sách đề nghị mua hàng" rows={filtered} columns={tableColumns} rowId={item => item.id}
-        card={item => ({ code: item.code, title: item.purpose, meta: [formatDateTime(item.date), item.creator, item.totalAmount === "—" ? null : item.totalAmount], status: { label: statusLabels[item.status], tone: statusTones[item.status], statusForeColor: item.statusForeColor, statusBackColor: item.statusBackColor } })}
+        card={item => ({ code: item.code, title: item.purpose, meta: [formatDateTime(item.date), item.creator], status: { ...erpStatusDisplay(item), statusForeColor: item.statusForeColor, statusBackColor: item.statusBackColor } })}
         onOpen={handleOpenDetail} loading={loading} error={error} onRetry={() => void loadPurchases(false)}
         empty={{ message: "Chưa có chứng từ khớp với tìm kiếm hoặc bộ lọc.", onCreate: onOpenCreateModal }}
         pagination={{ page, pageSize, rowCount: purchases.length, visibleRowCount: filtered.length, hasMore, busy: loading || isRefreshing, maxPage: 1000,
@@ -365,7 +355,7 @@ export function TabPurchases({
                   </p>
                 </div>
                 <div className="text-right flex flex-col items-end gap-1">
-                  {getStatusBadge(activeItem.status, activeItem)}
+                  {getStatusBadge(activeItem)}
                   <span className="text-sm font-mono font-extrabold text-brand-700 dark:text-brand-300">
                     {activeItem.totalAmount}
                   </span>

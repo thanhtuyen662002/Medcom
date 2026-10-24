@@ -872,11 +872,11 @@ export function TabErpScreen({
       ...chip, count: chip.status === null ? rows.length : rows.filter(row => row.header?.statusId === chip.status).length,
     })) : [
       { value: "all", label: "Tất cả", count: rows.length },
-      { value: "open", label: "Đang mở / Chưa khóa", count: rows.filter(row => {
+      { value: "open", label: "Chưa khóa", count: rows.filter(row => {
         const locked = row.header?.isLocked ?? (row as Record<string, unknown>).isLocked;
         return locked === false || locked === 0 || locked === "0" || locked == null;
       }).length },
-      { value: "locked", label: "Đã khóa / Hoàn tất", count: rows.filter(row => {
+      { value: "locked", label: "Đã khóa", count: rows.filter(row => {
         const locked = row.header?.isLocked ?? (row as Record<string, unknown>).isLocked;
         return locked === true || locked === 1 || locked === "1";
       }).length },

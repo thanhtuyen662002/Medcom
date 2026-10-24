@@ -9,6 +9,7 @@ import type { DocumentDetail, InboundRequestHeader, InboundRequestLineFields } f
 import { errorMessage } from "@/lib/erp/api";
 
 import { formatDateTime } from "@/lib/erp/document-detail/format";
+import { erpStatusChips, erpStatusDisplay, matchesErpStatus } from "@/lib/erp/status-chips";
 import {formatMoney} from "@/lib/erp/money";
 
 function formatVND(value?: string | null, currency = "VND"): string {
@@ -32,7 +33,8 @@ export interface InboundReceipt {
   statusName?: string | null;
   statusForeColor?: string | null;
   statusBackColor?: string | null;
-  stage: "receiving" | "inspecting" | "stored" | "rejected";
+  /** ERP status identity (IV_InboundRequestStatusTbl); statusName is its label. */
+  statusId: number | null;
   batchNo: string;
   expiryDate: string;
   totalQuantity: number;
@@ -105,10 +107,6 @@ export function TabInbound({
           const mapped: InboundReceipt[] = pageData.rows.map((r) => {
             const raw = r as Record<string, unknown>;
             const h = r.inboundRequestHeader;
-            let stage: InboundReceipt["stage"] = "receiving";
-            if (r.statusId === 2) stage = "stored";
-            else if (r.statusId === 1) stage = "inspecting";
-            else if (r.statusId === 3 || r.statusId === -1) stage = "rejected";
 
             const orderNumber = h?.orderNumber || (raw.orderNumber as string);
             const poRef = orderNumber || `PO-${r.documentId}`;
@@ -153,7 +151,7 @@ export function TabInbound({
               statusName: r.statusName,
               statusForeColor: typeof r.statusForeColor === "string" ? r.statusForeColor : null,
               statusBackColor: typeof r.statusBackColor === "string" ? r.statusBackColor : null,
-              stage,
+              statusId: r.statusId ?? null,
               batchNo: declarationNumber ? `TK: ${declarationNumber}` : `LÔ-${r.documentId}`,
               expiryDate: "Theo chứng từ",
               totalQuantity: 0,
@@ -291,10 +289,8 @@ export function TabInbound({
     }
   };
 
-  const stageLabels = { receiving: "Chờ kiểm hàng", inspecting: "Đang kiểm hàng", stored: "Đã nhập kho", rejected: "Từ chối" };
-  const stageTones = { receiving: "neutral", inspecting: "warning", stored: "success", rejected: "danger" } as const;
-  const getStageBadge = (item: InboundReceipt) => <StatusBadge label={item.statusName || stageLabels[item.stage]} tone={stageTones[item.stage]} statusForeColor={item.statusForeColor} statusBackColor={item.statusBackColor} />;
-  const statuses = [{ value: "", label: "Tất cả" }, ...Object.entries(stageLabels).map(([value, label]) => ({ value, label }))];
+  const getStageBadge = (item: InboundReceipt) => <StatusBadge {...erpStatusDisplay(item)} statusForeColor={item.statusForeColor} statusBackColor={item.statusBackColor} />;
+  const statuses = erpStatusChips(inbounds);
   const tableColumns: RecordColumn<InboundReceipt>[] = [
     { id: "document", label: "Mã phiếu nhập", render: item => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{item.code}</span> },
     { id: "date", label: "Ngày chứng từ", className: "whitespace-nowrap", render: item => formatDateTime(item.receivedDate) },
@@ -305,7 +301,7 @@ export function TabInbound({
   ];
 
   const filtered = inbounds.filter((item) => {
-    if (stageFilter !== "" && item.stage !== stageFilter) return false;
+    if (!matchesErpStatus(item, stageFilter)) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       const codeMatch = item.id.toLowerCase().includes(q) || (item.orderNumber && item.orderNumber.toLowerCase().includes(q));
@@ -324,10 +320,10 @@ export function TabInbound({
         onFilter={() => setFilterOpen(true)} filterOpen={filterOpen} filterId="inbound-filters"
         filterCount={Number(Boolean(stageFilter)) + Number(pageSize !== 20)}
         refreshing={loading || isRefreshing} onRefresh={() => void loadInbounds(true)} onCreate={onOpenNewInbound} />
-      <FilterChips description="Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại." items={statuses.map(status => ({ ...status, count: status.value ? inbounds.filter(item => item.stage === status.value).length : inbounds.length }))}
+      <FilterChips description="Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại." items={statuses}
         value={stageFilter} onChange={setStageFilter} onPageChange={() => { if (page !== 1) void loadInbounds(false, 1); }} />
       <RecordList label="Danh sách nhập kho" rows={filtered} columns={tableColumns} rowId={item => item.id}
-        card={item => ({ code: item.code, title: item.supplier, meta: [formatDateTime(item.receivedDate), item.orderNumber ? "PO: " + item.orderNumber : null, item.invoiceNo ? "Hóa đơn: " + item.invoiceNo : null], status: { label: item.statusName || stageLabels[item.stage], tone: stageTones[item.stage], statusForeColor: item.statusForeColor, statusBackColor: item.statusBackColor } })}
+        card={item => ({ code: item.code, title: item.supplier, meta: [formatDateTime(item.receivedDate), item.orderNumber ? "PO: " + item.orderNumber : null, item.invoiceNo ? "Hóa đơn: " + item.invoiceNo : null], status: { ...erpStatusDisplay(item), statusForeColor: item.statusForeColor, statusBackColor: item.statusBackColor } })}
         onOpen={handleOpenDetail} loading={loading} error={error} onRetry={() => void loadInbounds(false)}
         empty={{ message: "Chưa có chứng từ khớp với tìm kiếm hoặc bộ lọc.", onCreate: onOpenNewInbound }}
         pagination={{ page, pageSize, rowCount: inbounds.length, visibleRowCount: filtered.length, hasMore, busy: loading || isRefreshing, maxPage: 1000,

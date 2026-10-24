@@ -202,12 +202,14 @@ for (const spec of specifications) {
 }
 
 test('home retains supplied metrics and opens a source-backed pending document without local approval', async () => {
-  globalThis.__p2Api = dataApi();
+  // AP_PurchaseStatusTbl: 2 = "Chờ duyệt"; a status-1 draft is not awaiting approval.
+  globalThis.__p2Api = dataApi(() => pageResult([row('QA-001', 2), row('QA-DRAFT', 1)]));
   const selected = [];
   await mounted(h(TabHome, { currentBranch: 'QA-A', ordersCount: 7, purchasesCount: 8, inboundCount: 9, onNavigateTab: noop, onSelectPurchaseItem: item => selected.push(item) }), async tree => {
     const html = markup(tree);
     assert.doesNotMatch(html, /Duyệt nhanh|Đã phê duyệt|Trực tuyến/);
     for (const value of ['7 đơn', '8 phiếu', '9 phiếu']) assert.ok(html.includes(value));
+    assert.equal(tree.root.findAll(node => node.type === 'button' && text(node).includes('QA-DRAFT')).length, 0);
     const card = tree.root.findAll(node => node.type === 'button' && text(node).includes('QA-001'))[0];
     await click(card);
     assert.equal(selected[0].id, 'QA-001');
