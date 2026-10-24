@@ -22,8 +22,6 @@ export function DocumentListPagination({ page, pageSize, rowCount, visibleRowCou
   onPageChange, onPageSizeChange }: DocumentListPaginationProps) {
   const sizeId = useId();
   const canNext = hasMore && page < maxPage;
-  // One page at the default size: page and size controls would only be noise.
-  const singlePage = page === 1 && !hasMore && pageSize === pageSizeOptions[0];
   const pages = [...new Set([1, Math.max(1, page - 1), page, ...(canNext ? [page + 1] : [])])].sort((a, b) => a - b);
   const buttonClass = "inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 text-sm font-semibold text-black transition-colors hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-800";
 
@@ -36,14 +34,14 @@ export function DocumentListPagination({ page, pageSize, rowCount, visibleRowCou
           {busy ? "Đang tải…" : `${rowCount} chứng từ`}
           {!busy && visibleRowCount !== rowCount && <span className="block text-sm">Hiển thị {visibleRowCount} sau lọc trên trang này</span>}
         </p>
-        {!singlePage && <label htmlFor={sizeId} className="flex items-center gap-2 text-sm text-black dark:text-white">
+        <label htmlFor={sizeId} className="flex items-center gap-2 text-sm text-black dark:text-white">
           <span>Dòng/trang</span>
           <select id={sizeId} aria-label="Số dòng mỗi trang" value={pageSize} disabled={busy} onChange={event => onPageSizeChange(Number(event.target.value))} className="min-h-11 rounded-lg border border-neutral-300 bg-white px-2 text-base font-medium text-black focus-visible:outline-2 focus-visible:outline-brand-500 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white">
             {pageSizeOptions.map(size => <option key={size} value={size}>{size}</option>)}
           </select>
-        </label>}
+        </label>
       </div>
-      {!singlePage && <div className="flex items-center justify-between gap-2 sm:justify-end">
+      <div className="flex items-center justify-between gap-2 sm:justify-end">
         <button type="button" aria-label="Trang trước" disabled={busy || page <= 1} onClick={() => onPageChange(page - 1)} className={buttonClass}><ChevronLeft aria-hidden="true" className="size-4" /><span>Trước</span></button>
         <div className="hidden items-center gap-1 sm:flex">
           {pages.map((number, index) => <span key={number} className="inline-flex items-center gap-1">
@@ -53,7 +51,7 @@ export function DocumentListPagination({ page, pageSize, rowCount, visibleRowCou
         </div>
         <span aria-hidden="true" className="text-sm font-semibold tabular-nums text-black sm:hidden dark:text-white">{page}</span>
         <button type="button" aria-label="Trang sau" disabled={busy || !canNext} onClick={() => onPageChange(page + 1)} className={buttonClass}><span>Sau</span><ChevronRight aria-hidden="true" className="size-4" /></button>
-      </div>}
+      </div>
     </nav>
   );
 }

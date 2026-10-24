@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useLayoutEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { DesktopHeader } from "./desktop-header";
 import { DesktopSidebar } from "./desktop-sidebar";
@@ -29,15 +29,6 @@ export function MedcomApp() {
   const [isAuthLoaded, setIsAuthLoaded] = useState(false);
 
   const [activeTab, setActiveTab] = useState<NavTabId>("home");
-  // Every screen stays mounted (hidden) and shares the window scroll position;
-  // without a reset a newly opened screen starts mid-page, under its header.
-  // (Screens reload their list on activation, so restoring an old offset is moot.)
-  const shownTabRef = useRef<string>("home");
-  useLayoutEffect(() => {
-    if (shownTabRef.current === activeTab) return;
-    shownTabRef.current = activeTab;
-    if (typeof window.scrollTo === "function") window.scrollTo(0, 0);
-  }, [activeTab]);
   const [currentBranch, setCurrentBranch] = useState("CN01");
   const [branches, setBranches] = useState<BranchOption[]>(() =>
     REAL_BRANCHES.map((b) => ({
@@ -56,8 +47,6 @@ export function MedcomApp() {
   const [ordersCount, setOrdersCount] = useState(0);
   const [purchasesCount, setPurchasesCount] = useState(0);
   const [inboundCount, setInboundCount] = useState(0);
-  // Nav badges count work awaiting action, not every document on the list.
-  const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const [isLoadingCounts, setIsLoadingCounts] = useState(true);
 
@@ -379,13 +368,10 @@ export function MedcomApp() {
       }
 
       if (prData.status === "fulfilled" && prData.value) {
-        const val = prData.value.list as unknown as { totalRows?: number; rows?: { statusId?: number | null }[] };
+        const val = prData.value.list as unknown as { totalRows?: number; rows?: unknown[] };
         setPurchasesCount(typeof val?.totalRows === "number" ? val.totalRows : val?.rows?.length ?? 0);
-        // AP_PurchaseStatusTbl: 2 = "Chờ duyệt" (same rule as the home approval list).
-        setPendingApprovalCount(val?.rows?.filter(row => row.statusId === 2).length ?? 0);
       } else {
         setPurchasesCount(0);
-        setPendingApprovalCount(0);
       }
 
       if (inData.status === "fulfilled" && inData.value) {
@@ -402,7 +388,6 @@ export function MedcomApp() {
       setOrdersCount(0);
       setPurchasesCount(0);
       setInboundCount(0);
-      setPendingApprovalCount(0);
     } finally {
       setIsLoadingCounts(false);
     }
@@ -642,8 +627,8 @@ export function MedcomApp() {
             onTabChange={setActiveTab}
             onOpenMenu={() => setIsSidebarOpen(true)}
             pendingOrdersCount={ordersCount}
-            pendingPurchasesCount={pendingApprovalCount}
-            pendingInboundCount={0}
+            pendingPurchasesCount={purchasesCount}
+            pendingInboundCount={inboundCount}
             menuOpen={isSidebarOpen}
           />
         </div>
@@ -665,8 +650,8 @@ export function MedcomApp() {
           onToggleDarkMode={handleToggleDarkMode}
           onLogout={handleLogout}
           pendingOrdersCount={ordersCount}
-          pendingPurchasesCount={pendingApprovalCount}
-          pendingInboundCount={0}
+          pendingPurchasesCount={purchasesCount}
+          pendingInboundCount={inboundCount}
           tabAccess={tabAccess}
           onRetryTabs={() => void retryTabAccess()}
         />

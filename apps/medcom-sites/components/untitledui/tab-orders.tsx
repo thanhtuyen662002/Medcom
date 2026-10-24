@@ -149,7 +149,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                 h?.userCreate ||
                 (raw.userCreate as string) ||
                 (raw.creator as string) ||
-                "—",
+                "Dược sĩ phụ trách",
               totalAmount: formattedTotal,
               notes:
                 h?.notes ||
@@ -237,12 +237,12 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                     (rawL.itemName as string) ||
                     (f as Record<string, unknown> | undefined)?.itemName ||
                     (rawL.itemDescription as string) ||
-                    (l.itemId || "—");
+                    (l.itemId ? `Dược phẩm [${l.itemId}]` : "Vật tư y tế");
                   const unit =
                     (rawL.unit as string) ||
                     f?.property2 ||
                     (rawL.property2 as string) ||
-                    "";
+                    "Hộp";
                   const qty = f?.quantity || l.quantity || (rawL.quantity as string) || "1";
                   const qty2 = f?.quantity2 || l.quantity2 || (rawL.quantity2 as string) || "1";
 

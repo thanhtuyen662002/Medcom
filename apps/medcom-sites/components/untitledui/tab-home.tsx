@@ -58,7 +58,7 @@ export function TabHome({
             .filter((r) => r.statusId === 2)
             .map((r): PurchaseItem => ({
               id: r.documentId, code: r.documentId,
-              purpose: r.fields?.purposeDescOrClient || r.fields?.notes || "—",
+              purpose: r.fields?.purposeDescOrClient || r.fields?.notes || "Đề nghị mua sắm",
               department: r.department || "—", creator: r.personSuggest || "—", branch,
               date: formatDateTime(r.purchaseDate),
               totalAmount: "—", statusId: r.statusId, statusName: r.statusName ?? null, lines: [],
@@ -117,33 +117,39 @@ export function TabHome({
               value={`${ordersCount} đơn`}
               icon={<ShoppingBag className="size-5" />}
               iconColor="brand"
-              period=""
+              change={ordersCount > 0 ? `${ordersCount} đơn` : "0 đơn"}
+              changeType={ordersCount > 0 ? "warning" : "neutral"}
+              period="trong kỳ"
               onClick={() => onNavigateTab("orders")}
             />
             <UntitledMetricCard
-              title="Đề nghị PR"
+              title="Phiếu đề nghị PR"
               value={`${purchasesCount} phiếu`}
               icon={<Clock className="size-5" />}
               iconColor="warning"
-              change={loadingPending ? undefined : `${pendingItems.length} chờ duyệt`}
-              changeType={pendingItems.length > 0 ? "warning" : "neutral"}
-              period=""
+              change={purchasesCount > 0 ? `${purchasesCount} phiếu` : "0 phiếu"}
+              changeType={purchasesCount > 0 ? "warning" : "neutral"}
+              period="trong kỳ"
               onClick={() => onNavigateTab("purchases")}
             />
             <UntitledMetricCard
-              title="Nhập kho"
+              title="Nhập kho (Inbound)"
               value={`${inboundCount} phiếu`}
               icon={<PackageCheck className="size-5" />}
               iconColor="success"
-              period=""
+              change={inboundCount > 0 ? `${inboundCount} phiếu` : "0 phiếu"}
+              changeType={inboundCount > 0 ? "positive" : "neutral"}
+              period="chuẩn GSP"
               onClick={() => onNavigateTab("inbound")}
             />
             <UntitledMetricCard
-              title="Chi nhánh"
+              title="Chi nhánh hiện hành"
               value={currentBranch}
               icon={<Building className="size-5" />}
               iconColor="brand"
-              period="Đổi trong Cài đặt"
+              change="Đang chọn"
+              changeType="neutral"
+              period="chi nhánh"
               onClick={() => onNavigateTab("settings")}
             />
           </>

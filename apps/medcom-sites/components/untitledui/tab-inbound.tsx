@@ -242,12 +242,12 @@ export function TabInbound({
             (rawL.unit as string) ||
             f?.unit2 ||
             (rawL.unit2 as string) ||
-            "";
+            "Hộp";
           const itemName =
             (rawL.itemName as string) ||
             (f as Record<string, unknown> | undefined)?.itemName ||
             (rawL.itemDescription as string) ||
-            (l.itemId || "—");
+            (l.itemId ? `Dược phẩm [${l.itemId}]` : "Vật tư y tế");
           const hangSX = f?.hangSX || (rawL.hangSX as string);
           const checkerNote = f?.checkerNote || (rawL.checkerNote as string);
           const testStatus = f?.testStatus || (rawL.testStatus as string);
