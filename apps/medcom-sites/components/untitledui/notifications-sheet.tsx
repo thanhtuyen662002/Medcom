@@ -25,6 +25,7 @@ import {
   type NotificationTarget,
 } from "@/lib/erp/erp-client";
 import { type NavTabId } from "./bottom-nav";
+import { isGuid, readableNotificationText } from "@/lib/erp/notification-text";
 
 export interface NotificationsSheetProps {
   open: boolean;
@@ -417,28 +418,23 @@ export function NotificationsSheet({
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
-                          <span className="text-[10px] text-neutral-400 flex items-center gap-0.5">
-                            <Clock className="size-2.5" />
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
+                            <Clock className="size-3" />
                             {formatTimestamp(item.msgTime)}
                           </span>
                         </div>
                       </div>
 
                       <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 line-clamp-2 leading-relaxed">
-                        {item.message}
+                        {readableNotificationText(item.message)}
                       </p>
 
                       {/* Footer Metadata & Badges */}
-                      <div className="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-800/60 text-[11px]">
+                      <div className="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-800/60 text-xs">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          {item.documentId && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-mono text-[10px] font-semibold">
+                          {item.documentId && !isGuid(item.documentId) && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-mono text-xs font-semibold">
                               {item.documentId}
-                            </span>
-                          )}
-                          {item.erpFormName && (
-                            <span className="text-[10px] text-neutral-400 truncate max-w-[140px]">
-                              {item.erpFormName}
                             </span>
                           )}
                         </div>
@@ -464,7 +460,7 @@ export function NotificationsSheet({
 
                       {/* Target Error Alert */}
                       {hasError && (
-                        <div className="mt-2 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300 text-[11px] flex items-center gap-1.5 animate-uui-fade-in">
+                        <div className="mt-2 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-1.5 animate-uui-fade-in">
                           <AlertTriangle className="size-3.5 shrink-0" />
                           <span>{targetError.message}</span>
                         </div>
