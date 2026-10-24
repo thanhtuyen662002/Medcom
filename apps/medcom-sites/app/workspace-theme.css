@@ -57,6 +57,8 @@ html:root.dark[data-palette="blue"] {
 }
 html body { font-family: var(--font-sans); letter-spacing: normal; line-height: 1.5; }
 html [data-slot="button"], html .request-select, html [data-slot="input"], html [data-slot="textarea"], html [data-slot="select-trigger"] { border-radius: 8px; font-size: .875rem; }
+/* An explicit text-base (e.g. a phone-sized primary action) keeps its 16px. */
+html [data-slot="button"].text-base { font-size: 1rem; }
 html [data-slot="button"] { font-weight: 600; gap: 8px; transition: background-color .16s, border-color .16s, box-shadow .16s; }
 html [data-slot="button"][data-variant="outline"] { border-color: var(--input); background: var(--card); box-shadow: 0 1px 2px #00000004; }
 html [data-slot="button"][data-variant="outline"]:hover:not(:disabled) { background: var(--secondary); }

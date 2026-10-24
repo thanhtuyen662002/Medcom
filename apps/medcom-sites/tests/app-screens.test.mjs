@@ -234,7 +234,13 @@ test('settings renders the session profile and a 44px accessible theme switch; n
 
 test('scanner validates opaque manual/camera text without inventing medicine, stock or document mutations', async () => {
   const navigations = [];
-  await mounted(h(UntitledQrScannerView, { scopeKey: 'QA-session', onOpenPurchases: () => navigations.push('PR'), onOpenInbound: () => navigations.push('inbound') }), async tree => {
+  // The screen names what a code is for: scanning into a document's module, or looking it up.
+  await mounted(h(UntitledQrScannerView, { scopeKey: 'QA-session',
+    scanTargets: [{ id: 'warehouse-qr', label: 'Quét QR xuất kho' }],
+    searchTargets: [{ id: 'purchase-requests', label: 'Đề nghị mua hàng (PR)' }, { id: 'inbound-requests', label: 'Đề nghị nhập hàng' }],
+    onOpenTarget: id => navigations.push('open:' + id), onSearchIn: (id, code) => navigations.push('search:' + id + ':' + code) }), async tree => {
+    assert.match(markup(tree), /Quét hàng vào phiếu.*Tra cứu mã/s);
+    await click(nativeButton(tree, 'Quét QR xuất khoMở danh sách phiếu để quét'));
     const input = () => tree.root.findByType('input');
     const submit = async value => {
       act(() => input().props.onChange({ target: { value } }));
@@ -245,9 +251,9 @@ test('scanner validates opaque manual/camera text without inventing medicine, st
     await submit('QA-QR-001');
     assert.match(markup(tree), /QA-QR-001/);
     assert.doesNotMatch(markup(tree), /Hapacol|Camera AI Live|Tồn kho khả dụng|Đã nhận diện|GS1_NATIONAL/);
-    await click(nativeButton(tree, 'Mở đề nghị PR'));
-    await click(nativeButton(tree, 'Mở nhập kho'));
-    assert.deepEqual(navigations, ['PR', 'inbound']);
+    await click(nativeButton(tree, 'Đề nghị mua hàng (PR)'));
+    await click(nativeButton(tree, 'Đề nghị nhập hàng'));
+    assert.deepEqual(navigations, ['open:warehouse-qr', 'search:purchase-requests:QA-QR-001', 'search:inbound-requests:QA-QR-001']);
     await click(nativeButton(tree, 'Mở camera'));
     const camera = tree.root.findByType('scanner-fixture');
     assert.equal(camera.props.open, true);
@@ -403,8 +409,9 @@ test('F-01: quick tabs show the unified ERP screen of an allowed module and keep
       await act(async () => leaf(tree, 'tab-home').props.onNavigateTab('orders'));
       shown('orders', 'purchase-orders');
       await act(async () => leaf(tree, 'desktop-header').props.onTabChange('scan'));
-      await act(async () => leaf(tree, 'qr-scanner-view').props.onOpenPurchases());
+      await act(async () => leaf(tree, 'qr-scanner-view').props.onSearchIn('purchase-requests', 'QA-SCAN'));
       shown('purchases', 'purchase-requests');
+      assert.equal(erpScreens(tree, 'purchase-requests')[0].props.searchRequest.text, 'QA-SCAN', 'a looked-up code reaches the list search');
       await act(async () => leaf(tree, 'desktop-header').props.onTabChange('inbound'));
       assert.equal(leaf(tree, 'tab-inbound').props.isActive, true);
       assert.equal(erpScreens(tree, 'inbound-requests')[0].props.isActive, false);
@@ -426,7 +433,7 @@ test('F-01: inbound quick tab and QR hand-off open the ERP inbound screen once t
     await mounted(h(MedcomApp), async tree => {
       assert.equal(leaf(tree, 'tab-inbound'), undefined);
       await act(async () => leaf(tree, 'bottom-nav').props.onTabChange('scan'));
-      await act(async () => leaf(tree, 'qr-scanner-view').props.onOpenInbound());
+      await act(async () => leaf(tree, 'qr-scanner-view').props.onSearchIn('inbound-requests', 'QA-SCAN'));
       assert.equal(leaf(tree, 'bottom-nav').props.activeTab, 'inbound');
       assert.equal(erpScreens(tree, 'inbound-requests')[0].props.isActive, true);
       hold = new Promise(resolve => { finish = resolve; });

@@ -64,6 +64,7 @@ function AuthorizedRequestQrSearch({ scopeKey, onConfirmedSearchText }: RequestQ
     <p id={hintId} className="text-xs text-muted-foreground">Dùng mã có nội dung, tối đa 100 ký tự và không có ký tự điều khiển. Quét lại hoặc nhập mã thủ công nếu mã không hợp lệ.</p>
     {feedback && <p id={feedbackId} role="status" aria-live="polite" className="text-sm [overflow-wrap:anywhere]">{feedback}</p>}
     <QrScanner open={open} scopeKey={scopeKey} title="Quét QR để điền tìm kiếm (tối đa 100 ký tự)"
+      purpose="Mã đọc được sẽ điền vào ô tìm kiếm của danh sách này, không gửi vào chứng từ."
       onOpenChange={next => { if (!next) close(); }} onConfirm={confirm} />
   </div>;
 }

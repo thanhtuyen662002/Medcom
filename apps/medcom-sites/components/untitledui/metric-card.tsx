@@ -50,7 +50,7 @@ export function UntitledMetricCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400 truncate">
+          <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 truncate">
             {title}
           </p>
           <h3 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white truncate">
