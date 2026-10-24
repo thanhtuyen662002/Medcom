@@ -116,3 +116,6 @@ Mọi phiếu T-001…T-007 Done trên `ui-sync/main`. Tổng kết: `docs/ui-sy
 - 12:00–12:54: frontend production 500 sau deploy (VPS); `main` build/chạy tốt ở local. Mở revert #184 rồi đóng khi production tự lên lại. UX-02/03/04 đã kiểm trên production.
 - [F-01](F-01.md) (vấn đề 6 + 13) qua phiên riêng, merge PR #185 (`44d0dd9`, 16:07), kiểm trên production 16:09.
 - [UX-05](UX-05.md) (vấn đề 7 + 12): chủ dự án duyệt bảng "Chờ tôi xử lý"; mở PR.
+- [UX-06](UX-06.md) (màn Quét QR rõ mục đích, camera, sidebar, cỡ chữ điện thoại) merge PR #187 (`d10f1aa`); [BE-01](BE-01.md) (tên người thay tài khoản, `GET /api/erp/{module}/status-counts`, số chờ xử lý trên menu) merge PR #188 (`ba47ab9`), 18:11; kiểm trên production 18:13.
+- Chủ dự án: sự cố 12:00–12:54 do agent CD trên VPS bị chặn quyền, đã khắc phục.
+- [UX-07](UX-07.md): test `apps/medcom-sites` vào job CI `backend`; số đếm cho bảng lọc đơn bán; báo khi hàng việc vượt 100 phiếu/trạng thái.

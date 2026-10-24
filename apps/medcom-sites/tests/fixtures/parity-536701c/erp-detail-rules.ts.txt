@@ -1,0 +1,387 @@
+import type { ErpScreenModule } from "@/lib/erp/erp-client";
+import {formatMoney as formatMoneyValue, multiplyMoney, sumMoney} from "@/lib/erp/money";
+
+export function isTechnicalField(key: string): boolean {
+  const k = key.toLowerCase();
+  return (
+    k.includes("userautoid") ||
+    k.includes("formid") ||
+    k.includes("frm") ||
+    k.includes("menuid") ||
+    k.includes("createdbyautoid") ||
+    k.includes("modifiedbyautoid") ||
+    k.includes("statetoken") ||
+    k.includes("readscope") ||
+    k.includes("referencestate") ||
+    k.includes("schema") ||
+    k.includes("fields") ||
+    k.includes("searchfield") ||
+    k.includes("idempotencykey") ||
+    k.includes("auditid") ||
+    k.includes("clientlinekey") ||
+    k.includes("token") ||
+    k.includes("hash") ||
+    k.includes("rowid")
+  );
+}
+
+export const FIELD_LABELS: Record<string, string> = {
+  documentId: "Mã chứng từ",
+  purchaseRequestId: "Mã đề nghị mua hàng",
+  batchId: "Mã đợt điều chuyển",
+  branchId: "Chi nhánh",
+  branchName: "Tên chi nhánh",
+  documentDate: "Ngày chứng từ",
+  purchaseDate: "Ngày đề xuất",
+  datetimeRecorded: "Thời gian ghi nhận",
+  plannedTransferDate: "Ngày chuyển dự kiến",
+  batchDate: "Ngày tạo đợt",
+  deliverDate: "Ngày giao hàng",
+  expireDate: "Hạn sử dụng",
+  expireDateByDocument: "Hạn sử dụng theo CT",
+  statusId: "Trạng thái",
+  statusName: "Tên trạng thái",
+  isLocked: "Khóa phiếu",
+  objectId: "Khách hàng",
+  objectName: "Tên đối tượng",
+  personSuggest: "Người đề nghị",
+  customerName: "Khách hàng",
+  vendorName: "Nhà cung cấp",
+  department: "Bộ phận",
+  purposeId: "Mục đích",
+  purposeName: "Tên mục đích",
+  purposeDescOrClient: "Mục đích / Khách hàng",
+  price: "Giá bán",
+  model: "Model",
+  budget: "Ngân sách",
+  budgetDisplay: "Ngân sách",
+  timeRequired: "Thời gian yêu cầu",
+  totalPrice: "Tổng giá",
+  totalPriceDisplay: "Tổng giá",
+  memo: "Nội dung",
+  notes: "Ghi chú",
+  orderNumber: "Số đơn hàng",
+  invoiceNo: "Số hóa đơn",
+  declarationNumber: "Số tờ khai",
+  departurePoint: "Điểm đi",
+  destinationPoint: "Điểm đến",
+  fromBranchId: "Chi nhánh gửi",
+  fromBranchName: "Tên chi nhánh gửi",
+  toBranchId: "Chi nhánh nhận",
+  toBranchName: "Tên chi nhánh nhận",
+  fromStoreHouseId: "Kho nguồn",
+  fromStoreHouseName: "Tên kho nguồn",
+  toStoreHouseId: "Kho đích",
+  toStoreHouseName: "Tên kho đích",
+  assignedPM: "PM phụ trách",
+  assignedSA: "SA phụ trách",
+  assignedTechnician: "Kỹ thuật phụ trách",
+  transportMethod: "Phương thức vận chuyển",
+  carrierName: "Đơn vị vận chuyển",
+  carrierPhone: "SĐT vận chuyển",
+  vehicleNo: "Biển số xe",
+  outputDocumentId: "Phiếu xuất kho liên kết",
+  inputDocumentId: "Phiếu nhập kho liên kết",
+  contractId: "Mã hợp đồng",
+  currencyId: "Loại tiền",
+  currencyName: "Tên loại tiền",
+  rateExchange: "Tỷ giá",
+  totalAmount: "Tổng tiền",
+  totalQuantity: "Tổng số lượng",
+  packageTypeId: "Loại bao bì",
+  pMApprovedQty: "Số lượng PM duyệt",
+  pMNote: "Ghi chú PM",
+  techStatus: "Tình trạng kỹ thuật",
+  techNotes: "Ghi chú kỹ thuật",
+  approvedQty: "Số lượng duyệt",
+  actualIssueQty: "Số lượng xuất thực tế",
+  actualReceiveQty: "Số lượng nhận thực tế",
+  accountingNote: "Ghi chú kế toán",
+  warehouseNote: "Ghi chú thủ kho",
+  receiveNote: "Ghi chú nhận hàng",
+  bBKCUrl: "Biên bản kiểm tra",
+  imageURL: "Hình ảnh",
+  qrPrintType: "Loại in QR",
+  excessPackageQuantity: "Số kiện thừa",
+  lackOfPackageQuantity: "Số kiện thiếu",
+  damagedPackageQuantity: "Số kiện hỏng",
+  resultDesciption: "Kết quả kiểm tra",
+  damageDescription: "Mô tả hư hỏng",
+  isRain: "Thời tiết mưa",
+  isDamageOutsidePackage: "Hư hỏng ngoài bao bì",
+  itemId: "Mã hàng",
+  itemCode: "Mã hàng",
+  itemName: "Tên hàng",
+  unit: "Đơn vị tính",
+  quantity: "Số lượng",
+  unitPrice: "Đơn giá",
+  unitPriceDisplay: "Đơn giá",
+  amount: "Thành tiền",
+  amountDisplay: "Thành tiền",
+  sourceAmount: "Tiền nguyên tệ",
+  vatId: "Thuế VAT",
+  vatAmount: "Tiền VAT",
+  cost: "Chi phí",
+  assetCondition: "Tình trạng thiết bị",
+};
+
+export function getFieldLabel(key: string): string {
+  if (FIELD_LABELS[key]) return FIELD_LABELS[key];
+  if (key.endsWith("Display")) {
+    const base = key.slice(0, -"Display".length);
+    if (FIELD_LABELS[base]) return FIELD_LABELS[base];
+  }
+  if (key.endsWith("Name")) {
+    const base = key.slice(0, -"Name".length);
+    if (FIELD_LABELS[base]) return `Tên ${FIELD_LABELS[base].toLowerCase()}`;
+  }
+  return key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase()).trim();
+}
+
+export function formatVietnamDate(val: unknown): string {
+  if (!val || typeof val !== "string") return "";
+  const match = val.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!match) return String(val);
+  const [, y, m, d, hh, mm, ss] = match;
+  if (hh && mm && !(hh === "00" && mm === "00" && (!ss || ss === "00")))
+    return `${d}/${m}/${y} ${hh}:${mm}`;
+  return `${d}/${m}/${y}`;
+}
+
+export function formatVietnamNumber(val: unknown): string {
+  if (val === null || val === undefined || val === "") return "";
+  const num = Number(val);
+  if (isNaN(num)) return String(val);
+  return new Intl.NumberFormat("vi-VN").format(num);
+}
+
+// Grand total across detail lines: prefer the server-computed line amount
+// (includes VAT/discounts when present), fall back to qty x unit price.
+export function sumLineTotals(rows: Array<{ fields?: unknown } | Record<string, unknown>>): string | null {
+  if (!rows || rows.length === 0) return null;
+  const values: Array<string | null> = [];
+  for (const row of rows) {
+    const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+    const server = f.amount ?? f.sourceAmount;
+    values.push(server == null ? multiplyMoney(String(f.quantity ?? ""), String(f.unitPrice ?? "")) : String(server));
+  }
+  return sumMoney(values);
+}
+
+// One Vietnamese display convention; API values keep their original precision.
+export function formatMoney(value: unknown, _currencyId?: string): string {
+  return formatMoneyValue(value);
+}
+
+export function docCurrencyId(header: unknown): string {
+  const c = (header as Record<string, unknown> | null | undefined)?.currencyId;
+  return typeof c === "string" ? c : "";
+}
+
+// Per-line total display: server display string first, then raw server amount,
+// then qty x unit price fallback. Never blank when qty and price exist.
+export function lineTotalDisplay(f: Record<string, unknown>, currencyId?: string): string {
+  const raw = f.totalPrice ?? f.amount ?? f.sourceAmount;
+  if (raw != null && raw !== "") return formatMoney(raw, currencyId);
+  const display = (f.totalPriceDisplay || f.amountDisplay || "") as string;
+  if (typeof display === "string" && display.trim() !== "") return display;
+  const calculated = multiplyMoney(String(f.quantity ?? ""), String(f.unitPrice ?? ""));
+  if (calculated !== null) return formatMoney(calculated, currencyId);
+  return "—";
+}
+
+export function getActionErrorMessage(outcome: string, code?: string | null): string {
+  switch (outcome) {
+    case "InvalidInput":
+      return "Thông tin chưa hợp lệ hoặc thiếu trường bắt buộc. Vui lòng kiểm tra lại.";
+    case "Denied":
+      return "Tài khoản hiện tại không có quyền thực hiện thao tác này.";
+    case "Conflict":
+      return "Trạng thái hoặc dữ liệu chứng từ đã thay đổi bởi người dùng khác. Vui lòng làm mới lại trang.";
+    case "QualificationRequired":
+      return "Hệ thống đang ở chế độ kiểm soát an toàn. Dữ liệu chưa được ghi trực tiếp vào cơ sở dữ liệu.";
+    case "Unavailable":
+      return "Máy chủ ERP hiện chưa sẵn sàng xử lý yêu cầu. Vui lòng thử lại sau.";
+    case "Cancelled":
+      return "Thao tác đã bị hủy.";
+    default:
+      if (code) return `Thao tác không thành công (${code}). Vui lòng thử lại.`;
+      return "Thao tác không thành công. Vui lòng thử lại.";
+  }
+}
+
+export function getActionReasonMessage(reason?: string | null): string {
+  if (!reason) return "";
+  switch (reason) {
+    case "native_permission_or_hidden":
+      return "Chức năng chưa được phân quyền hoặc bị ẩn theo quy tắc ERP.";
+    case "save_document_first":
+      return "Vui lòng lưu chứng từ trước khi thực hiện thao tác này.";
+    case "contract_missing":
+      return "Chứng từ chưa liên kết thông tin hợp đồng.";
+    case "state_or_assignment_not_allowed":
+      return "Trạng thái chứng từ hiện tại không cho phép thực hiện thao tác này.";
+    case "erp_write_unqualified":
+      return "Hệ thống đang ở chế độ bảo vệ dữ liệu, chưa ghi trực tiếp.";
+    case "document_numbering_unqualified":
+      return "Chức năng cấp số chứng từ tự động đang được bảo vệ.";
+    case "contract_read_unqualified":
+      return "Chức năng đọc thông tin hợp đồng đang được bảo vệ.";
+    case "report_runtime_unqualified":
+      return "Chức năng in báo cáo đang được bảo vệ.";
+    default:
+      return reason;
+  }
+}
+
+// Màu badge theo trạng thái chứng từ: id số là chuẩn (duyệt ĐNMH:
+// 2 chờ, 3 đã duyệt, 4 không duyệt); các màn khác đoán theo tên.
+export function statusBadgeClass(statusId: unknown, statusName: unknown): string {
+  const base = "px-2.5 py-1 rounded-full text-xs font-semibold border ";
+  const red = "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300 border-red-200 dark:border-red-900/50";
+  const green = "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/50";
+  const amber = "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-900/50";
+  const brand = "bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border-brand-200 dark:border-brand-900/40";
+  if (statusId === 4) return base + red;
+  if (statusId === 3) return base + green;
+  if (statusId === 2) return base + amber;
+  const name = (typeof statusName === "string" ? statusName : "").toLowerCase();
+  if (!name) return base + brand;
+  if (name.includes("không duyệt") || name.includes("tu choi") || name.includes("từ chối")) return base + red;
+  if (name.includes("chờ") || name.includes("cho duyet") || name.includes("chờ duyệt") || name.includes("chua") || name.includes("chưa")) return base + amber;
+  if (name.includes("duyệt") || name.includes("duyet") || name.includes("đồng ý") || name.includes("hoàn tất") || name.includes("đã khóa")) return base + green;
+  return base + brand;
+}
+
+// Header fields editable inline in the detail card. Lookup-backed keys render
+// the shared options combobox; dates render date inputs; the rest are text.
+// Rate follows the currency lookup and stays read-only.
+const EDITABLE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
+  "purchase-requests": [
+    "personSuggest",
+    "department",
+    "purposeId",
+    "purposeDescOrClient",
+    "price",
+    "notes",
+    "objectId",
+    "currencyId",
+  ],
+  "sales-orders": [
+    "documentDate",
+    "contractId",
+    "managerId",
+    "employeeId",
+    "objectId",
+    "deliverDate",
+    "memo",
+    "ghiChuDonHang",
+    "linkId",
+    "documentUrl",
+  ],
+};
+export const DEFAULT_EDITABLE_HEADER_KEYS = [
+  "documentDate",
+  "objectId",
+  "deliverDate",
+  "contractId",
+  "memo",
+  "notes",
+] as const;
+export function editableHeaderKeys(module: ErpScreenModule): readonly string[] {
+  return EDITABLE_HEADER_BY_MODULE[module] ?? DEFAULT_EDITABLE_HEADER_KEYS;
+}
+const REQUIRED_EDIT_KEYS: Record<string, readonly string[]> = {
+  "purchase-requests": ["personSuggest", "department", "objectId", "currencyId"],
+  "sales-orders": ["documentDate", "objectId", "employeeId"],
+};
+const DEFAULT_REQUIRED_EDIT_KEYS = ["documentDate", "objectId"] as const;
+export function requiredEditKeys(module: ErpScreenModule): readonly string[] {
+  return REQUIRED_EDIT_KEYS[module] ?? DEFAULT_REQUIRED_EDIT_KEYS;
+}
+const EDIT_LOOKUPS: Record<string, Record<string, string>> = {
+  "purchase-requests": {
+    personSuggest: "header.PersonSuggest",
+    department: "header.Department",
+    objectId: "header.ObjectID",
+    purposeId: "header.PurposeID",
+    currencyId: "header.CurrencyID",
+  },
+  "sales-orders": {
+    contractId: "header.ContractID",
+    managerId: "header.ManagerID",
+    employeeId: "header.EmployeeID",
+    objectId: "header.ObjectID",
+  },
+};
+const DEFAULT_EDIT_LOOKUPS: Record<string, string> = { objectId: "header.ObjectID" };
+export function editLookupId(module: ErpScreenModule, key: string): string | undefined {
+  return (EDIT_LOOKUPS[module] ?? DEFAULT_EDIT_LOOKUPS)[key];
+}
+// Exact writable DTOs per module. The display header/rows carry *Display /
+// *Name / status companions that the backend Freeze validator rejects
+// (UnmappedMemberHandling.Disallow), so save must send only these keys.
+const SAVE_LINE_BY_MODULE: Record<string, readonly string[]> = {
+  "purchase-requests": ["itemId", "quantity", "unitPrice", "budget", "timeRequired", "model"],
+  "purchase-orders": ["itemId", "quantity", "unitPrice", "notes", "quantity2", "property", "property2"],
+  "sales-orders": ["itemId", "quantity", "unitPrice", "discountPercent", "vATPercent", "vATQuantity", "dienGiai", "notes", "property", "property2", "parentId", "notes2", "costId", "storeHouseId", "vATId"],
+};
+export function saveLineKeys(module: ErpScreenModule): readonly string[] {
+  return SAVE_LINE_BY_MODULE[module] ?? [];
+}
+export const SAVE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
+  "purchase-requests": [
+    "purchaseDate",
+    "purposeId",
+    "personSuggest",
+    "department",
+    "purposeDescOrClient",
+    "price",
+    "notes",
+    "currencyId",
+    "objectId",
+    "rateExchange",
+  ],
+  "purchase-orders": [
+    "documentDate",
+    "objectId",
+    "memo",
+    "notes",
+    "deliverDate",
+    "currencyId",
+    "rateExchange",
+    "searchField",
+    "contractId",
+  ],
+  "sales-orders": [
+    "documentDate", "objectId", "contractId", "memo", "deliverDate", "baseTotal",
+    "employeeId", "managerId", "phone", "taxCode", "notes", "depositAmount",
+    "agencyId", "isVAT", "isOrder", "currencyId", "rateExchange", "linkId",
+    "ghiChuDonHang", "paymentTermId", "ceoId", "thamGiaHopDongBan", "bBKCUrl",
+    "beforeOutStockUrl", "bBBGUrl", "documentUrl", "handoverLocation",
+    "representedByA", "positionA", "addressA", "representedByB", "positionB",
+    "addressB", "conclude", "minutesNumber", "partyAKeep", "partyBKeep",
+    "deliveryStatusId", "deliveryEmployeeId", "deliveryEmployeeSubId", "vehicle",
+    "soPhieu", "soHoaDon", "ngayPhieu", "ngayHoaDon",
+  ],
+};
+
+// Lock state for the header badge: true = locked, false = unlocked,
+// null = field absent (hide the badge instead of printing true/false).
+export function lockBadgeState(header: unknown): boolean | null {
+  const v = (header as Record<string, unknown> | null | undefined)?.isLocked;
+  if (v === true || v === 1 || v === "1") return true;
+  if (v === false || v === 0 || v === "0") return false;
+  return null;
+}
+
+// Detail dropdown entries, in display order. Rendered only when the backend
+// marks them visible; enabled state and reason come from the same action.
+export const MENU_ACTION_IDS = ["save", "submit", "send-purchase-order", "approve", "reject", "delete"] as const;
+
+// Tạm thời: Đặt mua hàng chưa có trong Medcom:ErpWrites:Modules nên backend
+// trả erp_write_unqualified (nút "Tạo mới" bị khóa kèm lý do "chưa ghi trực
+// tiếp", và save/delete hiện disabled trong dropdown chi tiết). Thay vì hiển
+// thị trạng thái bị chặn, ẨN toàn bộ action write của module này ở FE.
+// Bỏ "purchase-orders" khỏi danh sách này khi operator bật ghi cho module.
+export const WRITE_GATED_MODULES = new Set<ErpScreenModule>(["purchase-orders"]);

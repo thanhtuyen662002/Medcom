@@ -36,7 +36,7 @@ import { useSalesOrderStatuses } from "@/components/erp/sales-order-status-filte
 import { documentStatusLabel } from "@/lib/erp/document-status";
 import { formatDateTime } from "@/lib/erp/document-detail/format";
 import { formatMoney as formatMoneyValue } from "@/lib/erp/money";
-import { ROLE_QUEUE_PAGE_SIZE, mergeRoleQueuePages, roleQueueStatuses } from "@/lib/erp/role-queue";
+import { ROLE_QUEUE_PAGE_SIZE, mergeRoleQueuePages, roleQueueCount, roleQueueStatuses } from "@/lib/erp/role-queue";
 import { erpStatusChips } from "@/lib/erp/status-chips";
 import { MoneyInput } from "@/components/erp/money-input";
 import { WRITE_GATED_MODULES, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
@@ -50,6 +50,8 @@ interface TabErpScreenProps {
   /** A code to look up from the QR screen; a new nonce runs the search again. */
   searchRequest?: { text: string; nonce: number };
 }
+
+const isSalesOrderModuleId = (mod: ErpScreenModule) => mod === "sales-orders" || mod === "sales-order-pm" || mod === "sales-order-sa";
 
 function getModuleTitle(mod: ErpScreenModule): string {
   switch (mod) {
@@ -196,6 +198,9 @@ export function TabErpScreen({
   // Role screens open on "Chờ tôi xử lý": the ERP statuses waiting on this role.
   const queueStatuses = roleQueueStatuses(module);
   const [queueMode, setQueueMode] = useState(queueStatuses !== null);
+  // Documents per ERP status (same scope as the list); null until read or when unavailable.
+  const [statusCounts, setStatusCounts] = useState<{ statusId: number; count: number }[] | null>(null);
+  const countsSeq = useRef(0);
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -405,6 +410,12 @@ export function TabErpScreen({
         const result = await inflight;
         if (seq !== listSeqRef.current) return;
         setRows(result.rows || []);
+        if (queueStatuses || isSalesOrderModuleId(module)) {
+          const countSeq = ++countsSeq.current;
+          void Promise.resolve().then(() => erpClient.getErpStatusCounts(module, currentBranch))
+            .then(counts => { if (countSeq === countsSeq.current) setStatusCounts(counts.items); })
+            .catch(() => { if (countSeq === countsSeq.current) setStatusCounts(null); });
+        }
         appliedSearchRef.current = params.search ?? "";
         setPage(result.page);
         setPageSize(result.pageSize ?? pageSizeOverride);
@@ -472,6 +483,7 @@ export function TabErpScreen({
     setIsLoadingList(false);
     setIsRefreshing(false);
     setRows([]);
+    setStatusCounts(null); countsSeq.current++;
     setPage(1);
     setHasMore(false);
     setSelectedDocId(null);
@@ -898,11 +910,18 @@ export function TabErpScreen({
   ];
   // Sales order statuses: every ERP status is offered in the filter sheet; the
   // chip row keeps the role queue, "Tất cả", the chosen status and a way to the rest.
-  const salesStatusOptions = [{ value: "", label: "Tất cả" }, ...salesStatuses.choices.map(choice => ({ value: String(choice.id), label: choice.label }))];
+  const countOf = (id: number) => statusCounts?.find(item => item.statusId === id)?.count;
+  const totalCount = statusCounts?.reduce((sum, item) => sum + item.count, 0);
+  const queueTotal = statusCounts && queueStatuses ? roleQueueCount(statusCounts, queueStatuses) : undefined;
+  const withCount = (label: string, count: number | undefined) => count === undefined ? label : `${label} (${count})`;
+  const salesStatusOptions = [{ value: "", label: withCount("Tất cả", totalCount) },
+    ...salesStatuses.choices.map(choice => ({ value: String(choice.id), label: withCount(choice.label, countOf(choice.id)) }))];
   const queueChips: FilterChip[] = queueStatuses ? [
-    { value: "mine", label: "Chờ tôi xử lý", count: queueMode && !isLoadingList ? rows.length : undefined, disabled: !isActive },
-    { value: "all", label: "Tất cả", count: !queueMode && statusId === null && !isLoadingList && !isSalesOrderModule ? rows.length : undefined, disabled: !isActive },
+    { value: "mine", label: "Chờ tôi xử lý", count: queueTotal ?? (queueMode && !isLoadingList ? rows.length : undefined), disabled: !isActive },
+    { value: "all", label: "Tất cả", count: totalCount ?? (!queueMode && statusId === null && !isLoadingList && !isSalesOrderModule ? rows.length : undefined), disabled: !isActive },
   ] : [];
+  // The queue reads at most ROLE_QUEUE_PAGE_SIZE per status; say so instead of silently cutting it.
+  const queueCut = queueMode && queueTotal !== undefined && !isLoadingList && queueTotal > rows.length;
   const chipItems: FilterChip[] = isSalesOrderModule
     ? [...queueChips,
       ...(!queueMode && statusId !== null ? [{ value: String(statusId), label: salesStatusOptions.find(option => option.value === String(statusId))?.label ?? documentStatusLabel(statusId, null), disabled: !isActive }] : []),
@@ -986,11 +1005,14 @@ export function TabErpScreen({
       </div>
       <FilterSheet id={filterSheetId} open={filtersOpen} onClose={() => setFiltersOpen(false)}
         value={{ status: selectedStatus === "all" ? "" : selectedStatus, pageSize }}
-        statuses={isSalesOrderModule ? [...(queueStatuses ? [{ value: "mine", label: "Chờ tôi xử lý" }] : []), ...salesStatusOptions]
+        statuses={isSalesOrderModule ? [...(queueStatuses ? [{ value: "mine", label: withCount("Chờ tôi xử lý", queueTotal) }] : []), ...salesStatusOptions]
           : chipItems.map(chip => ({ value: chip.value === "all" ? "" : chip.value, label: chip.label }))}
         onApply={value => selectStatus(value.status, value.pageSize)} />
       {isCreateVisible && !canCreate && createActionTooltip && <p className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
         <AlertCircle aria-hidden className="mt-0.5 size-4 shrink-0" /><span>Chưa thể tạo mới: {createActionTooltip}</span>
+      </p>}
+      {queueCut && <p role="status" className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
+        <AlertCircle aria-hidden className="mt-0.5 size-4 shrink-0" /><span>Đang hiện {rows.length}/{queueTotal} chứng từ chờ xử lý. Dùng tìm kiếm để thu hẹp danh sách.</span>
       </p>}
       <RecordList label={title} rows={displayRows} columns={tableColumns} rowId={row => row.documentId}
         card={row => ({
