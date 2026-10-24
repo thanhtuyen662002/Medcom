@@ -54,6 +54,11 @@ const quickItems: readonly NavigationItem[] = [
 const settingsItem: NavigationItem = { id: "settings", label: "Cài đặt hệ thống", icon: Settings2 };
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLocaleLowerCase("vi").trim();
 
+/** The menu label a user clicked to reach a screen; screens reuse it as their title. */
+export function navigationLabel(id: string): string | undefined {
+  return navigationSections.flatMap(section => section.items).find(item => item.id === id)?.label;
+}
+
 export function navigationItemClassName(active: boolean) {
   return `flex min-h-11 min-w-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${active
     ? "bg-brand-50 font-semibold text-brand-700 ring-1 ring-inset ring-brand-200 dark:bg-brand-950/60 dark:text-brand-300 dark:ring-brand-800"

@@ -9,6 +9,7 @@ import { useIsMobile } from "@/components/app/use-is-mobile";
 import { UntitledButton } from "./button";
 import { LookupField, choiceLabel } from "./lookup-field";
 import { ScreenHeader } from "@/components/app/screen-header";
+import { navigationLabel } from "@/components/app/app-navigation";
 import { ScreenToolbar } from "@/components/app/screen-toolbar";
 import { FilterChips, type FilterChip } from "@/components/app/filter-chips";
 import { FilterSheet } from "@/components/app/filter-sheet";
@@ -900,7 +901,8 @@ export function TabErpScreen({
     else if (module === "purchase-requests") setPrCreateOpen(true);
     else setCreateModalOpen(true);
   };
-  const title = screenMeta?.caption || getModuleTitle(module);
+  // Title matches the menu entry; ERP captions differ from it (e.g. PR screens captioned "(PO)").
+  const title = navigationLabel(module) || screenMeta?.caption || getModuleTitle(module);
 
   return (
     <div className="min-w-0 space-y-4 pb-24 animate-uui-fade-in">
