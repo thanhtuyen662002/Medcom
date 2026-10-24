@@ -28,7 +28,8 @@ await build({
   plugins: [{ name: 'generic-detail-leaves', setup(builder) {
     builder.onResolve({ filter: /.*/ }, args => {
       if (!/(?:tab-erp-screen\.tsx|erp-document-detail-body\.tsx|erp-line-editor\.tsx|document-detail\/[^/]+\.tsx|document-detail\/registry\.ts)$/.test(args.importer.replaceAll('\\', '/'))) return;
-      for (const key of Object.keys(leaves)) if (args.path.endsWith(key)) return { path: key, namespace: 'generic-detail-qa' };
+      // Match the whole leaf name: "button" must not intercept P2 AppButton.
+      for (const key of Object.keys(leaves)) if (args.path.endsWith(`/${key}`)) return { path: key, namespace: 'generic-detail-qa' };
     });
     builder.onLoad({ filter: /.*/, namespace: 'generic-detail-qa' }, args => ({ contents: leaves[args.path], loader: 'tsx', resolveDir: app }));
   } }],
@@ -84,7 +85,8 @@ for (const screenModule of ['inbound-requests', 'purchase-requests']) test(`${sc
     assert.match(text(tree.toJSON()), /Đối tượng kiểm thử/);
     assert.doesNotMatch(text(tree.toJSON()), /Chi phí kiểm thử/);
     assert.match(text(tree.root.findByProps({ 'data-status': 'header' })), /Chưa khóa/);
-    assert.equal(tree.root.findAllByProps({ 'aria-label': 'Thao tác chứng từ' }).length, 1);
+    // Count native controls, not both the AppButton component and its host node.
+    assert.equal(tree.root.findAllByType('button').filter(node => node.props['aria-label'] === 'Thao tác chứng từ').length, 1);
   }, { module: screenModule });
 });
 test('write-gated purchase-orders keeps generic detail without its write menu', async () => {

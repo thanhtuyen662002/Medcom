@@ -11,7 +11,6 @@ import { errorMessage } from "@/lib/erp/api";
 
 import { formatDateTime } from "@/lib/erp/document-detail/format";
 import {formatMoney} from "@/lib/erp/money";
-import { statusColorStyle } from "@/lib/erp/status-colors";
 
 function formatVND(value?: string | null, currency = "VND"): string {
   const plainCurrency = value?.match(/^(-?\d+)\s*([A-Z]{3}|[₫$€])$/);
@@ -283,8 +282,8 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
     return true;
   });
 
-  const getStatusBadge = (statusId: number | null, statusName?: string | null, style?: { color?: string; backgroundColor?: string }) => (
-    <StatusBadge label={statusName || (statusId === 2 ? "Đã duyệt" : statusId === 3 ? "Hoàn tất" : statusId === 1 ? "Chờ phê duyệt" : "Bản nháp")} tone={statusId === 2 ? "success" : statusId === 3 ? "info" : statusId === 1 ? "warning" : "neutral"} statusForeColor={style?.color} statusBackColor={style?.backgroundColor} />
+  const getStatusBadge = (statusId: number | null, statusName?: string | null, colors?: { statusForeColor?: string | null; statusBackColor?: string | null }) => (
+    <StatusBadge label={statusName || (statusId === 2 ? "Đã duyệt" : statusId === 3 ? "Hoàn tất" : statusId === 1 ? "Chờ phê duyệt" : "Bản nháp")} tone={statusId === 2 ? "success" : statusId === 3 ? "info" : statusId === 1 ? "warning" : "neutral"} statusForeColor={colors?.statusForeColor} statusBackColor={colors?.statusBackColor} />
   );
   const statuses = [{ value: "", label: "Tất cả" }, { value: "pending", label: "Chờ duyệt" }, { value: "approved", label: "Đã duyệt" }, { value: "completed", label: "Hoàn tất" }];
   const statusIds: Record<string, number> = { pending: 1, approved: 2, completed: 3 };
@@ -293,7 +292,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
     { id: "document", label: "Mã PO", className: "min-w-40 whitespace-nowrap", render: order => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{order.documentId}</span> },
     { id: "date", label: "Ngày chứng từ", className: "whitespace-nowrap tabular-nums", render: order => formatDateTime(order.documentDate) },
     { id: "supplier", label: "Nhà cung cấp", className: "min-w-60 max-w-sm", render: order => <span className="line-clamp-2 break-words font-medium" title={order.supplier}>{order.supplier}</span> },
-    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: order => <div className="flex items-center gap-2">{getStatusBadge(order.statusId, order.statusName, statusColorStyle(order.statusForeColor, order.statusBackColor))}{order.isLocked && <LockKeyhole aria-label="Đã khóa" className="size-4" />}</div> },
+    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: order => <div className="flex items-center gap-2">{getStatusBadge(order.statusId, order.statusName, order)}{order.isLocked && <LockKeyhole aria-label="Đã khóa" className="size-4" />}</div> },
     { id: "creator", label: "Người lập", className: "min-w-40 max-w-52", render: order => <span className="line-clamp-2 break-words">{order.creator}</span> },
     { id: "amount", label: "Tổng tiền", className: "whitespace-nowrap text-right font-semibold tabular-nums", render: order => order.totalAmount },
   ];
@@ -352,7 +351,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                   </p>
                 </div>
                 <div className="text-right flex flex-col items-end gap-1">
-                  {getStatusBadge(selectedOrder.statusId, selectedOrder.statusName, statusColorStyle(selectedOrder.statusForeColor, selectedOrder.statusBackColor))}
+                  {getStatusBadge(selectedOrder.statusId, selectedOrder.statusName, selectedOrder)}
                   <span className="text-sm font-mono font-extrabold text-brand-700 dark:text-brand-300">
                     {selectedOrder.totalAmount}
                   </span>

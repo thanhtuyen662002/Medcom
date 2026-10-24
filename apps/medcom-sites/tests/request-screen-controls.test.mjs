@@ -332,7 +332,8 @@ for(const kind of ['purchase','inbound'])test(`${kind}: ${kind==='purchase'?'exi
   const count=()=>kind==='purchase'?f.editor().findAllByType('article').length:f.editor().findAllByType('legend').filter(n=>/^Dòng 1/.test(text(n))).length;
   const before=count();assert.equal(before,1);let queued,originalLines;
   if(kind==='purchase'){
-   assert.equal(editor.props.access.existingOnly,true);assert.equal(f.button('Bỏ dòng 1'),undefined);assert.equal(f.button('Thêm dòng hàng').props.disabled,true);
+   // Shared-detail copy changed before P2-07; existingOnly still denies Add/Remove.
+   assert.equal(editor.props.access.existingOnly,true);assert.equal(f.button('Bỏ dòng 1'),undefined);assert.equal(f.button('Thêm chi tiết').props.disabled,true);
    const retained=editor.findByType(MobileRequestLines).props;originalLines=structuredClone(retained.lines);
    queued=()=>{retained.onRemove(retained.lines[0].localKey);retained.onAdd();};
    await act(async()=>queued());await f.flush();assert.equal(count(),before);assert.equal(f.root().findAllByProps({role:'alertdialog'}).length,0,'The fixed profile cannot open a removal dialog');
@@ -348,7 +349,7 @@ for(const kind of ['purchase','inbound'])test(`${kind}: ${kind==='purchase'?'exi
   assert.equal(count(),before,'Restoration cannot revive the retired queued action');assert.equal(f.root().findAllByProps({role:'alertdialog'}).length,0);
   assert.strictEqual(f.editor(),editor);assert.strictEqual(f.editor().props.adapter,adapter);assert.equal(f.field().props.value,'PRESENTATION CUSTODY');assert.equal(f.guard().isBlocked(),true);
   if(kind==='purchase'){
-   assert.equal(f.button('Bỏ dòng 1'),undefined);assert.equal(f.button('Thêm dòng hàng').props.disabled,true);
+   assert.equal(f.button('Bỏ dòng 1'),undefined);assert.equal(f.button('Thêm chi tiết').props.disabled,true);
    const current=f.editor().findByType(MobileRequestLines).props;await act(async()=>{current.onRemove(current.lines[0].localKey);current.onAdd();});await f.flush();
    assert.equal(count(),before,'Fresh callbacks also cannot remove or add in the fixed profile');assert.deepEqual(f.editor().findByType(MobileRequestLines).props.lines,originalLines);
    assert.equal(f.root().findAllByProps({role:'alertdialog'}).length,0);
@@ -454,7 +455,8 @@ for(const kind of ['purchase','inbound'])test(`I66 ${kind}: single X preserves d
   if(kind==='inbound')await f.render({onBack:()=>backs++,onClose:()=>legacyCloses++});
   await f.open('DOC-A');const label=kind==='purchase'?'Đóng đề nghị':'Quay lại danh sách';
   const closes=()=>f.root().findAllByType('button').filter(node=>node.props.title==='Đóng hộp thoại');
-  assert.equal(closes().length,1);assert.equal(closes()[0].props['aria-label'],label);assert.equal(text(closes()[0]),'×');
+  // The single dismissal is now the shared decorative X SVG, with its named button.
+  assert.equal(closes().length,1);assert.equal(closes()[0].props['aria-label'],label);assert.equal(closes()[0].findAllByType('svg').length,1);assert.equal(String(closes()[0].findByType('svg').props['aria-hidden']),'true');
   assert.equal(f.button('Đóng phiếu nhập hàng'),undefined,'No independent legacy close command remains');
   const form=f.editor().findByType('form');const sections=form.findAll(node=>node.type==='section'&&node.props.className?.split(' ').includes('record-section'));
   assert.ok(sections.length>=2);const note=f.field();assert.ok(note);let group=note;while(group&&group.type!=='section')group=group.parent;

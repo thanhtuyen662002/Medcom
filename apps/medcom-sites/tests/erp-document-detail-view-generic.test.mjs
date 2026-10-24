@@ -25,7 +25,8 @@ await build({
   plugins: [{ name: 'generic-view-leaves', setup(builder) {
     builder.onResolve({ filter: /.*/ }, args => {
       if (!/(?:erp-document-detail-body\.tsx|erp-line-editor\.tsx|document-detail\/[^/]+\.tsx|document-detail\/registry\.ts)$/.test(args.importer.replaceAll('\\', '/'))) return;
-      for (const key of Object.keys(leaves)) if (args.path.endsWith(key)) return { path: key, namespace: 'generic-view-qa' };
+      // Match the whole leaf name: "button" must not intercept P2 AppButton.
+      for (const key of Object.keys(leaves)) if (args.path.endsWith(`/${key}`)) return { path: key, namespace: 'generic-view-qa' };
     });
     builder.onLoad({ filter: /.*/, namespace: 'generic-view-qa' }, args => ({ contents: leaves[args.path], loader: 'tsx', resolveDir: app }));
   } }],
@@ -86,7 +87,8 @@ test('purchase status colors and technical metadata do not appear in the body', 
 test('generic writable modules have one document menu while purchase orders remain write gated', async () => {
   for (const moduleId of ['inbound-requests', 'internal-transfer-requests', 'purchase-orders']) {
     await mounted(tree => {
-      assert.equal(tree.root.findAllByProps({ 'aria-label': 'Thao tác chứng từ' }).length, moduleId === 'purchase-orders' ? 0 : 1);
+      // AppButton and its native host share props; count only user controls.
+      assert.equal(tree.root.findAllByType('button').filter(node => node.props['aria-label'] === 'Thao tác chứng từ').length, moduleId === 'purchase-orders' ? 0 : 1);
     }, { module: moduleId });
   }
 });

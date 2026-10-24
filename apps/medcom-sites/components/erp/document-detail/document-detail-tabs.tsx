@@ -5,7 +5,7 @@ import { ArrowRight, ChevronDown, Clock3, History, Package2, Send } from "lucide
 import { calculateDetailMoney, formatDetailValue, isEmptyDetailValue, sumDetailLineTotals } from "@/lib/erp/document-detail/format";
 import type { DetailPage, DetailRow, DocumentDetailModel } from "@/lib/erp/document-detail/model";
 import type { DocumentDetailConfig, LineColumnConfig } from "@/lib/erp/document-detail/types";
-import { statusColorsFrom } from "@/lib/erp/status-colors";
+import { StatusBadge } from "@/components/app/status-badge";
 import { readDocumentSummary, summaryDisplay } from "@/lib/erp/document-summary";
 
 const cellClass = "border-b border-neutral-100 px-4 py-3.5 align-top dark:border-neutral-800";
@@ -148,7 +148,9 @@ function HistoryPanel({ page, busy, onMore }: { page: DetailPage; busy: boolean;
           </div>
           <dl className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2">
             <div className="min-w-0"><dt className="mb-1 text-sm">Gửi đến</dt><dd className="flex items-start gap-2 text-base font-medium"><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0 text-brand-600 dark:text-brand-300" /><span className="min-w-0 break-words">{formatDetailValue(fields.sendTo)}</span></dd></div>
-            <div className="min-w-0"><dt className="mb-1 text-sm">Trạng thái</dt><dd title={fields.statusId == null ? undefined : `Mã trạng thái: ${fields.statusId}`} style={statusColorsFrom(fields)} className="inline-flex max-w-full rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-sm font-semibold dark:border-neutral-700 dark:bg-neutral-800"><span className="break-words">{status}</span></dd></div>
+            <div className="min-w-0"><dt className="mb-1 text-sm">Trạng thái</dt><dd><StatusBadge title={fields.statusId == null ? undefined : `Mã trạng thái: ${fields.statusId}`} label={status}
+              statusForeColor={typeof fields.statusForeColor === "string" ? fields.statusForeColor : undefined}
+              statusBackColor={typeof fields.statusBackColor === "string" ? fields.statusBackColor : undefined} className="max-w-full break-words" /></dd></div>
           </dl>
           {!isEmptyDetailValue(fields.notes) && <div className="mt-4 border-t border-neutral-100 pt-3 dark:border-neutral-800"><p className="mb-1 text-sm">Ghi chú</p><p className="whitespace-pre-wrap break-words text-base leading-6">{formatDetailValue(fields.notes, "multiline")}</p></div>}
         </article>

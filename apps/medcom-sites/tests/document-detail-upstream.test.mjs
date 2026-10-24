@@ -20,7 +20,7 @@ const leaves = {
   'qr-camera': `export class QrCamera{start(){}stop(){}}`,
 };
 await build({
-  stdin: { contents: `export {SalesOrderForm} from './components/erp/sales-order-form';export {ErpDocumentDetailBody} from './components/erp/erp-document-detail-body';`, resolveDir: app, loader: 'tsx' },
+  stdin: { contents: `export {SalesOrderForm} from './components/erp/sales-order-form';export {ErpDocumentDetailBody} from './components/erp/erp-document-detail-body';export {statusBadgeStyle} from './lib/erp/status-colors';`, resolveDir: app, loader: 'tsx' },
   outfile: path.join(output, 'fixture.cjs'), bundle: true, platform: 'node', format: 'cjs', packages: 'external', alias: { '@': app }, jsx: 'automatic', logLevel: 'warning',
   plugins: [{ name: 'upstream-detail-leaves', setup(builder) {
     builder.onResolve({ filter: /.*/ }, args => {
@@ -31,7 +31,7 @@ await build({
 });
 const require = createRequire(import.meta.url);
 const React = require('react'), { create, act } = require('react-test-renderer');
-const { SalesOrderForm, ErpDocumentDetailBody } = require(path.join(output, 'fixture.cjs'));
+const { SalesOrderForm, ErpDocumentDetailBody, statusBadgeStyle } = require(path.join(output, 'fixture.cjs'));
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const noop = () => {};
 const text = node => typeof node === 'string' || typeof node === 'number' ? String(node)
@@ -90,13 +90,14 @@ for (const moduleId of ['sales-orders', 'sales-order-pm', 'sales-order-sa', 'war
       }
       assert.equal(tree.root.findAllByProps({ 'data-document-lines-total': true }).length, 0, 'page totals must not compete with server totals');
       const header = tree.root.findByProps({ 'data-status': 'header' });
-      assert.deepEqual(header.findAllByType('span').find(node => text(node) === 'Đã gửi PM').props.style, { color: '#000000', backgroundColor: '#FFFF00' });
-      assert.deepEqual(header.findByProps({ title: 'Trạng thái giao hàng' }).props.style, { color: '#FFFFFF', backgroundColor: '#00695C' });
+      // P2-07 keeps the supplied ERP hue but uses the shared light/dark pairs.
+      assert.deepEqual(header.findAllByType('span').find(node => text(node) === 'Đã gửi PM').props.style, statusBadgeStyle('#000000', '#FFFF00'));
+      assert.deepEqual(header.findAllByType('span').find(node => node.props.title === 'Trạng thái giao hàng').props.style, statusBadgeStyle('#FFFFFF', '#00695C', 'warning'));
       assert.match(text(header), /Chưa khóa.*Giao hàng: Đang giao/);
       assert.doesNotMatch(text(tree.toJSON()), /Status Fore Color|Delivery Status|#FFFF00|#00695C/);
       if (sales) {
-        const historyStatus = tree.root.findByProps({ title: 'Mã trạng thái: 12' });
-        assert.deepEqual(historyStatus.props.style, { color: '#000000', backgroundColor: '#FFFF00' });
+        const historyStatus = tree.root.findAllByType('span').find(node => node.props.title === 'Mã trạng thái: 12');
+        assert.deepEqual(historyStatus.props.style, statusBadgeStyle('#FFFFFF', '#FFFF00'));
       }
     });
   });

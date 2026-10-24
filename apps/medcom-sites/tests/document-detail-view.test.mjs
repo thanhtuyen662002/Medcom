@@ -173,7 +173,8 @@ test('subgroups have h4 headings and editable empties do not collapse to a strip
 test('disabled, busy and danger actions keep labels and Vietnamese reasons', () => {
   const output = render(config(), model({ actions: [action('remove', { tone: 'danger', enabled: false, reason: 'Chưa được phép xóa' }), action('save', { busy: true })] }));
   assert.match(output, /text-red-600/);
-  assert.match(output, /disabled="" title="Chưa được phép xóa"/);
+  // P2-07 AppButton retains both attributes; their DOM order is immaterial.
+  assert.match(output, /<button(?=[^>]*disabled="")(?=[^>]*title="Chưa được phép xóa")[^>]*>/);
   assert.match(output, /aria-busy="true"/);
 });
 
@@ -361,18 +362,19 @@ test('action callbacks retain IDs and disabled/busy actions do not dispatch', as
   });
 });
 
-test('dialog SSR waits for a body host and preserves the reference viewport class string exactly', async () => {
+test('dialog SSR waits for a body host and retains viewport geometry with P2 header/footer chrome', async () => {
   assert.equal(renderToStaticMarkup(h(DocumentDetailDialog, { open: true, title: 'Kiểm thử', documentNumber: 'QA', closeLabel: 'Đóng', onRequestClose: noop }, 'QA-BODY')), '');
-  // Source: cd68422:apps/medcom-sites/components/erp/erp-detail-sheet.tsx:19-27.
+  // Original viewport bounds retained; P2-07 changes header typography, ghost
+  // dismissal and safe-area padding, not the retained RecordDialog behavior.
   const referenceClasses = `p-0! sm:p-6! font-['Segoe_UI',Roboto,Arial,sans-serif] text-base leading-relaxed
       [&_.request-detail-dialog]:h-dvh! [&_.request-detail-dialog]:max-h-dvh! [&_.request-detail-dialog]:w-full! [&_.request-detail-dialog]:max-w-[1440px]! [&_.request-detail-dialog]:rounded-none! [&_.request-detail-dialog]:bg-white! [&_.request-detail-dialog]:text-black!
       sm:[&_.request-detail-dialog]:h-[min(900px,calc(100dvh-3rem))]! sm:[&_.request-detail-dialog]:max-h-[calc(100dvh-3rem)]! sm:[&_.request-detail-dialog]:rounded-2xl!
       dark:[&_.request-detail-dialog]:bg-neutral-900! dark:[&_.request-detail-dialog]:text-white!
-      [&_.request-detail-header]:bg-white! [&_.request-detail-header]:p-4! sm:[&_.request-detail-header]:px-6! dark:[&_.request-detail-header]:bg-neutral-900!
-      [&_.request-detail-header_h2]:text-lg! sm:[&_.request-detail-header_h2]:text-xl! [&_.record-document-number]:text-sm! [&_.record-document-number]:text-black! dark:[&_.record-document-number]:text-white!
+      [&_.request-detail-header]:bg-white! [&_.request-detail-header]:px-4! [&_.request-detail-header]:pb-4! [&_.request-detail-header]:pt-[calc(1rem_+_env(safe-area-inset-top))]! sm:[&_.request-detail-header]:px-6! dark:[&_.request-detail-header]:bg-neutral-900!
+      [&_.request-detail-header_h2]:order-none! [&_.request-detail-header_h2]:text-xl! [&_.request-detail-header_h2]:font-semibold! [&_.request-detail-header_h2]:text-neutral-900! dark:[&_.request-detail-header_h2]:text-neutral-100!
       [&_.request-detail-body]:block! [&_.request-detail-body]:bg-neutral-50! [&_.request-detail-body]:p-4! sm:[&_.request-detail-body]:p-6! dark:[&_.request-detail-body]:bg-neutral-950!
-      [&_.record-dialog-actions]:bg-white! [&_.record-dialog-actions]:p-4! sm:[&_.record-dialog-actions]:px-6! dark:[&_.record-dialog-actions]:bg-neutral-900!
-      [&_.record-dialog-close]:items-center! [&_.record-dialog-close]:justify-center! [&_.record-dialog-close]:text-black! dark:[&_.record-dialog-close]:text-white!`;
+      [&_.record-dialog-actions]:bg-white! [&_.record-dialog-actions]:px-4! [&_.record-dialog-actions]:pt-3! [&_.record-dialog-actions]:pb-[calc(0.75rem_+_env(safe-area-inset-bottom))]! sm:[&_.record-dialog-actions]:px-6! dark:[&_.record-dialog-actions]:bg-neutral-900!
+      [&_.record-dialog-close]:size-11! [&_.record-dialog-close]:items-center! [&_.record-dialog-close]:justify-center! [&_.record-dialog-close]:rounded-xl! [&_.record-dialog-close]:border-0! [&_.record-dialog-close]:bg-transparent! [&_.record-dialog-close]:p-0! [&_.record-dialog-close]:text-neutral-700! [&_.record-dialog-close]:shadow-none! [&_.record-dialog-close:hover]:bg-neutral-100! dark:[&_.record-dialog-close]:text-neutral-200! dark:[&_.record-dialog-close:hover]:bg-neutral-800!`;
   const implementation = await readFile('components/erp/document-detail/document-detail-dialog.tsx', 'utf8');
   const classes = source => source.match(/className="(p-0![\s\S]*?)"/)[1].replaceAll('\r\n', '\n');
   assert.equal(classes(implementation), referenceClasses.replaceAll('\r\n', '\n'));
