@@ -156,9 +156,6 @@ export function TabHome({
           <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">
             Thao tác nghiệp vụ nhanh
           </h3>
-          <span className="text-[11px] text-brand-600 dark:text-brand-400 font-medium">
-            Phân hệ Quản trị Dược
-          </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">

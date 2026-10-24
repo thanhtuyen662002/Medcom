@@ -796,9 +796,10 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
           open={cameraModalOpen}
           onClose={() => setCameraModalOpen(false)}
           title={cameraScanMode === "add" ? "Quét thêm mã QR" : "Quét xóa mã QR"}
+          subtitle={`${cameraScanMode === "add" ? "Mã quét được thêm vào" : "Mã quét được xóa khỏi"} phiếu ${selectedDocId} trên ERP`}
         >
-          <div className="space-y-4 p-2 text-xs">
-            <div className="relative aspect-square max-w-sm mx-auto overflow-hidden rounded-2xl bg-black border border-neutral-800 flex items-center justify-center">
+          <div className="space-y-4 p-2 text-sm">
+            <div className="relative aspect-square max-w-sm mx-auto overflow-hidden rounded-2xl bg-neutral-950 flex items-center justify-center">
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover"
@@ -806,28 +807,27 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
                 muted
                 playsInline
               />
-              {/* Scanner Reticle Overlay */}
-              <div className="absolute inset-0 border-2 border-brand-500/60 rounded-2xl pointer-events-none flex items-center justify-center">
-                <div className="size-48 border-2 border-dashed border-brand-400 rounded-xl" />
-              </div>
+              {/* Aiming frame; purely visual, the decoder reads the whole image. */}
+              <div aria-hidden="true" className="pointer-events-none absolute inset-[14%] rounded-2xl border-2 border-white/80" />
             </div>
 
-            <p className="text-center font-medium text-neutral-600 dark:text-neutral-400">
+            <p role="status" aria-live="polite" className="text-center text-base font-medium text-neutral-700 dark:text-neutral-300">
               {cameraScanStatus}
             </p>
 
             {/* Manual Barcode Input Fallback */}
             <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-2">
-              <label className="text-[11px] font-semibold text-neutral-500">
-                Nhập mã thủ công nếu thiết bị không có camera:
+              <label htmlFor="document-scan-manual" className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                Hoặc nhập mã thủ công
               </label>
               <div className="flex gap-2">
                 <input
+                  id="document-scan-manual"
                   type="text"
                   value={manualBarcode}
                   onChange={(e) => setManualBarcode(e.target.value)}
                   placeholder="Mã ItemID;ItemCode;Lot hoặc PKG1;..."
-                  className="flex-1 px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                  className="min-h-11 min-w-0 flex-1 px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-base"
                 />
                 <button
                   type="button"
@@ -838,7 +838,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
                     }
                   }}
                   disabled={!manualBarcode.trim() || qrOperationLoading}
-                  className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50"
+                  className="min-h-11 shrink-0 px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50"
                 >
                   Xác nhận
                 </button>

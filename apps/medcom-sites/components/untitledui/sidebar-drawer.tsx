@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { BookOpen, LogOut, Moon, Sun, X } from "lucide-react";
 import { AppButton } from "@/components/app/app-button";
-import { NavigationList, navigationItemClassName, type NavigationAccess } from "@/components/app/app-navigation";
+import { NavigationList, type NavigationAccess } from "@/components/app/app-navigation";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import type { NavTabId } from "./bottom-nav";
 
@@ -27,34 +27,41 @@ export interface SidebarDrawerProps {
   queueBadges?: Readonly<Record<string, number>>;
 }
 
+const footerIconClass = "inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-neutral-600 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-brand-500 dark:text-neutral-300 dark:hover:bg-neutral-800";
+
+// Who and where on top, modules in the middle; the footer is one row of
+// account tools so the module list keeps most of a phone screen.
 export function SidebarDrawer({ open, onClose, activeTab, onSelectTab, userName = "", userRole = "", currentBranch = "", branchName,
   isDarkMode = false, onToggleDarkMode, onLogout, tabAccess, onRetryTabs, queueBadges }: SidebarDrawerProps) {
   const opener = useRef<HTMLElement | null>(null);
+  const branch = branchName || currentBranch || "MEDCOM ERP";
   return <Sheet open={open} modal onOpenChange={next => { if (!next) onClose(); }}>
     <SheetContent side="left" showCloseButton={false} aria-modal="true"
       onOpenAutoFocus={() => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }}
       onCloseAutoFocus={event => { if (opener.current?.isConnected) { event.preventDefault(); opener.current.focus(); } }}
       className="h-dvh max-h-dvh w-[calc(100vw-2rem)] max-w-sm gap-0 overflow-hidden border-neutral-200 bg-white p-0 text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100">
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] dark:border-neutral-800">
-        <div className="min-w-0">
-          <SheetTitle className="truncate text-lg font-semibold">Menu phân hệ</SheetTitle>
-          <SheetDescription className="truncate text-sm text-neutral-500 dark:text-neutral-400" title={branchName || currentBranch}>{branchName || currentBranch || "MEDCOM ERP"}</SheetDescription>
+      <header className="flex shrink-0 items-center gap-3 border-b border-neutral-200 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] dark:border-neutral-800">
+        <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-base font-semibold text-brand-700 dark:bg-brand-950 dark:text-brand-300">{userName.charAt(0).toUpperCase() || "M"}</span>
+        <div className="min-w-0 flex-1">
+          <SheetTitle className="truncate text-base font-semibold" title={userName}>{userName || "Menu phân hệ"}</SheetTitle>
+          <SheetDescription className="truncate text-sm text-neutral-500 dark:text-neutral-400" title={[userRole, branch].filter(Boolean).join(" · ")}>
+            {[userRole, branch].filter(Boolean).join(" · ")}
+          </SheetDescription>
         </div>
         <AppButton variant="ghost" size="icon" aria-label="Đóng menu" onClick={onClose}><X aria-hidden="true" className="size-5" /></AppButton>
       </header>
       <NavigationList key={open ? "open" : "closed"} activeTab={activeTab} onSelect={tab => { onSelectTab(tab); onClose(); }} tabAccess={tabAccess} onRetryTabs={onRetryTabs} badges={queueBadges} />
-      <footer className="shrink-0 space-y-1 border-t border-neutral-200 bg-neutral-50 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-neutral-800 dark:bg-neutral-950">
-        <div className="flex items-center gap-3 px-3 pb-2">
-          <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-sm font-semibold text-brand-700 dark:bg-brand-950 dark:text-brand-300">{userName.charAt(0).toUpperCase()}</span>
-          <div className="min-w-0"><p className="truncate text-sm font-semibold" title={userName}>{userName}</p><p className="truncate text-sm text-neutral-500 dark:text-neutral-400" title={userRole}>{userRole}</p></div>
-        </div>
-        <a href="/help" target="_blank" rel="noopener noreferrer" className={navigationItemClassName(false)}><BookOpen aria-hidden="true" className="size-5 shrink-0" /><span>Hướng dẫn sử dụng</span></a>
-        <div className="flex gap-2">
-          {onToggleDarkMode && <AppButton variant="secondary" className="min-w-0 flex-1 px-3" onClick={onToggleDarkMode} aria-label="Giao diện tối" aria-pressed={isDarkMode}>
-            {isDarkMode ? <Moon aria-hidden="true" className="size-5 shrink-0" /> : <Sun aria-hidden="true" className="size-5 shrink-0" />}<span>{isDarkMode ? "Giao diện tối" : "Giao diện sáng"}</span>
-          </AppButton>}
-          {onLogout && <AppButton variant="ghost" size="icon" aria-label="Đăng xuất" onClick={() => { onClose(); onLogout(); }}><LogOut aria-hidden="true" className="size-5" /></AppButton>}
-        </div>
+      <footer className="flex shrink-0 items-center gap-1 border-t border-neutral-200 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] dark:border-neutral-800">
+        <a href="/help" target="_blank" rel="noopener noreferrer" aria-label="Hướng dẫn sử dụng (mở tab mới)"
+          className="inline-flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-3 text-base font-medium text-neutral-700 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-brand-500 dark:text-neutral-200 dark:hover:bg-neutral-800">
+          <BookOpen aria-hidden="true" className="size-5 shrink-0" /><span className="truncate">Hướng dẫn</span>
+        </a>
+        {onToggleDarkMode && <button type="button" className={footerIconClass} onClick={onToggleDarkMode} aria-pressed={isDarkMode}
+          aria-label={isDarkMode ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"} title={isDarkMode ? "Giao diện sáng" : "Giao diện tối"}>
+          {isDarkMode ? <Sun aria-hidden="true" className="size-5" /> : <Moon aria-hidden="true" className="size-5" />}
+        </button>}
+        {onLogout && <button type="button" className={`${footerIconClass} text-rose-600 dark:text-rose-400`} aria-label="Đăng xuất" title="Đăng xuất"
+          onClick={() => { onClose(); onLogout(); }}><LogOut aria-hidden="true" className="size-5" /></button>}
       </footer>
     </SheetContent>
   </Sheet>;
