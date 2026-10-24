@@ -113,3 +113,6 @@ Mọi phiếu T-001…T-007 Done trên `ui-sync/main`. Tổng kết: `docs/ui-sy
 - [UX-02](UX-02.md) (4, 8, 11, 15, 16, 17) → PR #181; [UX-03](UX-03.md) (5, 9) → PR #182; [UX-04](UX-04.md) (14, 17 sót; đóng 18) → PR #183. Chuỗi PR xếp chồng, merge theo thứ tự.
 - **Phát hiện CI:** PR CI (`backend`, `backend-windows`) chạy test của `src/frontend`, không chạy `apps/medcom-sites`; workflow `medcom-selfhost` chỉ chạy tay. Cổng chất lượng FE thực tế là kiểm tra local của leader (tsc, `npm test`, eslint, build, giao diện trên dữ liệu VPS).
 - **Còn lại, cần quyết định riêng:** F-01 (vấn đề 6 + 13: tab PR/Nhập kho/Đơn hàng trùng màn ERP, chi tiết kiểu cũ); vấn đề 7 (màn vai trò điều chuyển chưa có lọc "chờ tôi"); 12 (19 chip trạng thái đơn hàng là bộ lọc phía server, chưa có số đếm); 10 (người tạo hiện email/tài khoản import — cần ánh xạ ở backend).
+- 12:00–12:54: frontend production 500 sau deploy (VPS); `main` build/chạy tốt ở local. Mở revert #184 rồi đóng khi production tự lên lại. UX-02/03/04 đã kiểm trên production.
+- [F-01](F-01.md) (vấn đề 6 + 13) qua phiên riêng, merge PR #185 (`44d0dd9`, 16:07), kiểm trên production 16:09.
+- [UX-05](UX-05.md) (vấn đề 7 + 12): chủ dự án duyệt bảng "Chờ tôi xử lý"; mở PR.

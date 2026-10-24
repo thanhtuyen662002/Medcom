@@ -35,6 +35,8 @@ import { useSalesOrderStatuses } from "@/components/erp/sales-order-status-filte
 import { documentStatusLabel } from "@/lib/erp/document-status";
 import { formatDateTime } from "@/lib/erp/document-detail/format";
 import { formatMoney as formatMoneyValue } from "@/lib/erp/money";
+import { ROLE_QUEUE_PAGE_SIZE, mergeRoleQueuePages, roleQueueStatuses } from "@/lib/erp/role-queue";
+import { erpStatusChips } from "@/lib/erp/status-chips";
 import { MoneyInput } from "@/components/erp/money-input";
 import { WRITE_GATED_MODULES, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
 
@@ -187,6 +189,9 @@ export function TabErpScreen({
   const [dateTo, setDateTo] = useState("");
   const [statusId, setStatusId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  // Role screens open on "Chờ tôi xử lý": the ERP statuses waiting on this role.
+  const queueStatuses = roleQueueStatuses(module);
+  const [queueMode, setQueueMode] = useState(queueStatuses !== null);
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -353,8 +358,9 @@ export function TabErpScreen({
   const listSeqRef = useRef(0);
   const appliedSearchRef = useRef("");
   const loadList = useCallback(
-    async (targetPage = 1, silent = false, statusOverride?: number | null, pageSizeOverride = pageSize) => {
+    async (targetPage = 1, silent = false, statusOverride?: number | null, pageSizeOverride = pageSize, queueOverride?: boolean) => {
       const seq = ++listSeqRef.current;
+      const queue = (queueOverride ?? queueMode) ? queueStatuses : null;
       const effectiveStatus = ["purchase-requests", "purchase-approvals", "sales-orders", "sales-order-pm", "sales-order-sa"].includes(module)
         ? statusOverride !== undefined ? statusOverride : statusId : null;
       const params = {
@@ -366,14 +372,19 @@ export function TabErpScreen({
         dateTo: dateTo || undefined,
         statusId: effectiveStatus !== null ? effectiveStatus : undefined,
       };
-      const key = `${module}::${currentBranch}::${targetPage}::${params.pageSize}::${params.search ?? ""}::${params.dateFrom ?? ""}::${params.dateTo ?? ""}::${params.statusId ?? ""}`;
+      const key = `${module}::${currentBranch}::${targetPage}::${params.pageSize}::${params.search ?? ""}::${params.dateFrom ?? ""}::${params.dateTo ?? ""}::${params.statusId ?? ""}::${queue?.join(",") ?? ""}`;
       if (!silent) setIsLoadingList(true);
       setErrorMsg(null);
       let inflight = listInflight.get(key);
       if (!inflight) {
         const aborter = new AbortController();
         const timer = setTimeout(() => aborter.abort(), 45000);
-        const started: Promise<ErpDocumentPage> = erpClient.getErpModuleList(module, params, aborter.signal);
+        // The list API filters one status at a time: a role queue reads each of
+        // its statuses and shows them as one page.
+        const started: Promise<ErpDocumentPage> = queue
+          ? Promise.all(queue.map(status => erpClient.getErpModuleList(module, { ...params, page: 1, pageSize: ROLE_QUEUE_PAGE_SIZE, statusId: status }, aborter.signal)))
+            .then(pages => ({ rows: mergeRoleQueuePages(pages).rows, page: 1, pageSize: params.pageSize, hasMore: false }))
+          : erpClient.getErpModuleList(module, params, aborter.signal);
         inflight = started.finally(() => {
           clearTimeout(timer);
           if (listInflight.get(key) === inflight) listInflight.delete(key);
@@ -401,7 +412,7 @@ export function TabErpScreen({
         setIsRefreshing(false);
       }
     },
-    [module, currentBranch, search, dateFrom, dateTo, statusId, pageSize]
+    [module, currentBranch, search, dateFrom, dateTo, statusId, pageSize, queueMode, queueStatuses]
   );
 
   // Reload the list every time this tab becomes visible. Show skeletons
@@ -801,6 +812,7 @@ export function TabErpScreen({
     const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
     if (statusFilter === "locked") return isLocked === true || isLocked === 1 || isLocked === "1";
     if (statusFilter === "open") return isLocked === false || isLocked === 0 || isLocked === "0" || isLocked == null;
+    if (statusFilter.startsWith("s:")) return String(r.header?.statusId) === statusFilter.slice(2);
     return true;
   });
 
@@ -865,10 +877,21 @@ export function TabErpScreen({
     { value: "returned", label: "Trả về", status: 4 },
     { value: "ordered", label: "Đã gửi ĐMH", status: 5 },
   ];
+  // Sales order statuses: every ERP status is offered in the filter sheet; the
+  // chip row keeps the role queue, "Tất cả", the chosen status and a way to the rest.
+  const salesStatusOptions = [{ value: "", label: "Tất cả" }, ...salesStatuses.choices.map(choice => ({ value: String(choice.id), label: choice.label }))];
+  const queueChips: FilterChip[] = queueStatuses ? [
+    { value: "mine", label: "Chờ tôi xử lý", count: queueMode && !isLoadingList ? rows.length : undefined, disabled: !isActive },
+    { value: "all", label: "Tất cả", count: !queueMode && statusId === null && !isLoadingList && !isSalesOrderModule ? rows.length : undefined, disabled: !isActive },
+  ] : [];
   const chipItems: FilterChip[] = isSalesOrderModule
-    // Lookup provides labels/IDs, not counts across the server result set.
-    ? [{ value: "", label: "Tất cả", disabled: !isActive }, ...salesStatuses.choices.map(choice => ({ value: String(choice.id), label: choice.label, disabled: !isActive }))]
+    ? [...queueChips,
+      ...(!queueMode && statusId !== null ? [{ value: String(statusId), label: salesStatusOptions.find(option => option.value === String(statusId))?.label ?? documentStatusLabel(statusId, null), disabled: !isActive }] : []),
+      { value: "more", label: "Trạng thái khác…", disabled: !isActive || salesStatuses.busy }]
     : isSalesModule ? [{ value: "", label: "Tất cả" }]
+    : queueStatuses ? [...queueChips, ...erpStatusChips(rows.map(row => ({
+      statusId: typeof row.header?.statusId === "number" ? row.header.statusId : null, statusName: listText(row, "statusName") || null,
+    }))).slice(1).map(chip => ({ value: `s:${chip.value}`, label: chip.label, count: chip.count }))]
     : useServerStatusChips ? serverChips.map(chip => ({
       ...chip, count: chip.status === null ? rows.length : rows.filter(row => row.header?.statusId === chip.status).length,
     })) : [
@@ -882,11 +905,22 @@ export function TabErpScreen({
         return locked === true || locked === 1 || locked === "1";
       }).length },
     ];
-  const selectedStatus = isSalesModule ? (statusId === null ? "" : String(statusId)) : statusFilter;
+  const selectedStatus = queueStatuses && queueMode && !statusFilter.startsWith("s:") ? "mine"
+    : isSalesOrderModule ? (statusId === null ? "all" : String(statusId))
+    : isSalesModule ? (statusId === null ? "" : String(statusId)) : statusFilter;
   const selectStatus = (value: string, size = pageSize) => {
-    if (isSalesOrderModule) {
-      const next = value === "" ? null : Number(value);
-      setStatusId(next); void loadList(1, false, next, size);
+    if (value === "more") { setFiltersOpen(true); return; }
+    if (value === "mine") {
+      setQueueMode(true); setStatusId(null); setStatusFilter("all");
+      void loadList(1, false, null, size, true);
+    } else if (isSalesOrderModule) {
+      const next = value === "" || value === "all" ? null : Number(value);
+      setQueueMode(false); setStatusId(next); void loadList(1, false, next, size, false);
+    } else if (queueStatuses && value.startsWith("s:")) {
+      setStatusFilter(value);
+    } else if (queueStatuses && queueMode) {
+      setQueueMode(false); setStatusFilter("all");
+      void loadList(1, false, undefined, size, false);
     } else if (useServerStatusChips) {
       const chip = serverChips.find(item => item.value === (value || "all"))!;
       setStatusFilter(chip.value); setStatusId(chip.status);
@@ -915,7 +949,7 @@ export function TabErpScreen({
           else immediateSearch.current = true;
         }}
         onFilter={() => setFiltersOpen(true)} filterOpen={filtersOpen} filterId={filterSheetId}
-        filterCount={selectedStatus && selectedStatus !== "all" ? 1 : 0}
+        filterCount={selectedStatus && selectedStatus !== "all" && selectedStatus !== "mine" ? 1 : 0}
         onRefresh={() => void loadList(search.trim() === appliedSearchRef.current ? page : 1)}
         refreshing={isLoadingList || isRefreshing}
         onCreate={isCreateVisible ? openCreate : undefined} createDisabled={!canCreate}
@@ -933,7 +967,8 @@ export function TabErpScreen({
       </div>
       <FilterSheet id={filterSheetId} open={filtersOpen} onClose={() => setFiltersOpen(false)}
         value={{ status: selectedStatus === "all" ? "" : selectedStatus, pageSize }}
-        statuses={chipItems.map(chip => ({ value: chip.value === "all" ? "" : chip.value, label: chip.label }))}
+        statuses={isSalesOrderModule ? [...(queueStatuses ? [{ value: "mine", label: "Chờ tôi xử lý" }] : []), ...salesStatusOptions]
+          : chipItems.map(chip => ({ value: chip.value === "all" ? "" : chip.value, label: chip.label }))}
         onApply={value => selectStatus(value.status, value.pageSize)} />
       {isCreateVisible && !canCreate && createActionTooltip && <p className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
         <AlertCircle aria-hidden className="mt-0.5 size-4 shrink-0" /><span>Chưa thể tạo mới: {createActionTooltip}</span>
@@ -945,7 +980,7 @@ export function TabErpScreen({
         })}
         onOpen={row => void handleOpenDetail(row.documentId)} loading={isLoadingList}
         error={errorMsg} retainRowsOnError onRetry={() => void loadList(page)}
-        empty={{ message: `Chưa có chứng từ phù hợp với bộ lọc tại chi nhánh ${currentBranch}.`,
+        empty={{ message: selectedStatus === "mine" ? `Không có chứng từ nào đang chờ bạn xử lý tại chi nhánh ${currentBranch}.` : `Chưa có chứng từ phù hợp với bộ lọc tại chi nhánh ${currentBranch}.`,
           onCreate: isCreateVisible && canCreate ? openCreate : undefined }}
         pagination={{ page, pageSize, rowCount: rows.length, visibleRowCount: displayRows.length, hasMore, busy: isLoadingList || isRefreshing,
           onPageChange: nextPage => void loadList(search.trim() === appliedSearchRef.current ? nextPage : 1),
