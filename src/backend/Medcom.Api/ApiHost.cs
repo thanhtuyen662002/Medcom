@@ -163,6 +163,10 @@ public static class ApiHost
         var absoluteMinutes = builder.Configuration.GetValue("Session:AbsoluteMinutes", 10080);
         builder.Services.AddSingleton(new WebSessionPolicy(TimeSpan.FromMinutes(idleMinutes),
             TimeSpan.FromMinutes(absoluteMinutes), builder.Configuration.GetValue("Session:Capacity", 10000)));
+        // Real ERP sign-in keeps sessions across deploys (disposed, so flushed, on shutdown).
+        var sessionStore = builder.Configuration.GetValue("Legacy:Enabled", false)
+            ? WebSessionFileStore.Create(builder.Configuration["Session:StorePath"]) : null;
+        if (sessionStore is not null) builder.Services.AddSingleton(sessionStore);
         builder.Services.AddSingleton<IWebSessions, LocalWebSessions>();
         builder.Services.ConfigureHttpJsonOptions(options =>
             options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow);

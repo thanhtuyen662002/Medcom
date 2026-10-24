@@ -34,7 +34,7 @@ export function DocumentListTable<T>({ label, rows, columns, rowId, onOpen, load
           </thead>
           <tbody>
             {loading ? Array.from({ length: 6 }, (_, index) => <tr key={index} aria-hidden="true">
-              {Array.from({ length: columns.length + 2 }, (_, cell) => <td key={cell} className="border-b border-neutral-100 px-4 py-4 dark:border-neutral-800"><div className="h-5 animate-pulse rounded bg-neutral-100 dark:bg-neutral-800" /></td>)}
+              {Array.from({ length: columns.length + 2 }, (_, cell) => <td key={cell} className="border-b border-neutral-100 px-4 py-4 dark:border-neutral-800"><div className="h-5 medcom-shimmer rounded" /></td>)}
             </tr>) : rows.map((row, index) => <tr key={rowId(row)} onClick={() => onOpen(row)} className="group h-14 cursor-pointer transition-colors hover:bg-brand-50/60 focus-within:bg-brand-50/60 dark:hover:bg-brand-950/40 dark:focus-within:bg-brand-950/40">
               <td className="border-b border-neutral-100 px-4 py-3 text-center tabular-nums dark:border-neutral-800">{rowOffset + index + 1}</td>
               {columns.map(column => <td key={column.id} className={`border-b border-neutral-100 px-4 py-3 align-middle dark:border-neutral-800 ${column.className ?? ""}`}>{column.render(row)}</td>)}

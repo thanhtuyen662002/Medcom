@@ -29,7 +29,7 @@ function FieldValue({ field, header }: { field: DetailFieldConfig; header: Recor
     {field.format === "url" && isHttpUrl(value)
       ? <a className="inline-flex min-h-11 max-w-full items-center gap-2 text-primary underline underline-offset-4" href={String(value).trim()} target="_blank" rel="noopener noreferrer"><Link2 aria-hidden="true" className="size-4 shrink-0" />Mở tài liệu</a>
       : formattedValue}
-    {showSecondary && <span className="mt-1 block text-sm font-normal leading-6">{formattedSecondary}</span>}
+    {showSecondary && <span className="mt-0.5 block text-sm font-normal leading-5 text-neutral-500 dark:text-neutral-400">{formattedSecondary}</span>}
   </>;
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, type ReactNode } from "react";
-import { Loader2 } from "lucide-react";
+import { DetailSkeleton } from "@/components/app/loading-skeleton";
 import type { DocumentDetailHandlers, DocumentDetailModel } from "@/lib/erp/document-detail/model";
 import type { DetailSlotId, DocumentDetailConfig, ErpScreenModule } from "@/lib/erp/document-detail/types";
 import { RecordDetailHeading } from "../record-dialog";
@@ -39,7 +39,7 @@ export function DocumentDetailView({ config, model, handlers, module, slots, men
     </RecordDetailHeading>
     <DocumentDetailStatus status={model.status} subtitle={`${documentType.charAt(0).toLocaleUpperCase("vi-VN")}${documentType.slice(1)} · Chi nhánh ${branch ?? "—"}`} presentationAllowed={ready} />
     <DocumentDetailNotices model={model} handlers={handlers} />
-    {model.loading ? <DetailSection title="Thông tin chung"><div role="status" className="flex items-center gap-2 py-5 text-sm text-muted-foreground"><Loader2 aria-hidden="true" className="size-5 animate-spin" />{config.messages?.loading ?? "Đang tải chứng từ..."}</div></DetailSection>
+    {model.loading ? <DetailSection title="Thông tin chung"><DetailSkeleton label={config.messages?.loading ?? "Đang tải chứng từ..."} /></DetailSection>
       : !ready ? <DetailSection title="Thông tin chung"><p role="alert" className="text-sm text-destructive">{model.error || config.messages?.empty || "Chưa có thông tin chứng từ."}</p><RequestButton type="button" onClick={handlers.onRetry}>Thử lại</RequestButton></DetailSection>
         : <>
           {notice && <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm leading-6 text-black dark:border-brand-800 dark:bg-brand-950 dark:text-white"><strong>{notice.title}</strong><p className="mt-1">{notice.body}</p></div>}

@@ -115,10 +115,10 @@ export const salesQrDetailConfig = {
       title: "Tiền tệ & thanh toán",
       columns: 2,
       fields: [
-        { key: "currencyId", label: "Loại tiền", format: "reference", displayKey: "currencyName", secondaryKey: "currencyId" },
+        { key: "currencyId", label: "Loại tiền", format: "reference", displayKey: "currencyName" },
         { key: "rateExchange", label: "Tỷ giá", format: "number" },
-        { key: "paymentTypeId", label: "Hình thức thanh toán", format: "reference", displayKey: "paymentTypeName", secondaryKey: "paymentTypeId" },
-        { key: "paymentTermId", label: "Điều khoản thanh toán", format: "reference", displayKey: "paymentTermName", secondaryKey: "paymentTermId" },
+        { key: "paymentTypeId", label: "Hình thức thanh toán", format: "reference", displayKey: "paymentTypeName" },
+        { key: "paymentTermId", label: "Điều khoản thanh toán", format: "reference", displayKey: "paymentTermName" },
         { key: "dueDate", label: "Ngày đến hạn", format: "date" },
         { key: "debtDueDate", label: "Hạn công nợ", format: "date" },
         { key: "baseTotal", label: "Tổng tiền gốc", format: "money" },

@@ -10,10 +10,14 @@ public sealed record WebSessionPolicy(TimeSpan IdleTimeout, TimeSpan AbsoluteTim
     public static WebSessionPolicy Default { get; } = new(TimeSpan.FromMinutes(1440), TimeSpan.FromDays(7), 10000);
 }
 
-// Bounded, single-instance authority. Restart intentionally revokes every Web
-// session. This is not a distributed store; load-balanced deployment is gated.
-public sealed class LocalWebSessions : IWebSessions
+// Bounded, single-instance authority. With a file store, sessions survive a
+// restart/deploy (token hashes only; each one revalidates against ERP on use);
+// without one, restart revokes every Web session. This is not a distributed
+// store; load-balanced deployment is gated.
+public sealed class LocalWebSessions : IWebSessions, IDisposable
 {
+    private static readonly TimeSpan SaveDelay = TimeSpan.FromSeconds(2);
+
     private sealed record Entry(AuthoritativeIdentity Identity, DateTimeOffset LastActivity,
         DateTimeOffset AbsoluteExpiry, SemaphoreSlim RevalidationGate);
 
@@ -22,8 +26,13 @@ public sealed class LocalWebSessions : IWebSessions
     private readonly IIdentityAuthority authority;
     private readonly TimeProvider clock;
     private readonly WebSessionPolicy policy;
+    private readonly WebSessionFileStore? store;
+    private readonly object saveGate = new();
+    private ITimer? pendingSave;
+    private int saveScheduled;
 
-    public LocalWebSessions(IIdentityAuthority authority, TimeProvider clock, WebSessionPolicy policy)
+    public LocalWebSessions(IIdentityAuthority authority, TimeProvider clock, WebSessionPolicy policy,
+        WebSessionFileStore? store = null)
     {
         if (policy.IdleTimeout <= TimeSpan.Zero || policy.IdleTimeout > TimeSpan.FromDays(7)
             || policy.AbsoluteTimeout < policy.IdleTimeout || policy.AbsoluteTimeout > TimeSpan.FromDays(30)
@@ -32,6 +41,49 @@ public sealed class LocalWebSessions : IWebSessions
         this.authority = authority;
         this.clock = clock;
         this.policy = policy;
+        this.store = store;
+        if (store is null) return;
+        var now = clock.GetUtcNow();
+        foreach (var saved in store.Load())
+        {
+            var identity = Freeze(saved.Identity);
+            var entry = identity is null ? null
+                : new Entry(identity, saved.LastActivity, saved.AbsoluteExpiry, new SemaphoreSlim(1, 1));
+            // A changed policy can only shorten a restored session, never extend it.
+            if (entry is null || Expired(entry, now) || entry.AbsoluteExpiry > now + policy.AbsoluteTimeout
+                || entries.Count >= policy.Capacity) continue;
+            entries[saved.TokenHash] = entry;
+        }
+    }
+
+    /// <summary>Writes the current sessions now (used on shutdown and by tests).</summary>
+    public void Flush()
+    {
+        if (store is null) return;
+        lock (saveGate)
+        {
+            // Reset first so a change made while saving schedules the next write.
+            Interlocked.Exchange(ref saveScheduled, 0);
+            Interlocked.Exchange(ref pendingSave, null)?.Dispose();
+            WebSessionFileStore.Snapshot[] snapshot;
+            var now = clock.GetUtcNow();
+            lock (gate)
+                snapshot = entries.Where(pair => !Expired(pair.Value, now))
+                    .Select(pair => new WebSessionFileStore.Snapshot(pair.Key, pair.Value.Identity,
+                        pair.Value.LastActivity, pair.Value.AbsoluteExpiry)).ToArray();
+            store.Save(snapshot);
+        }
+    }
+
+    public void Dispose() => Flush();
+
+    // Coalesce bursts of activity into one write a couple of seconds later. Runs
+    // under the session lock, so it never takes saveGate (Flush takes both).
+    private void Changed()
+    {
+        if (store is null || Interlocked.Exchange(ref saveScheduled, 1) == 1) return;
+        Interlocked.Exchange(ref pendingSave,
+            clock.CreateTimer(_ => Flush(), null, SaveDelay, Timeout.InfiniteTimeSpan))?.Dispose();
     }
 
     public ResolvedSession? Create(AuthoritativeIdentity identity)
@@ -47,6 +99,7 @@ public sealed class LocalWebSessions : IWebSessions
             var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
             var entry = new Entry(frozen, now, now + policy.AbsoluteTimeout, new SemaphoreSlim(1, 1));
             entries.Add(Hash(token), entry);
+            Changed();
             return Resolve(token, entry);
         }
     }
@@ -128,6 +181,8 @@ public sealed class LocalWebSessions : IWebSessions
                     LastActivity = userInteraction ? clock.GetUtcNow() : latest.LastActivity
                 };
                 entries[key] = updated;
+                if (updated.LastActivity != latest.LastActivity || !ReferenceEquals(updated.Identity, latest.Identity))
+                    Changed();
                 return Resolve(token, updated);
             }
         }
@@ -160,7 +215,9 @@ public sealed class LocalWebSessions : IWebSessions
 
     public void Revoke(string token)
     {
-        lock (gate) entries.Remove(Hash(token));
+        bool removed;
+        lock (gate) removed = entries.Remove(Hash(token));
+        if (removed) Changed();
     }
 
     private bool Expired(Entry entry, DateTimeOffset now) =>
