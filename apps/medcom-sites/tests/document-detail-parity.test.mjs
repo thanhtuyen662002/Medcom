@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -10,7 +10,9 @@ import { build } from 'esbuild';
 const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(app, '.test-runtime/document-detail-parity');
 await mkdir(output, { recursive: true });
-const historical = name => execFileSync('git', ['show', `536701c:apps/medcom-sites/${name}`], { cwd: app, encoding: 'utf8' });
+// Reference sources from commit 536701c, kept as fixtures because that commit
+// is not in the pushed history (CI checkouts cannot `git show` it).
+const historical = name => readFileSync(path.join(app, 'tests/fixtures/parity-536701c', path.basename(name) + '.txt'), 'utf8');
 const oldBody = historical('components/erp/erp-document-detail-body.tsx');
 await build({
   stdin: {
