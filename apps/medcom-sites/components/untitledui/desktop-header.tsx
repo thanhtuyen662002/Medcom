@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, BookOpen, ChevronDown, LayoutDashboard, LogOut, Moon, PanelLeft, Settings2, Sun } from "lucide-react";
+import { Bell, BookOpen, ChevronDown, FileText, LayoutDashboard, LogOut, Moon, PackageCheck, PanelLeft, Settings2, Sun } from "lucide-react";
 import { MedcomLogo } from "@/components/brand/medcom-logo";
 import { AppButton } from "@/components/app/app-button";
 import { BranchSwitcher } from "@/components/app/branch-switcher";
@@ -39,9 +39,11 @@ export function DesktopHeader({ currentBranch, onBranchChange, branches, activeT
         <BranchSwitcher branches={branches} currentBranch={currentBranch} onBranchChange={onBranchChange} />
       </div>
       <nav aria-label="Điều hướng chính" className="order-last flex w-full min-w-0 items-center gap-2 lg:order-none lg:w-auto lg:flex-1">
-        <AppButton variant={activeTab === "home" ? "secondary" : "ghost"} className="shrink-0" aria-current={activeTab === "home" ? "page" : undefined} onClick={() => onTabChange("home")}>
-          <LayoutDashboard aria-hidden="true" className="size-5" /><span>Tổng quan</span>
-        </AppButton>
+        {/* Same destinations as the mobile bottom bar, so desktop reaches the PR and inbound tabs directly. */}
+        {([["home", "Tổng quan", LayoutDashboard], ["purchases", "Đề nghị PR", FileText], ["inbound", "Nhập kho", PackageCheck]] as const).map(([tab, label, Icon]) =>
+          <AppButton key={tab} variant={activeTab === tab ? "secondary" : "ghost"} className="shrink-0" aria-current={activeTab === tab ? "page" : undefined} onClick={() => onTabChange(tab)}>
+            <Icon aria-hidden="true" className="size-5" /><span>{label}</span>
+          </AppButton>)}
         <NavigationMenu activeTab={activeTab} onSelect={onTabChange} tabAccess={tabAccess} onRetryTabs={onRetryTabs} />
       </nav>
       <div className="ml-auto flex shrink-0 items-center gap-1">
