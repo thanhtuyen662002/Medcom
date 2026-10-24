@@ -31,6 +31,7 @@ import { type ErpScreenModule } from "./proxy-policy";
 import {
   getErpScreen,
   getErpList,
+  getErpStatusCounts,
   getErpDetail,
   getErpActions,
   getErpContractInfo,
@@ -328,6 +329,10 @@ export class ErpClientService {
     signal?: AbortSignal
   ) {
     return await getErpList(module, params, signal);
+  }
+
+  public async getErpStatusCounts(module: ErpScreenModule, branchId: string, signal?: AbortSignal) {
+    return await getErpStatusCounts(module, branchId, signal);
   }
 
   public async getScreenPermissions(branchId: string) {

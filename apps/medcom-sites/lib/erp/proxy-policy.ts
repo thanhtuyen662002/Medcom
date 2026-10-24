@@ -134,6 +134,7 @@ const erpScreenGetRoutes = new Set([
   ...erpScreenModules.flatMap(m => [
     `api/erp/${m}/screen`,
     `api/erp/${m}`,
+    `api/erp/${m}/status-counts`,
     `api/erp/${m}/detail`,
     `api/erp/${m}/actions`,
   ]),

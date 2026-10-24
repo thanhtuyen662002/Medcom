@@ -294,6 +294,15 @@ export async function getErpList(
   return erpGet(`api/erp/${module}`, erpDocumentPageSchema, params, signal);
 }
 
+/** Documents per ERP status within the same branch and read scope as the list. */
+const erpStatusCountsSchema = z.object({
+  items: z.array(z.object({ statusId: z.number().int(), count: z.number().int().nonnegative() }).passthrough()).max(1000),
+}).passthrough();
+export type ErpStatusCounts = z.infer<typeof erpStatusCountsSchema>;
+export async function getErpStatusCounts(module: ErpScreenModule, branchId: string, signal?: AbortSignal): Promise<ErpStatusCounts> {
+  return erpGet(`api/erp/${module}/status-counts`, erpStatusCountsSchema, { branchId }, signal);
+}
+
 /** 3. Document Detail with lines, actions, and stateToken */
 export async function getErpDetail(
   module: ErpScreenModule,

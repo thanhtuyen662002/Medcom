@@ -65,6 +65,7 @@ internal static class FeDisplaySchemas
                                 Add(property.Key.EndsWith("ID",StringComparison.Ordinal)?"Unit":"unit","CF_ItemTbl.Unit; existing document unit is retained.",true,mandatory);
                             }
                         }
+                        if(FeDisplayProjection.IsAccount(property.Key))Add(FeDisplayProjection.AccountNameField(property.Key),"SY_User.HoTen for the stored login account. Null when the account is empty or unknown; the account value is retained.",true,mandatory);
                         if(FeDisplayProjection.IsDisplay(property.Key))Add(property.Key+"Display","dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null.",true,mandatory);
                     }
                     obj["x-medcom-response-presentation"]="reference-names-v1";

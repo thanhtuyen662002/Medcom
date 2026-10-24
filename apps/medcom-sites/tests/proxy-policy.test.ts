@@ -17,6 +17,8 @@ test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted"
  for(const m of erpScreenModules){
   assert.ok(routeAllowed(`api/erp/${m}/screen`,"GET"));
   assert.ok(routeAllowed(`api/erp/${m}`,"GET"));
+  assert.ok(routeAllowed(`api/erp/${m}/status-counts`,"GET"));
+  assert.equal(routeAllowed(`api/erp/${m}/status-counts`,"POST"),false);
   assert.ok(routeAllowed(`api/erp/${m}/detail`,"GET"));
   assert.ok(routeAllowed(`api/erp/${m}/actions`,"GET"));
   assert.ok(routeAllowed(`api/erp/${m}/options`,"POST"));

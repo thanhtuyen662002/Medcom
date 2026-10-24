@@ -26,6 +26,9 @@ public sealed record ErpPageQuery(string BranchId, int Page = 1, int PageSize = 
     string? Search = null, string? DateFrom = null, string? DateTo = null, int? StatusId = null);
 public sealed record ErpDocumentRow(string DocumentId, IReadOnlyDictionary<string, object?> Header);
 public sealed record ErpDocumentPage(IReadOnlyList<ErpDocumentRow> Rows, int Page, int PageSize, bool HasMore);
+/// <summary>Documents per native StatusID within the same branch and native read scope as the list.</summary>
+public sealed record ErpStatusCount(int StatusId, long Count);
+public sealed record ErpStatusCounts(IReadOnlyList<ErpStatusCount> Items);
 public sealed record ErpLineRow(string LineId, IReadOnlyDictionary<string, object?> Fields);
 public sealed record ErpLinePage(IReadOnlyList<ErpLineRow> Rows, int Page, int PageSize, bool HasMore);
 public sealed record ErpDocumentDetail(string DocumentId, string BranchId, string StateToken,

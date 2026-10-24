@@ -24,6 +24,7 @@ export interface SidebarDrawerProps {
   pendingInboundCount?: number;
   tabAccess?: NavigationAccess | null;
   onRetryTabs?: () => void;
+  queueBadges?: Readonly<Record<string, number>>;
 }
 
 const footerIconClass = "inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-neutral-600 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-brand-500 dark:text-neutral-300 dark:hover:bg-neutral-800";
@@ -31,7 +32,7 @@ const footerIconClass = "inline-flex size-11 shrink-0 items-center justify-cente
 // Who and where on top, modules in the middle; the footer is one row of
 // account tools so the module list keeps most of a phone screen.
 export function SidebarDrawer({ open, onClose, activeTab, onSelectTab, userName = "", userRole = "", currentBranch = "", branchName,
-  isDarkMode = false, onToggleDarkMode, onLogout, tabAccess, onRetryTabs }: SidebarDrawerProps) {
+  isDarkMode = false, onToggleDarkMode, onLogout, tabAccess, onRetryTabs, queueBadges }: SidebarDrawerProps) {
   const opener = useRef<HTMLElement | null>(null);
   const branch = branchName || currentBranch || "MEDCOM ERP";
   return <Sheet open={open} modal onOpenChange={next => { if (!next) onClose(); }}>
@@ -49,7 +50,7 @@ export function SidebarDrawer({ open, onClose, activeTab, onSelectTab, userName 
         </div>
         <AppButton variant="ghost" size="icon" aria-label="Đóng menu" onClick={onClose}><X aria-hidden="true" className="size-5" /></AppButton>
       </header>
-      <NavigationList key={open ? "open" : "closed"} activeTab={activeTab} onSelect={tab => { onSelectTab(tab); onClose(); }} tabAccess={tabAccess} onRetryTabs={onRetryTabs} />
+      <NavigationList key={open ? "open" : "closed"} activeTab={activeTab} onSelect={tab => { onSelectTab(tab); onClose(); }} tabAccess={tabAccess} onRetryTabs={onRetryTabs} badges={queueBadges} />
       <footer className="flex shrink-0 items-center gap-1 border-t border-neutral-200 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] dark:border-neutral-800">
         <a href="/help" target="_blank" rel="noopener noreferrer" aria-label="Hướng dẫn sử dụng (mở tab mới)"
           className="inline-flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-3 text-base font-medium text-neutral-700 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-brand-500 dark:text-neutral-200 dark:hover:bg-neutral-800">

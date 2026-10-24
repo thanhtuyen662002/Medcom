@@ -29,6 +29,12 @@ public static class ErpScreenEndpoints
                 return Read(context,await service.ListAsync(module,new(Value(context,"branchId")??"",page,size,Value(context,"search"),
                     Value(context,"dateFrom"),Value(context,"dateTo"),status),context.RequestAborted));
             });
+            app.MapGet(path+"/status-counts",async(HttpContext context,IErpScreenService service)=>
+            {
+                if(!CanRead(context,module))return Problem(403,"native_read_denied");
+                if(!Query(context,"branchId"))return Problem(400,"invalid_query");
+                return Read(context,await service.StatusCountsAsync(module,Value(context,"branchId")??"",context.RequestAborted));
+            });
             app.MapGet(path+"/detail",async(HttpContext context,IErpScreenService service)=>
             {
                 if(!CanRead(context,module))return Problem(403,"native_read_denied");

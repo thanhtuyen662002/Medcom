@@ -27,10 +27,11 @@ export interface DesktopHeaderProps {
   onToggleLayoutMode?: () => void;
   tabAccess?: NavigationAccess | null;
   onRetryTabs?: () => void;
+  queueBadges?: Readonly<Record<string, number>>;
 }
 
 export function DesktopHeader({ currentBranch, onBranchChange, branches, activeTab, onTabChange, userName = "", userRole = "", unreadNotifications = 0,
-  onNotificationsClick, isDarkMode, onToggleDarkMode, onLogout, onToggleLayoutMode, tabAccess, onRetryTabs }: DesktopHeaderProps) {
+  onNotificationsClick, isDarkMode, onToggleDarkMode, onLogout, onToggleLayoutMode, tabAccess, onRetryTabs, queueBadges }: DesktopHeaderProps) {
   const [profileOpen, setProfileOpen] = useState(false);
   return <header className="sticky top-0 z-40 w-full border-b border-neutral-200 bg-white/95 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/95">
     <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 lg:flex-nowrap lg:px-6">
@@ -44,7 +45,7 @@ export function DesktopHeader({ currentBranch, onBranchChange, branches, activeT
           <AppButton key={tab} variant={activeTab === tab ? "secondary" : "ghost"} className="shrink-0" aria-current={activeTab === tab ? "page" : undefined} onClick={() => onTabChange(tab)}>
             <Icon aria-hidden="true" className="size-5" /><span>{label}</span>
           </AppButton>)}
-        <NavigationMenu activeTab={activeTab} onSelect={onTabChange} tabAccess={tabAccess} onRetryTabs={onRetryTabs} />
+        <NavigationMenu activeTab={activeTab} onSelect={onTabChange} tabAccess={tabAccess} onRetryTabs={onRetryTabs} badges={queueBadges} />
       </nav>
       <div className="ml-auto flex shrink-0 items-center gap-1">
         <a href="/help" target="_blank" rel="noopener noreferrer" aria-label="Hướng dẫn sử dụng (mở tab mới)" className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-neutral-600 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-brand-500 dark:text-neutral-300 dark:hover:bg-neutral-800"><BookOpen aria-hidden="true" className="size-5" /></a>

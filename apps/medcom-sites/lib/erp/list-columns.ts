@@ -14,7 +14,8 @@ export interface ErpListColumn {
 const document: ErpListColumn = { id: "document", label: "Mã chứng từ", keys: [], kind: "document" };
 const date: ErpListColumn = { id: "date", label: "Ngày chứng từ", keys: ["documentDateDisplay", "documentDate"], kind: "date" };
 const status: ErpListColumn = { id: "status", label: "Trạng thái", keys: [], kind: "status" };
-const creator: ErpListColumn = { id: "creator", label: "Người lập / Đề nghị", keys: ["userCreate"] };
+// "<account>Name" is SY_User.HoTen for a stored login account; the account itself is the fallback.
+const creator: ErpListColumn = { id: "creator", label: "Người lập / Đề nghị", keys: ["userCreateName", "userCreate"] };
 const notes: ErpListColumn = { id: "notes", label: "Nội dung", keys: ["memo", "notes"] };
 const purchase: readonly ErpListColumn[] = [
   document, { ...date, keys: ["purchaseDateDisplay", "purchaseDate"] },
@@ -28,7 +29,7 @@ const transferRequest: readonly ErpListColumn[] = [
   document, date,
   { id: "from", label: "Chi nhánh gửi", keys: ["fromBranchName", "fromBranchId"] },
   { id: "object", label: "Chi nhánh nhận", keys: ["toBranchName", "toBranchId"] }, status,
-  { ...creator, keys: ["salesUser", "userCreate"] },
+  { ...creator, keys: ["salesUserName", "salesUser", "userCreateName", "userCreate"] },
   { ...notes, keys: ["transferReason", "notes"] },
 ];
 const transferBatch: readonly ErpListColumn[] = [
@@ -55,7 +56,7 @@ export const ERP_LIST_COLUMNS: Record<ErpScreenModule, readonly ErpListColumn[]>
   "machine-repairs": [document, date, { id: "object", label: "Khách hàng", keys: ["objectName"] },
     { id: "service", label: "Loại dịch vụ", keys: ["serviceTypeName"] }, status, creator, notes],
   "internal-transfer-requests": transferRequest,
-  "internal-transfer-pm": transferRequest.map(column => column.id === "creator" ? { ...column, keys: ["salesName", "salesUser", "userCreate"] } : column),
+  "internal-transfer-pm": transferRequest.map(column => column.id === "creator" ? { ...column, keys: ["salesName", "salesUserName", "salesUser", "userCreateName", "userCreate"] } : column),
   "internal-transfer-batches": transferBatch,
   "internal-transfer-tech": transferBatch,
   "internal-transfer-sa": transferBatch,

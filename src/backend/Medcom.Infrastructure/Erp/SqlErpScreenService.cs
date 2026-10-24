@@ -60,6 +60,20 @@ public sealed partial class SqlErpScreenService:IErpScreenService
             return new(ErpReadOutcome.Success,new ErpDocumentPage(rows.Take(query.PageSize).ToArray(),query.Page,query.PageSize,rows.Count>query.PageSize));
         },token);
     }
+    public Task<ErpReadResult<ErpStatusCounts>> StatusCountsAsync(string module,string branch,CancellationToken token)=>
+        reader.Run<ErpStatusCounts>(module,branch,async(transaction,identity,plan,rights)=>
+        {
+            if(!plan.Screen.Fields["header"].Any(column=>column.Column=="StatusID"))return new(ErpReadOutcome.Invalid,Code:"status_not_supported");
+            await using var command=ErpSqlPlan.Command(transaction,plan.StatusCountText);ErpSqlPlan.Scope(command,identity,branch);
+            await using var data=await command.ExecuteReaderAsync(token);var items=new List<ErpStatusCount>();
+            while(await data.ReadAsync(token))
+            {
+                if(items.Count>=1000)throw new InvalidOperationException("Unbounded status count response.");
+                items.Add(new(Convert.ToInt32(data.GetValue(0),System.Globalization.CultureInfo.InvariantCulture),data.GetInt64(1)));
+            }
+            if(await data.NextResultAsync(token))throw new InvalidOperationException("Unexpected status count result.");
+            return new(ErpReadOutcome.Success,new ErpStatusCounts(items));
+        },token);
     public Task<ErpReadResult<ErpDocumentDetail>> DetailAsync(string module,string branch,string document,int page,int size,CancellationToken token)
     {
         if(!ErpInputRules.Identifier(document,50)||!ErpInputRules.Page(page,size))return Invalid<ErpDocumentDetail>();

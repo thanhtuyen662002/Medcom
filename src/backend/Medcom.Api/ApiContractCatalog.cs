@@ -278,6 +278,8 @@ internal static class ApiContractCatalog
             Add("get",path,id+"_list",Shape(typeof(ErpScopedResponse<ErpDocumentPage>)),admission,module+".read",parameters:new JsonArray(
                 Parameter("branchId","query",String(50),true),Parameter("page","query",Number(10000,1)),Parameter("pageSize","query",Number(100,20)),
                 Parameter("search","query",String(100)),Parameter("dateFrom","query",String(10)),Parameter("dateTo","query",String(10)),Parameter("statusId","query",new(){["type"]="integer"})));
+            Add("get",path+"/status-counts",id+"_status_counts",Shape(typeof(ErpScopedResponse<ErpStatusCounts>)),admission,module+".read",
+                parameters:new JsonArray(Parameter("branchId","query",String(50),true)));
             var detailParameters=(JsonArray)documentParameters.DeepClone();detailParameters.Add(Parameter("page","query",Number(10000,1)));detailParameters.Add(Parameter("pageSize","query",Number(100,20)));
             Add("get",path+"/detail",id+"_detail",Shape(typeof(ErpScopedResponse<ErpDocumentDetail>)),admission,module+".read",parameters:detailParameters);
             var actionParameters=(JsonArray)documentParameters.DeepClone();actionParameters[1]!["required"]=false;

@@ -70,9 +70,11 @@ interface NavigationListProps {
   onSelect: (tab: NavTabId) => void;
   tabAccess?: NavigationAccess | null;
   onRetryTabs?: () => void;
+  /** Documents waiting on the user's role, per screen id ("Chờ tôi xử lý"). */
+  badges?: Readonly<Record<string, number>>;
 }
 
-export function NavigationList({ activeTab, onSelect, tabAccess, onRetryTabs }: NavigationListProps) {
+export function NavigationList({ activeTab, onSelect, tabAccess, onRetryTabs, badges }: NavigationListProps) {
   const [query, setQuery] = useState("");
   const searchId = useId();
   const term = normalize(query);
@@ -89,6 +91,8 @@ export function NavigationList({ activeTab, onSelect, tabAccess, onRetryTabs }: 
       onClick={() => onSelect(item.id)} className={navigationItemClassName(active)}>
       <Icon aria-hidden="true" className="size-5 shrink-0" />
       <span className="min-w-0 flex-1 break-words">{item.label}</span>
+      {(badges?.[item.id] ?? 0) > 0 && <span className="shrink-0 rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold tabular-nums text-white dark:bg-brand-500"
+        aria-label={`${badges![item.id]} chờ xử lý`}>{badges![item.id] > 99 ? "99+" : badges![item.id]}</span>}
     </button>;
   };
 
