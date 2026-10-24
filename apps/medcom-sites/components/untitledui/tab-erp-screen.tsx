@@ -940,7 +940,7 @@ export function TabErpScreen({
       </p>}
       <RecordList label={title} rows={displayRows} columns={tableColumns} rowId={row => row.documentId}
         card={row => ({
-          code: row.documentId, title: listText(row, ...objectKeys) || listText(row, ...creatorKeys) || "Chứng từ",
+          code: row.documentId, title: listText(row, ...objectKeys) || listText(row, ...creatorKeys) || "Chưa có đối tượng",
           meta: [dateText(row), listText(row, ...creatorKeys)], status: statusBadge(row),
         })}
         onOpen={row => void handleOpenDetail(row.documentId)} loading={isLoadingList}

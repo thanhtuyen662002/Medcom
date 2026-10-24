@@ -118,7 +118,7 @@ export function TabInbound({
               (raw.objectId as string) ||
               (raw.supplierName as string) ||
               (raw.vendorName as string);
-            const supplierName = objectId ? (objectId.startsWith("NCC") ? objectId : `NCC: ${objectId}`) : "Nhà cung ứng Dược phẩm ERP";
+            const supplierName = objectId ? (objectId.startsWith("NCC") ? objectId : `NCC: ${objectId}`) : "—";
             const invoiceNo = h?.invoiceNo || (raw.invoiceNo as string);
             const departurePoint = h?.departurePoint || (raw.departurePoint as string);
             const destinationPoint = h?.destinationPoint || (raw.destinationPoint as string);
