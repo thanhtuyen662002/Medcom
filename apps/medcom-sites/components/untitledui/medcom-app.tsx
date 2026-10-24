@@ -24,20 +24,26 @@ import { REAL_BRANCHES, erpClient, type LoginResult } from "@/lib/erp/erp-client
 
 const ERP_MODULES: readonly ErpScreenModule[] = erpScreenModules;
 
+// F-01: the quick tabs (bottom nav, desktop header, home KPIs, QR hand-offs)
+// show the unified ERP screen of their module. The legacy read-only tab stays
+// only as a fallback while that module is not (yet) allowed by tabAccess.
+const QUICK_TAB_MODULES = {
+  orders: "purchase-orders",
+  purchases: "purchase-requests",
+  inbound: "inbound-requests",
+} as const satisfies Partial<Record<NavTabId, ErpScreenModule>>;
+type QuickTabId = keyof typeof QUICK_TAB_MODULES;
+
+export function quickTabModule(tab: string, allowed: readonly string[] | null): ErpScreenModule | null {
+  const mod = QUICK_TAB_MODULES[tab as QuickTabId];
+  return mod && allowed?.includes(mod) ? mod : null;
+}
+
 export function MedcomApp() {
   const [currentUser, setCurrentUser] = useState<LoginResult["user"] | null>(null);
   const [isAuthLoaded, setIsAuthLoaded] = useState(false);
 
   const [activeTab, setActiveTab] = useState<NavTabId>("home");
-  // Every screen stays mounted (hidden) and shares the window scroll position;
-  // without a reset a newly opened screen starts mid-page, under its header.
-  // (Screens reload their list on activation, so restoring an old offset is moot.)
-  const shownTabRef = useRef<string>("home");
-  useLayoutEffect(() => {
-    if (shownTabRef.current === activeTab) return;
-    shownTabRef.current = activeTab;
-    if (typeof window.scrollTo === "function") window.scrollTo(0, 0);
-  }, [activeTab]);
   const [currentBranch, setCurrentBranch] = useState("CN01");
   const [branches, setBranches] = useState<BranchOption[]>(() =>
     REAL_BRANCHES.map((b) => ({
@@ -68,25 +74,41 @@ export function MedcomApp() {
     error: boolean;
     allowed: readonly string[] | null;
   }>({ loading: false, error: false, allowed: null });
+  // Last settled module list for the quick tabs: a reload (branch change) keeps
+  // the open ERP screen instead of flashing the legacy tab until it answers.
+  const [quickAccess, setQuickAccess] = useState<readonly string[] | null>(null);
+  const quickModule = (tab: QuickTabId) => quickTabModule(tab, quickAccess);
+  // The screen actually on display: a quick tab resolves to its ERP module.
+  const shownTab: string = quickTabModule(activeTab, quickAccess) ?? activeTab;
+
+  // Every screen stays mounted (hidden) and shares the window scroll position;
+  // without a reset a newly opened screen starts mid-page, under its header.
+  // (Screens reload their list on activation, so restoring an old offset is moot.)
+  const shownTabRef = useRef<string>("home");
+  useLayoutEffect(() => {
+    if (shownTabRef.current === shownTab) return;
+    shownTabRef.current = shownTab;
+    if (typeof window.scrollTo === "function") window.scrollTo(0, 0);
+  }, [shownTab]);
 
   const retryTabAccess = useCallback(async () => {
     setTabAccess({ loading: true, error: false, allowed: null });
     try {
       const perms = await erpClient.getScreenPermissions(currentBranch);
       if (!perms || !Array.isArray(perms.screens)) throw new Error("invalid permissions");
-      setTabAccess({
-        loading: false,
-        error: false,
-        allowed: perms.screens.filter((s) => s.canView).map((s) => s.module),
-      });
+      const allowed = perms.screens.filter((s) => s.canView).map((s) => s.module);
+      setTabAccess({ loading: false, error: false, allowed });
+      setQuickAccess(allowed);
     } catch {
       setTabAccess({ loading: false, error: true, allowed: null });
+      setQuickAccess(null);
     }
   }, [currentBranch]);
 
   useEffect(() => {
     if (!currentUser) {
       setTabAccess({ loading: false, error: false, allowed: null });
+      setQuickAccess(null);
       return;
     }
     void retryTabAccess();
@@ -564,34 +586,35 @@ export function MedcomApp() {
               />
             </div>
 
+            {/* TAB 2-4: legacy quick tabs, only while their ERP module is not allowed (F-01) */}
             {/* TAB 2: Orders (PO) */}
-            <div className={activeTab === "orders" ? "block" : "hidden"}>
+            {!quickModule("orders") && <div className={activeTab === "orders" ? "block" : "hidden"}>
               <TabOrders
                 currentBranch={currentBranch}
                 isActive={activeTab === "orders"}
                 onCountChange={setOrdersCount}
                 onOpenCreateModal={canCreate("purchase-orders") ? () => setCreateRequest({ module: "purchase-orders", user: currentUser, branch: currentBranch }) : undefined}
               />
-            </div>
+            </div>}
 
             {/* TAB 3: Purchases (PR) */}
-            <div className={activeTab === "purchases" ? "block" : "hidden"}>
+            {!quickModule("purchases") && <div className={activeTab === "purchases" ? "block" : "hidden"}>
               <TabPurchases
                 onOpenCreateModal={canCreate("purchase-requests") ? () => setCreateRequest({ module: "purchase-requests", user: currentUser, branch: currentBranch }) : undefined}
                 currentBranch={currentBranch}
                 isActive={activeTab === "purchases"}
                 onCountChange={setPurchasesCount}
               />
-            </div>
+            </div>}
 
             {/* TAB 4: Inbound Receipts */}
-            <div className={activeTab === "inbound" ? "block" : "hidden"}>
+            {!quickModule("inbound") && <div className={activeTab === "inbound" ? "block" : "hidden"}>
               <TabInbound
                 currentBranch={currentBranch}
                 isActive={activeTab === "inbound"}
                 onCountChange={setInboundCount}
               />
-            </div>
+            </div>}
 
             {/* TAB 5: QR / Barcode Scanner */}
             <div className={activeTab === "scan" ? "block" : "hidden"}>
@@ -620,13 +643,13 @@ export function MedcomApp() {
               </div>
             </div>
 
-            {/* TAB 7+: All 6 ERP Screen Modules (Fully cached in DOM for instant tab switching) */}
+            {/* TAB 7+: ERP screen modules, also shown by their quick tab (cached in DOM for instant tab switching) */}
             {ERP_MODULES.map((mod) => (
-              <div key={mod} className={activeTab === mod ? "block" : "hidden"}>
+              <div key={mod} className={shownTab === mod ? "block" : "hidden"}>
                 <TabErpScreen
                   module={mod}
                   currentBranch={currentBranch}
-                  isActive={activeTab === mod}
+                  isActive={shownTab === mod}
                   targetDocumentId={targetDocPerModule?.module === mod ? targetDocPerModule.documentId : undefined}
                   onOpenScanner={() => setActiveTab("scan")}
                 />

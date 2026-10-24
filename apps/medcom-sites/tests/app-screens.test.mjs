@@ -309,11 +309,20 @@ async function parentEnvironment(verify) {
     }
   }
 }
-function parentApi({ crud = true, enabled = true, visible = true, missingAction = false, failed = false, delayBranch } = {}) {
+// legacyTabs: the tab-access permission read fails, so the quick tabs fall back
+// to the legacy screens (F-01). MedcomApp reads permissions twice per branch,
+// tab access first and create admission second (effect order), so only every
+// other call fails and create admission stays real.
+function parentApi({ crud = true, enabled = true, visible = true, missingAction = false, failed = false, delayBranch, legacyTabs = false,
+  modules = ['purchase-orders', 'purchase-requests'] } = {}) {
+  let permissionReads = 0;
   return async (method, ...args) => {
     if (method === 'getSession') return {};
     if (method === 'getBranchesList') return { items: [{ id: 'QA-A', name: 'Chi nhánh A' }, { id: 'QA-B', name: 'Chi nhánh B' }] };
-    if (method === 'getScreenPermissions') return { screens: ['purchase-orders', 'purchase-requests'].map(module => ({ module, canView: true, crud: { canCreate: crud } })) };
+    if (method === 'getScreenPermissions') {
+      if (legacyTabs && permissionReads++ % 2 === 0) throw Error('synthetic tab access unavailable');
+      return { screens: modules.map(module => ({ module, canView: true, crud: { canCreate: crud } })) };
+    }
     if (method === 'getErpModuleActions') {
       if (failed) throw Error('synthetic unavailable');
       if (args[1].branchId === 'QA-B' && delayBranch) await delayBranch;
@@ -324,9 +333,9 @@ function parentApi({ crud = true, enabled = true, visible = true, missingAction 
   };
 }
 for (const flags of [{}, { crud: false }, { enabled: false }, { visible: false }, { missingAction: true }, { failed: true }]) {
-  test('parent exposes real PO/PR create sheets only with current CRUD and action admission: ' + JSON.stringify(flags), async () => {
+  test('legacy fallback tabs expose real PO/PR create sheets only with current CRUD and action admission: ' + JSON.stringify(flags), async () => {
     await parentEnvironment(async () => {
-      globalThis.__p2Api = parentApi(flags);
+      globalThis.__p2Api = parentApi({ ...flags, legacyTabs: true });
       await mounted(h(MedcomApp), async tree => {
         assert.equal(leaf(tree, 'tab-settings').props.currentUser.username, user.username);
         assert.equal(leaf(tree, 'tab-inbound').props.onOpenNewInbound, undefined, 'no direct real inbound creation handoff exists');
@@ -356,7 +365,7 @@ test('branch changes retire open creation and old admission while pending; newly
   let finish;
   const pending = new Promise(resolve => { finish = resolve; });
   await parentEnvironment(async () => {
-    globalThis.__p2Api = parentApi({ delayBranch: pending });
+    globalThis.__p2Api = parentApi({ delayBranch: pending, legacyTabs: true });
     await mounted(h(MedcomApp), async tree => {
       await act(async () => leaf(tree, 'tab-orders').props.onOpenCreateModal());
       assert.ok(leaf(tree, 'purchase-order-create-sheet'));
@@ -370,6 +379,63 @@ test('branch changes retire open creation and old admission while pending; newly
       assert.equal(leaf(tree, 'purchase-order-create-sheet').props.currentBranch, 'QA-B');
       await act(async () => leaf(tree, 'desktop-header').props.onBranchChange('QA-A'));
       assert.equal(leaf(tree, 'purchase-order-create-sheet'), undefined);
+    });
+  });
+});
+
+const erpScreens = (tree, module) => tree.root.findAll(node => node.type === 'parent-fixture' && node.props.name === 'tab-erp-screen' && node.props.module === module);
+test('F-01: quick tabs show the unified ERP screen of an allowed module and keep nav, home and QR hand-offs', async () => {
+  await parentEnvironment(async () => {
+    globalThis.__p2Api = parentApi();
+    await mounted(h(MedcomApp), async tree => {
+      for (const legacy of ['tab-orders', 'tab-purchases']) assert.equal(leaf(tree, legacy), undefined, legacy + ' is not mounted beside its ERP screen');
+      assert.ok(leaf(tree, 'tab-inbound'), 'inbound-requests is not allowed here, so the legacy tab stays as fallback');
+      const shown = (tab, module) => {
+        assert.equal(leaf(tree, 'bottom-nav').props.activeTab, tab, 'bottom nav keeps the quick tab highlighted');
+        assert.equal(leaf(tree, 'desktop-header').props.activeTab, tab, 'desktop header keeps the quick tab highlighted');
+        const screens = erpScreens(tree, module);
+        assert.equal(screens.length, 1, 'one cached screen per module');
+        assert.equal(screens[0].props.isActive, true);
+        assert.equal(tree.root.findAll(node => node.props.name === 'tab-erp-screen' && node.props.isActive).length, 1);
+      };
+      await act(async () => leaf(tree, 'bottom-nav').props.onTabChange('purchases'));
+      shown('purchases', 'purchase-requests');
+      await act(async () => leaf(tree, 'tab-home').props.onNavigateTab('orders'));
+      shown('orders', 'purchase-orders');
+      await act(async () => leaf(tree, 'desktop-header').props.onTabChange('scan'));
+      await act(async () => leaf(tree, 'qr-scanner-view').props.onOpenPurchases());
+      shown('purchases', 'purchase-requests');
+      await act(async () => leaf(tree, 'desktop-header').props.onTabChange('inbound'));
+      assert.equal(leaf(tree, 'tab-inbound').props.isActive, true);
+      assert.equal(erpScreens(tree, 'inbound-requests')[0].props.isActive, false);
+      await act(async () => leaf(tree, 'tab-home').props.onSelectPurchaseItem({ id: 'QA-PENDING' }));
+      assert.equal(erpScreens(tree, 'purchase-requests')[0].props.targetDocumentId, 'QA-PENDING');
+      assert.equal(erpScreens(tree, 'purchase-requests')[0].props.isActive, true);
+    });
+  });
+});
+test('F-01: inbound quick tab and QR hand-off open the ERP inbound screen once the module is allowed; a branch reload keeps it', async () => {
+  let finish;
+  await parentEnvironment(async () => {
+    const api = parentApi({ modules: ['purchase-orders', 'purchase-requests', 'inbound-requests'] });
+    let hold = null;
+    globalThis.__p2Api = async (method, ...args) => {
+      if (method === 'getScreenPermissions' && hold) await hold;
+      return api(method, ...args);
+    };
+    await mounted(h(MedcomApp), async tree => {
+      assert.equal(leaf(tree, 'tab-inbound'), undefined);
+      await act(async () => leaf(tree, 'bottom-nav').props.onTabChange('scan'));
+      await act(async () => leaf(tree, 'qr-scanner-view').props.onOpenInbound());
+      assert.equal(leaf(tree, 'bottom-nav').props.activeTab, 'inbound');
+      assert.equal(erpScreens(tree, 'inbound-requests')[0].props.isActive, true);
+      hold = new Promise(resolve => { finish = resolve; });
+      await act(async () => leaf(tree, 'desktop-header').props.onBranchChange('QA-B'));
+      assert.equal(leaf(tree, 'tab-inbound'), undefined, 'no legacy flash while permissions reload');
+      assert.equal(erpScreens(tree, 'inbound-requests')[0].props.currentBranch, 'QA-B');
+      assert.equal(erpScreens(tree, 'inbound-requests')[0].props.isActive, true);
+      await act(async () => finish());
+      assert.equal(erpScreens(tree, 'inbound-requests')[0].props.isActive, true);
     });
   });
 });
