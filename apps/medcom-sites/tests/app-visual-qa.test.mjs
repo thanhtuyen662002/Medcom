@@ -93,6 +93,8 @@ const transport = `
     async getErpModuleActions(){return [{id:'create',visible:true,enabled:true}]},
     async getErpModuleList(){return page(rows.slice(0,2).map((row,i)=>({documentId:row.documentId,header:{...row,
       statusName:i?'Từ chối':'Đã gửi kế toán',statusBackColor:i?'#00FF00':'#CCCCFF'}})))},
+    async getErpModuleDetail(module,{documentId}){const row=rows.find(item=>item.documentId===documentId)??rows[0];
+      return {documentId,header:{...row,...row.fields,branchName:'Chi nhánh QA',department:'Bộ phận kiểm thử'},lines:page([]),sections:{},actions:[],stateToken:'a'.repeat(64)}},
     async getLookupOptions(){return {items:statuses.map((label,id)=>({id:String(id),label})),page:1,hasMore:false,requiredParameters:[]}},
   };`;
 
@@ -105,28 +107,24 @@ test('375×812 and 1280×860: real tabs, portal bounds, themes, detail labels, o
   const css = await postcss([tailwind({ base: app })]).process(await readFile(path.join(app, 'app/globals.css'), 'utf8'), { from: path.join(app, 'app/globals.css') });
   const fixture = await build({
     stdin: { contents: `import React,{useState} from 'react'; import {createRoot} from 'react-dom/client';
-      import {TabPurchases} from './components/untitledui/tab-purchases';
-      import {TabOrders} from './components/untitledui/tab-orders';
-      import {TabInbound} from './components/untitledui/tab-inbound';
       import {TabErpScreen} from './components/untitledui/tab-erp-screen';
       import {UntitledBottomNav} from './components/untitledui/bottom-nav';
-      import {FormSheet} from './components/app/form-sheet';
-      function Fixture(){const [screen,setScreen]=useState('purchases'),[create,setCreate]=useState(false);
-        window.qaScreen=setScreen; const open=()=>{window.qaCreates=(window.qaCreates??0)+1;setCreate(true)};
+      // F-01: quick tabs render the unified ERP screen of their module, as MedcomApp does.
+      const quick = {purchases:'purchase-requests', orders:'purchase-orders', inbound:'inbound-requests', 'sales-orders':'sales-orders'};
+      function Fixture(){const [screen,setScreen]=useState('purchases');
+        window.qaScreen=setScreen;
         return <><main className="min-w-0 px-3 py-4 pb-[calc(10rem_+_env(safe-area-inset-bottom))] md:px-8 md:pb-8">
-          <section data-qa-screen="purchases" hidden={screen!=='purchases'}><TabPurchases currentBranch="QA" isActive={screen==='purchases'} onOpenCreateModal={open}/></section>
-          <section data-qa-screen="orders" hidden={screen!=='orders'}><TabOrders currentBranch="QA" isActive={screen==='orders'} onOpenCreateModal={open}/></section>
-          <section data-qa-screen="inbound" hidden={screen!=='inbound'}><TabInbound currentBranch="QA" isActive={screen==='inbound'} onOpenNewInbound={open}/></section>
-          <section data-qa-screen="sales-orders" hidden={screen!=='sales-orders'}><TabErpScreen module="sales-orders" currentBranch="QA" isActive={screen==='sales-orders'}/></section>
-          </main><div className="md:hidden"><UntitledBottomNav activeTab={screen} onTabChange={setScreen}/></div>
-          <FormSheet open={create} title="Tạo chứng từ kiểm thử" submitLabel="Tạo chứng từ" onClose={()=>setCreate(false)} onSubmit={()=>{}}><p>Dữ liệu kiểm thử tổng hợp</p></FormSheet></>}
+          {Object.entries(quick).map(([tab,module])=><section key={tab} data-qa-screen={tab} hidden={screen!==tab}><TabErpScreen module={module} currentBranch="QA" isActive={screen===tab}/></section>)}
+          </main><div className="md:hidden"><UntitledBottomNav activeTab={screen} onTabChange={setScreen}/></div></>}
       createRoot(document.getElementById('root')).render(<Fixture/>);`, resolveDir: app, loader: 'tsx' },
     bundle: true, write: false, platform: 'browser', format: 'iife', alias: { '@': app }, jsx: 'automatic', logLevel: 'warning',
     plugins: [{ name: 'synthetic-only-transport', setup(builder) {
-      builder.onResolve({ filter: /\/(erp-client|registry|purchase-order-create-sheet|purchase-request-create-sheet)$/ }, args => ({ path: args.path.split('/').at(-1), namespace: 'qa' }));
+      builder.onResolve({ filter: /\/(erp-client|purchase-order-create-sheet|purchase-request-create-sheet)$/ }, args => ({ path: args.path.split('/').at(-1), namespace: 'qa' }));
       builder.onLoad({ filter: /.*/, namespace: 'qa' }, args => ({ loader: 'tsx', resolveDir: app, contents:
-        args.path === 'erp-client' ? transport : args.path === 'registry' ? 'export const getDocumentDetailEntry=()=>null;' :
-          'export const PurchaseOrderCreateSheet=()=>null; export const PurchaseRequestCreateSheet=()=>null;' }));
+        args.path === 'erp-client' ? transport : `import React,{useEffect} from 'react'; import {FormSheet} from '@/components/app/form-sheet';
+          const Sheet=({open,onClose})=>{useEffect(()=>{if(open)window.qaCreates=(window.qaCreates??0)+1},[open]);
+            return <FormSheet open={!!open} title="Tạo chứng từ kiểm thử" submitLabel="Tạo chứng từ" onClose={onClose} onSubmit={()=>{}}><p>Dữ liệu kiểm thử tổng hợp</p></FormSheet>};
+          export const PurchaseOrderCreateSheet=Sheet; export const PurchaseRequestCreateSheet=Sheet;` }));
     } }],
   });
   const js = fixture.outputFiles[0].text;
@@ -173,22 +171,28 @@ test('375×812 and 1280×860: real tabs, portal bounds, themes, detail labels, o
         await page.screenshot({ path: path.join(output, `${screen}-${width}-${dark ? 'dark' : 'light'}-top.png`) });
         let bounds = null;
         if (width === 375) {
-          assert.equal(await fab.count(), 1, 'cached hidden tabs must not leak portal FABs');
-          bounds = await fab.boundingBox();
-          assert.equal(bounds.width, 56); assert.equal(bounds.height, 56);
-          assert.equal(bounds.x, 375 - 16 - 56); assert.equal(bounds.y + bounds.height, 812 - 81);
-          const nav = await page.getByRole('navigation', { name: 'Thanh điều hướng ứng dụng di động', exact: true }).boundingBox();
-          assert.ok(bounds.y + bounds.height <= nav.y - 16);
-          await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-          assert.deepEqual(await fab.boundingBox(), bounds, 'FAB remains fixed after scroll');
-          const paging = await section.locator('[data-document-pagination]').boundingBox();
-          assert.ok(paging.y + paging.height <= bounds.y, 'bottom padding keeps last-page controls above FAB');
+          // Purchase-order writes are gated (WRITE_GATED_MODULES), so its ERP screen has no create FAB.
+          const creates = screen !== 'orders';
+          assert.equal(await fab.count(), creates ? 1 : 0, 'cached hidden tabs must not leak portal FABs');
+          if (creates) {
+            bounds = await fab.boundingBox();
+            assert.equal(bounds.width, 56); assert.equal(bounds.height, 56);
+            assert.equal(bounds.x, 375 - 16 - 56); assert.equal(bounds.y + bounds.height, 812 - 81);
+            const nav = await page.getByRole('navigation', { name: 'Thanh điều hướng ứng dụng di động', exact: true }).boundingBox();
+            assert.ok(bounds.y + bounds.height <= nav.y - 16);
+            await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+            assert.deepEqual(await fab.boundingBox(), bounds, 'FAB remains fixed after scroll');
+            const paging = await section.locator('[data-document-pagination]').boundingBox();
+            assert.ok(paging.y + paging.height <= bounds.y, 'bottom padding keeps last-page controls above FAB');
+          }
           const small = await page.locator('button:visible, input:visible, select:visible, a:visible').evaluateAll(nodes => nodes.filter(node => { const rect = node.getBoundingClientRect(); return rect.width < 44 || rect.height < 44; }).map(node => node.outerHTML));
           assert.deepEqual(small, []);
           const chips = section.getByRole('group', { name: /Lọc/ }).first();
           assert.equal(await chips.evaluate(node => getComputedStyle(node).scrollbarWidth), 'none');
-          await chips.evaluate(node => { node.scrollLeft = node.scrollWidth; });
-          assert.ok(await chips.evaluate(node => node.scrollLeft > 0), 'chips still scroll');
+          if (await chips.evaluate(node => node.scrollWidth > node.clientWidth)) {
+            await chips.evaluate(node => { node.scrollLeft = node.scrollWidth; });
+            assert.ok(await chips.evaluate(node => node.scrollLeft > 0), 'overflowing chips still scroll');
+          }
         } else {
           assert.equal(await fab.isVisible(), false);
           assert.equal(await section.getByRole('table').isVisible(), true);
@@ -203,12 +207,14 @@ test('375×812 and 1280×860: real tabs, portal bounds, themes, detail labels, o
           await dialog.waitFor();
           const text = await dialog.innerText();
           assert.doesNotMatch(text, /\(ObjectName\)|AP_|00:00:00/);
-          const labels = dialog.locator('span.text-xs.text-neutral-500');
+          // Unified P2-07 detail: sentence-case field labels, no legacy uppercase/monospace chrome.
+          const labels = dialog.locator('dt');
           assert.ok(await labels.count() > 0);
-          for (const style of await labels.evaluateAll(nodes => nodes.map(node => ({ size: getComputedStyle(node).fontSize, transform: getComputedStyle(node).textTransform, color: getComputedStyle(node).color })))) {
-            assert.equal(style.size, '12px'); assert.equal(style.transform, 'none');
+          for (const style of await labels.evaluateAll(nodes => nodes.map(node => ({ size: getComputedStyle(node).fontSize, transform: getComputedStyle(node).textTransform })))) {
+            assert.equal(style.size, '14px'); assert.equal(style.transform, 'none');
           }
-          await dialog.locator('button[aria-label="Đóng"]').click();
+          assert.equal(await dialog.locator('.uppercase:visible, .font-mono:visible').count(), 0);
+          await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'hidden' });
         }
       }
       if (width === 375) {
