@@ -30,6 +30,17 @@ public static class ApiHost
             "Web session store {Path} is not writable; sessions stay in memory and end at restart", path);
     }
 
+    private const string SessionCheckUnavailableKey = "Medcom.SessionCheckUnavailable";
+
+    private static void SessionCheckUnavailable(HttpContext context, string reason)
+    {
+        context.Items[SessionCheckUnavailableKey] = true;
+        context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Medcom.Api.Sessions").LogWarning(
+            new EventId(1011, "SessionCheckUnavailable"),
+            "Session check could not reach ERP; session kept; reason {Reason}; correlation {CorrelationId}",
+            reason, context.TraceIdentifier);
+    }
+
     internal static void LogPurchaseReadUnavailable(ILogger logger, HttpContext context,
         PurchaseRequestReadDiagnostic diagnostic) => logger.LogWarning(
         new EventId(1002, "PurchaseReadUnavailable"),
@@ -230,8 +241,13 @@ public static class ApiHost
                 options.SlidingExpiration = false;
                 options.Events = new CookieAuthenticationEvents
                 {
-                    OnRedirectToLogin = context => WriteProblem(context.HttpContext,
-                        StatusCodes.Status401Unauthorized, "authentication_required", "Authentication required."),
+                    // A session kept through a transient ERP failure answers 503, so the
+                    // browser retries instead of showing the sign-in screen.
+                    OnRedirectToLogin = context => context.HttpContext.Items.ContainsKey(SessionCheckUnavailableKey)
+                        ? WriteProblem(context.HttpContext, StatusCodes.Status503ServiceUnavailable,
+                            "identity_unavailable", "Authentication is temporarily unavailable.")
+                        : WriteProblem(context.HttpContext,
+                            StatusCodes.Status401Unauthorized, "authentication_required", "Authentication required."),
                     OnRedirectToAccessDenied = context => WriteProblem(context.HttpContext,
                         StatusCodes.Status403Forbidden, "forbidden", "Access denied."),
                     OnValidatePrincipal = async context =>
@@ -260,13 +276,23 @@ public static class ApiHost
                             var session = tokenOnly?await sessions.InspectAsync(token,timeout.Token):NativeReadSession.IsRead(context.HttpContext)
                                 ? await sessions.ResolveReadAsync(token, timeout.Token)
                                 : await sessions.ResolveAsync(token, false, timeout.Token);
-                            if (session is null) { context.RejectPrincipal(); return; }
+                            if (session is null)
+                            {
+                                if (sessions is LocalWebSessions local && local.AwaitingAuthority(token))
+                                    SessionCheckUnavailable(context.HttpContext, "authority_unavailable");
+                                context.RejectPrincipal();
+                                return;
+                            }
                             context.HttpContext.Items[AuthEndpoints.ResolvedKey] = session;
                             context.ReplacePrincipal(AuthEndpoints.Principal(session));
                         }
-                        catch (Exception) when (!context.HttpContext.RequestAborted.IsCancellationRequested)
+                        catch (Exception error) when (!context.HttpContext.RequestAborted.IsCancellationRequested)
                         {
-                            sessions.Revoke(token);
+                            // A slow or failing ERP check (e.g. the first one after a restart)
+                            // must not end the session: refuse this request with 503 and let
+                            // the next request check again.
+                            SessionCheckUnavailable(context.HttpContext,
+                                error is OperationCanceledException ? "timeout" : "exception");
                             context.RejectPrincipal();
                         }
                     }
