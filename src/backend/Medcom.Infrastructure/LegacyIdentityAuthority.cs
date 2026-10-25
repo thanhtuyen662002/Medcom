@@ -16,9 +16,12 @@ public interface ILegacyUserStore
 public sealed record LegacyCompany(string TenantId, string CompanyId, string CompanyName);
 
 public sealed class LegacyIdentityAuthority(ILegacyUserStore users, ILegacyPasswordVerifier passwords,
-    LegacyCompany company) : IIdentityAuthority
+    LegacyCompany company, TimeProvider? clock = null) : IIdentityAuthority
 {
-    private long sequence;
+    // Versions only order observations of one session. Start from the start time
+    // (microsecond scale) so a restarted process never issues a version lower than
+    // one stored in a session restored from before the restart.
+    private long sequence = (clock ?? TimeProvider.System).GetUtcNow().ToUnixTimeMilliseconds() * 1000;
     public async Task<IdentityResult> AuthenticateAsync(string username, string password,
         CancellationToken cancellationToken)
     {
