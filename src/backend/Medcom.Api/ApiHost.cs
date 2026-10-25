@@ -173,6 +173,7 @@ public static class ApiHost
         builder.Services.AddSingleton(new WebSessionPolicy(TimeSpan.FromMinutes(idleMinutes),
             TimeSpan.FromMinutes(absoluteMinutes), builder.Configuration.GetValue("Session:Capacity", 10000)));
         // Real ERP sign-in keeps sessions across deploys (disposed, so flushed, on shutdown).
+        string? cookieKeyRing = null;
         var sessionStore = builder.Configuration.GetValue("Legacy:Enabled", false)
             ? WebSessionFileStore.Create(builder.Configuration["Session:StorePath"]) : null;
         if (sessionStore is not null)
@@ -185,9 +186,12 @@ public static class ApiHost
             catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
             if (keyRing is not null)
             {
+                cookieKeyRing = keyRing;
                 var protection = builder.Services.AddDataProtection().SetApplicationName("Medcom.Api")
                     .PersistKeysToFileSystem(new DirectoryInfo(keyRing));
-                if (OperatingSystem.IsWindows()) protection.ProtectKeysWithDpapi();
+                // Machine scope: an IIS app pool may run without a loaded user profile, which
+                // user-scope DPAPI needs. The key folder itself is private to this account.
+                if (OperatingSystem.IsWindows()) protection.ProtectKeysWithDpapi(protectToLocalMachine: true);
             }
         }
         builder.Services.AddSingleton<IWebSessions, LocalWebSessions>();
@@ -276,7 +280,10 @@ public static class ApiHost
         var app = builder.Build();
         if (app.Services.GetService<WebSessionFileStore>() is { } store
             && app.Services.GetRequiredService<IWebSessions>() is LocalWebSessions local)
+        {
             LogSessionStore(app.Logger, store.FilePath, local.Restored, local.Persisting == true);
+            app.Services.GetService<LegacyReadiness>()?.UpdateSessionPersistence(local.Persisting == true, cookieKeyRing is not null);
+        }
         app.UseSecureIngress(allRequestsSecure);
         app.Use(RequestPerformance.Observe);
         var contentSecurityPolicy = WebSecurity.ContentSecurityPolicy(app.Environment.WebRootPath);
