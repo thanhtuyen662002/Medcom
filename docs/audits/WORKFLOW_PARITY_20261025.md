@@ -25,3 +25,10 @@ Dữ liệu: 8/10 PO tạo từ đề nghị mua có dòng thiếu thành tiền
 - Đợt điều chuyển: nút "Gửi TP SA" riêng cho đợt không thiết bị (Web gộp vào "Gửi kỹ thuật").
 - Đề nghị nhập: "Hủy đợt nháp" (`AP_POInboundPartial_CancelStp`), 2 nút in, ảnh hư hỏng (webcam) và link ảnh.
 - Duyệt đơn bán (SA): "In Biên bản bàn giao". Quét QR bán hàng: Viettel Post.
+
+## Bổ sung 26/10 — trigger ERP làm hỏng tạo/lưu đề nghị nhập trên Web
+- Thử tạo đề nghị nhập trên production (00:22, ghi chú "Test web"): `Unavailable` `unexpected_affected_rows`, giao dịch hủy, không có dòng nào được lưu.
+- Nguyên nhân: `IV_InboundRequest_SaveBatchAdapterTrg` (INSTEAD OF INSERT trên `IV_InboundRequestDetailsTbl`, thêm 20–23/10) chèn lại dòng với `SET NOCOUNT OFF`; client nhận tổng 2 cho 1 dòng. Web yêu cầu đúng 1.
+- Thử trên tempdb: `@@ROWCOUNT` ngay sau câu lệnh luôn là số dòng của chính câu lệnh, kể cả khi trigger INSTEAD OF ghi thêm nhiều dòng.
+- Sửa: kiểm số dòng ghi/xóa bằng `SET @affected=@@ROWCOUNT` (tham số đầu ra).
+- Đã kiểm 26/10 (PR #200, có sự đồng ý của chủ dự án): "Gửi đặt mua hàng" PO1026/0006 tạo PO đủ `SourceAmount`/`Amount`/`BaseTotal` (100.000 VND).

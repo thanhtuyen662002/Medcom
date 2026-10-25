@@ -98,6 +98,24 @@ public sealed class ErpWorkflowParityTests
     }
 
     [Fact]
+    public async Task Row_counts_ignore_rows_added_by_ERP_triggers()
+    {
+        // IV_InboundRequest_SaveBatchAdapterTrg (INSTEAD OF INSERT, SET NOCOUNT OFF) makes one inserted
+        // line report 2 rows to the client; the statement's own @@ROWCOUNT is still 1.
+        var connection=new DisplayConnection(_=>throw new InvalidOperationException(),command=>
+        {
+            Assert.EndsWith("; SET @affected=@@ROWCOUNT;",command.CommandText);
+            command.Parameters["@affected"].Value=1;
+            return 2;
+        });
+        connection.Open();
+        using var transaction=connection.BeginTransaction(IsolationLevel.Serializable);
+        using var command=connection.CreateCommand();command.Transaction=transaction;
+        command.CommandText="INSERT dbo.[IV_InboundRequestDetailsTbl]([ItemID]) VALUES(@value0);";
+        Assert.Equal(1,await SqlErpScreenCommands.Affected(command,default));
+    }
+
+    [Fact]
     public async Task Sales_lines_within_the_contract_save_normally()
     {
         var (transaction,_)=Connection(_=>{var t=new DataTable();t.Columns.Add("Title",typeof(string));t.Columns.Add("MsgType",typeof(int));return t;});
