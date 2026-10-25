@@ -19,7 +19,7 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
     private static readonly TimeSpan SaveDelay = TimeSpan.FromSeconds(2);
 
     private sealed record Entry(AuthoritativeIdentity Identity, DateTimeOffset LastActivity,
-        DateTimeOffset AbsoluteExpiry, SemaphoreSlim RevalidationGate);
+        DateTimeOffset AbsoluteExpiry, SemaphoreSlim RevalidationGate, bool AuthorityUnavailable = false);
 
     private readonly Dictionary<string, Entry> entries = new(StringComparer.Ordinal);
     private readonly object gate = new();
@@ -160,6 +160,18 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
             }
             var result = await authority.RevalidateAsync(original.Identity, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
+            // ERP could not be asked (SQL error, adapter warming up after a restart): refuse
+            // this request but keep the session. Only a definite answer ends it.
+            if (result.Outcome == IdentityOutcome.Unavailable)
+                lock (gate)
+                {
+                    if (entries.TryGetValue(key, out var current))
+                    {
+                        if (Expired(current, clock.GetUtcNow())) entries.Remove(key);
+                        else entries[key] = current with { AuthorityUnavailable = true };
+                    }
+                    return null;
+                }
             var currentIdentity = result.Outcome == IdentityOutcome.Success && result.Identity is not null
                 ? Freeze(result.Identity) : null;
             lock (gate)
@@ -186,6 +198,7 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
                 }
                 var updated = latest with
                 {
+                    AuthorityUnavailable = false,
                     Identity = currentIdentity,
                     LastActivity = userInteraction ? clock.GetUtcNow() : latest.LastActivity
                 };
@@ -220,6 +233,18 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
             }
             return Task.FromResult<ResolvedSession?>(Resolve(token, entry));
         }
+    }
+
+    /// <summary>
+    /// True when the session still exists and its last check could not reach ERP, so a
+    /// refused request is a temporary outage rather than an ended session.
+    /// </summary>
+    public bool AwaitingAuthority(string token)
+    {
+        if (token.Length != 64 || token.Any(c => !Uri.IsHexDigit(c))) return false;
+        lock (gate)
+            return entries.TryGetValue(Hash(token), out var entry) && entry.AuthorityUnavailable
+                && !Expired(entry, clock.GetUtcNow());
     }
 
     public void Revoke(string token)

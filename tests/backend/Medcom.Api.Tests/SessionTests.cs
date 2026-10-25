@@ -130,6 +130,24 @@ public sealed class SessionTests
     }
 
     [Fact]
+    public async Task UnavailableAuthorityRefusesTheRequestButKeepsTheSession()
+    {
+        var authority = new ControlledAuthority();
+        var sessions = Store(authority, new ManualClock());
+        var session = sessions.Create(authority.Identity)!;
+        authority.Outcome = IdentityOutcome.Unavailable;
+        Assert.Null(await sessions.ResolveAsync(session.Token, false, default));
+        Assert.NotNull(await sessions.InspectAsync(session.Token, default));
+        Assert.True(sessions.AwaitingAuthority(session.Token));
+        authority.Outcome = IdentityOutcome.Success;
+        Assert.NotNull(await sessions.ResolveAsync(session.Token, false, default));
+        Assert.False(sessions.AwaitingAuthority(session.Token));
+        authority.Outcome = IdentityOutcome.Rejected;
+        Assert.Null(await sessions.ResolveAsync(session.Token, false, default));
+        Assert.Null(await sessions.InspectAsync(session.Token, default));
+    }
+
+    [Fact]
     public async Task CapacityIsBoundedExpiredEntriesAreReclaimedAndTokensAreUnpredictable()
     {
         var clock = new ManualClock();

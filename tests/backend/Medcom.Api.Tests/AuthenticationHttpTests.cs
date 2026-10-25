@@ -210,6 +210,31 @@ public sealed class AuthenticationHttpTests
     }
 
     [Fact]
+    public async Task An_unreachable_ERP_answers_503_and_keeps_the_session_while_a_rejection_ends_it()
+    {
+        await using var server = await SecureTestServer.Start();
+        using var login = await server.Post("/api/auth/login", new { username = "synthetic-user", password = "synthetic-password" }, await server.Csrf());
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+
+        // e.g. SQL down or the adapter still warming up after a restart.
+        server.Authority.Outcome = IdentityOutcome.Unavailable;
+        using var unavailable = await server.Client.GetAsync("/api/platform/metadata");
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, unavailable.StatusCode);
+        Assert.Contains("identity_unavailable", await unavailable.Content.ReadAsStringAsync());
+
+        server.Authority.Outcome = IdentityOutcome.Success;
+        using var recovered = await server.Client.GetAsync("/api/platform/metadata");
+        Assert.Equal(HttpStatusCode.OK, recovered.StatusCode);
+
+        server.Authority.Outcome = IdentityOutcome.Rejected;
+        using var rejected = await server.Client.GetAsync("/api/platform/metadata");
+        Assert.Equal(HttpStatusCode.Unauthorized, rejected.StatusCode);
+        server.Authority.Outcome = IdentityOutcome.Success;
+        using var ended = await server.Client.GetAsync("/api/platform/metadata");
+        Assert.Equal(HttpStatusCode.Unauthorized, ended.StatusCode);
+    }
+
+    [Fact]
     public async Task RateLimitBoundsAttemptsWithoutUnboundedQueue()
     {
         await using var server = await SecureTestServer.Start();
