@@ -31,6 +31,12 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
     private ITimer? pendingSave;
     private int saveScheduled;
 
+    /// <summary>Sessions restored from the store at startup.</summary>
+    public int Restored { get; }
+
+    /// <summary>Null without a store; otherwise whether the last write succeeded.</summary>
+    public bool? Persisting { get; private set; }
+
     public LocalWebSessions(IIdentityAuthority authority, TimeProvider clock, WebSessionPolicy policy,
         WebSessionFileStore? store = null)
     {
@@ -54,6 +60,9 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
                 || entries.Count >= policy.Capacity) continue;
             entries[saved.TokenHash] = entry;
         }
+        Restored = entries.Count;
+        // Write once now so an unwritable location shows up at startup, not at the next deploy.
+        Flush();
     }
 
     /// <summary>Writes the current sessions now (used on shutdown and by tests).</summary>
@@ -71,7 +80,7 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
                 snapshot = entries.Where(pair => !Expired(pair.Value, now))
                     .Select(pair => new WebSessionFileStore.Snapshot(pair.Key, pair.Value.Identity,
                         pair.Value.LastActivity, pair.Value.AbsoluteExpiry)).ToArray();
-            store.Save(snapshot);
+            Persisting = store.Save(snapshot);
         }
     }
 

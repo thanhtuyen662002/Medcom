@@ -60,6 +60,23 @@ public sealed class WebSessionStoreTests : IDisposable
         Assert.Throws<ArgumentException>(() => new WebSessionFileStore("relative.json"));
     }
 
+    [Fact]
+    public void Startup_reports_restored_sessions_and_whether_the_store_is_writable()
+    {
+        var authority = new ControlledAuthority(); var clock = new ManualClock();
+        var memoryOnly = new LocalWebSessions(authority, clock, WebSessionPolicy.Default);
+        Assert.Null(memoryOnly.Persisting);
+        using (var first = new LocalWebSessions(authority, clock, WebSessionPolicy.Default, new WebSessionFileStore(StorePath)))
+        {
+            Assert.True(first.Persisting);
+            first.Create(authority.Identity);
+        }
+        Assert.Equal(1, new LocalWebSessions(authority, clock, WebSessionPolicy.Default, new WebSessionFileStore(StorePath)).Restored);
+        var keys = new WebSessionFileStore(StorePath).EnsurePrivateDirectory("keys");
+        Assert.True(Directory.Exists(keys));
+        Assert.Equal(directory, Path.GetDirectoryName(keys));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(directory)) Directory.Delete(directory, true);
