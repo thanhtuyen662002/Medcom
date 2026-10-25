@@ -22,6 +22,32 @@ public sealed class LegacyAuthorityTests
         { Calls++; Username = username; return Task.FromResult(Outcome); }
     }
     [Fact]
+    public async Task A_session_restored_after_restart_is_accepted_by_the_new_process()
+    {
+        // Regression: the version counter restarted at 0, so the first revalidation of
+        // every restored session looked older than the stored one and returned 401.
+        var directory = Path.Combine(Path.GetTempPath(), "medcom-restart-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = Path.Combine(directory, "web-sessions.json");
+            var users = new Users(); var clock = new ManualClock();
+            var before = new LegacyIdentityAuthority(users, new Passwords(), new("t", "c", "Company"), clock);
+            string token;
+            using (var sessions = new LocalWebSessions(before, clock, WebSessionPolicy.Default, new WebSessionFileStore(store)))
+            {
+                token = sessions.Create((await before.AuthenticateAsync("alias", "input", default)).Identity!)!.Token;
+                for (var i = 0; i < 50; i++) Assert.NotNull(await sessions.ResolveAsync(token, true, default));
+            }
+            clock.Advance(TimeSpan.FromSeconds(30));
+            var after = new LegacyIdentityAuthority(users, new Passwords(), new("t", "c", "Company"), clock);
+            var restored = new LocalWebSessions(after, clock, WebSessionPolicy.Default, new WebSessionFileStore(store));
+            Assert.Equal("Canonical", (await restored.ResolveAsync(token, true, default))!.Identity.PrincipalId);
+            Assert.NotNull(await restored.ResolveReadAsync(token, default));
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+    }
+
+    [Fact]
     public async Task DatabaseCanonicalIdentityControlsVerificationAndBrowserScope()
     {
         var users = new Users(); var passwords = new Passwords();
