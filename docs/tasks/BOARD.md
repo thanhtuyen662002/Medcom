@@ -120,3 +120,4 @@ Mọi phiếu T-001…T-007 Done trên `ui-sync/main`. Tổng kết: `docs/ui-sy
 - Chủ dự án: sự cố 12:00–12:54 do agent CD trên VPS bị chặn quyền, đã khắc phục.
 - [UX-07](UX-07.md): test `apps/medcom-sites` vào job CI `backend`; số đếm cho bảng lọc đơn bán; báo khi hàng việc vượt 100 phiếu/trạng thái.
 - [UX-09](UX-09.md): giữ phiên qua deploy (file băm token), tương phản nhãn/giá trị, ẩn mã kỹ thuật, tiêu đề màn, khung tải có hiệu ứng.
+- UX-09b/c: CSS tải tách file riêng (#192); khóa cookie lưu cạnh file phiên, cookie có hạn 7 ngày, log `WebSessionStore` (#193).
