@@ -69,14 +69,18 @@ public sealed partial class SqlErpScreenCommands
             }
             Require(remaining.Count<=ErpInputRules.MaximumLines&&(remaining.Count>0||plan.Module=="internal-transfer-batches"),ErpCommandOutcome.InvalidInput,"document_line_count");
             await RevalueUnchangedLines(transaction,plan,request,document,before,header,remaining,token);
-            if(plan.Module=="sales-orders")await SalesAfterSave(transaction,document,token);
+            if(plan.Module=="sales-orders")
+            {
+                await SalesContractQuantity(transaction,document,token);
+                await SalesAfterSave(transaction,document,token);
+            }
             if(plan.Module=="purchase-orders")await PurchaseOrderAfterSave(transaction,document,token);
         }
         else if(ErpScreenCatalog.IsWorkflow(plan.Module))await WorkflowAction(transaction,identity,plan,request,document,token);
         else if(plan.Module=="purchase-requests")
         {
             if(request.Operation=="submit")await PurchaseSubmit(transaction,plan,document,token);
-            else if(request.Operation=="send-purchase-order")await PurchaseOrder(transaction,plan,before!,document,token);
+            else if(request.Operation=="send-purchase-order")await PurchaseOrder(transaction,identity,document,token);
             else throw new Stop(ErpCommandOutcome.InvalidInput,"invalid_action");
         }
         else if(plan.Module=="sales-orders")
@@ -327,12 +331,18 @@ public sealed partial class SqlErpScreenCommands
             var msg=Enumerable.Range(0,reader.FieldCount).SingleOrDefault(i=>reader.GetName(i)=="MsgType",-1);
             while(await reader.ReadAsync(token))
             {Require(++count<=1000,ErpCommandOutcome.Unavailable,"native_result_capacity");
-             if(msg>=0){var result=Convert.ToInt32(reader.GetValue(msg),CultureInfo.InvariantCulture);Require(result!=1,ErpCommandOutcome.Conflict,"native_action_rejected");
+             if(msg>=0){var result=Convert.ToInt32(reader.GetValue(msg),CultureInfo.InvariantCulture);
+                 if(result==1)throw new Stop(ErpCommandOutcome.Conflict,"native_action_rejected",NativeMessage(reader));
                  Require(result==NativeSuccessCode(name),ErpCommandOutcome.Unavailable,"native_result_changed");success=true;}}
         }while(await reader.NextResultAsync(token));
         Require(success,ErpCommandOutcome.Unavailable,"native_success_not_observed");
     }
     internal static int NativeSuccessCode(string name)=>name=="CF_QRcodeStp"?0:3;
+    private static string? NativeMessage(DbDataReader reader)
+    {
+        var ordinal=Enumerable.Range(0,reader.FieldCount).SingleOrDefault(i=>reader.GetName(i)=="Msg",-1);
+        return ordinal>=0&&!reader.IsDBNull(ordinal)?Convert.ToString(reader.GetValue(ordinal),CultureInfo.InvariantCulture):null;
+    }
     // Diagnostic audit helpers only. API reads, writes, numbering and journal
     // preparation do not call these historical source/configuration hash checks.
     internal static async Task VerifyNativeMetadata(DbTransaction transaction,CancellationToken token)
@@ -405,6 +415,27 @@ public sealed partial class SqlErpScreenCommands
         }
         Require(seen.Count==expected.Count&&!await reader.NextResultAsync(token),ErpCommandOutcome.QualificationRequired,"native_form_configuration_changed");
     }
+    // ERP's before-save hook (EBS) AR_OrderDetail_WarningOverQuantityStp lists lines whose quantity exceeds
+    // what remains on the contract, with MsgType 1 (refusal). Feed it the saved lines in the form's XML shape.
+    internal static async Task SalesContractQuantity(DbTransaction transaction,string document,CancellationToken token)
+    {
+        await using var command=ErpSqlPlan.Command(transaction,"DECLARE @xml xml=(SELECT DocumentID,ItemID,SoLuongHopDong,DeliveryQuantity,Quantity FROM dbo.AR_OrderDetailTbl WHERE DocumentID=@document FOR XML PATH('T1'),ROOT('Data'),TYPE); EXEC dbo.AR_OrderDetail_WarningOverQuantityStp @xml;");
+        ErpSqlPlan.Parameter(command,"@document",DbType.AnsiString,document,50);
+        await using var reader=await command.ExecuteReaderAsync(token);
+        var lines=new List<string>();
+        do
+        {
+            int Ordinal(string name)=>Enumerable.Range(0,reader.FieldCount).SingleOrDefault(i=>reader.GetName(i)==name,-1);
+            var item=Ordinal("ItemName");var code=Ordinal("ItemID");var notes=Ordinal("Notes");
+            while(await reader.ReadAsync(token))
+            {
+                string? Text(int i)=>i>=0&&!reader.IsDBNull(i)?Convert.ToString(reader.GetValue(i),CultureInfo.InvariantCulture):null;
+                if(lines.Count<5)lines.Add($"{Text(item)??Text(code)}: {Text(notes)}");else if(lines.Count==5)lines.Add("…");
+            }
+        }while(await reader.NextResultAsync(token));
+        if(lines.Count>0)throw new Stop(ErpCommandOutcome.Conflict,"sales_quantity_exceeds_contract",
+            "Số lượng vượt quá hợp đồng. "+string.Join("; ",lines));
+    }
     private static async Task SalesAfterSave(DbTransaction transaction,string document,CancellationToken token)
     {
         // Scoped replacement for the native hook's observed unscoped first UPDATE.
@@ -417,35 +448,10 @@ public sealed partial class SqlErpScreenCommands
         await using var command=ErpSqlPlan.Command(transaction,"UPDATE dbo.AP_PurchaseRequestTbl SET StatusID=@status,isLock=@locked WHERE PurchaseRequestID=@document;");
         ErpSqlPlan.Parameter(command,"@status",DbType.Int32,2);ErpSqlPlan.Parameter(command,"@locked",DbType.Boolean,true);ErpSqlPlan.Parameter(command,"@document",DbType.String,document,50);await One(command,token);
     }
-    private static async Task PurchaseOrder(DbTransaction transaction,ErpSqlPlan plan,ErpReadSnapshot before,string document,CancellationToken token)
-    {
-        Require(ErpInputRules.AnsiIdentifier(document,50)&&before.Header.GetValueOrDefault("purchaseDate")is string,ErpCommandOutcome.InvalidInput,"purchase_order_transport_invalid");
-        var header=new Dictionary<string,object?>(StringComparer.Ordinal)
-        {
-            ["DocumentID"]=document,["DocumentDate"]=DateTime.Parse((string)before.Header["purchaseDate"]!,CultureInfo.InvariantCulture),
-            ["Memo"]=before.Header.GetValueOrDefault("notes"),["Notes"]=before.Header.GetValueOrDefault("purposeDescOrClient"),
-            ["ObjectID"]=before.Header["objectId"],["CurrencyID"]=before.Header["currencyId"],["RateExchange"]=before.Header["rateExchange"],
-            ["BranchID"]=before.Branch,["isLock"]=false
-        };
-        // New Web line identities are UUIDs within the source varchar(50); not the legacy timestamp identity format.
-        await using(var command=ErpSqlPlan.Command(transaction,"INSERT dbo.AP_OrderTbl(DocumentID,DocumentDate,Memo,Notes,ObjectID,CurrencyID,RateExchange,BranchID,isLock) VALUES(@id,@date,@memo,@notes,@object,@currency,@rate,@branch,@lock);"))
-        {
-            ErpSqlPlan.Parameter(command,"@id",DbType.AnsiString,document,50);ErpSqlPlan.Parameter(command,"@date",DbType.DateTime,header["DocumentDate"]);
-            ErpSqlPlan.Parameter(command,"@memo",DbType.String,header["Memo"],-1);ErpSqlPlan.Parameter(command,"@notes",DbType.String,header["Notes"],-1);
-            ErpSqlPlan.Parameter(command,"@object",DbType.AnsiString,header["ObjectID"],50);ErpSqlPlan.Parameter(command,"@currency",DbType.AnsiString,header["CurrencyID"],50);
-            ErpSqlPlan.Parameter(command,"@rate",DbType.Double,header["RateExchange"]);ErpSqlPlan.Parameter(command,"@branch",DbType.AnsiString,before.Branch,50);
-            ErpSqlPlan.Parameter(command,"@lock",DbType.Boolean,false);await One(command,token);
-        }
-        foreach(var line in before.Lines)
-        {
-            await using var command=ErpSqlPlan.Command(transaction,"INSERT dbo.AP_OrderDetailTbl(UserAutoID,DocumentID,ItemID,Quantity,UnitPrice,Notes) VALUES(@line,@document,@item,@quantity,@price,@notes);");
-            ErpSqlPlan.Parameter(command,"@line",DbType.AnsiString,Guid.NewGuid().ToString("D"),50);ErpSqlPlan.Parameter(command,"@document",DbType.AnsiString,document,50);
-            ErpSqlPlan.Parameter(command,"@item",DbType.AnsiString,line.Fields["itemId"],50);
-            ErpSqlPlan.Parameter(command,"@quantity",DbType.Decimal,decimal.Parse((string)line.Fields["quantity"]!,CultureInfo.InvariantCulture));
-            ErpSqlPlan.Parameter(command,"@price",DbType.Decimal,decimal.Parse((string)line.Fields["unitPrice"]!,CultureInfo.InvariantCulture));
-            ErpSqlPlan.Parameter(command,"@notes",DbType.String,line.Fields.GetValueOrDefault("timeRequired"),-1);await One(command,token);
-        }
-        await using var status=ErpSqlPlan.Command(transaction,"UPDATE dbo.AP_PurchaseRequestTbl SET StatusID=@status WHERE PurchaseRequestID=@document;");
-        ErpSqlPlan.Parameter(status,"@status",DbType.Int32,5);ErpSqlPlan.Parameter(status,"@document",DbType.String,document,50);await One(status,token);
-    }
+    // ERP's "Gửi đặt mua hàng" button runs AP_PurchaseRequest_CreatePOStp: it validates the request
+    // (approved, has lines, rate > 0, quantity > 0) and writes the PO with SourceAmount, Amount and
+    // BaseTotal. The former Web-side INSERT left those amounts empty.
+    internal static Task PurchaseOrder(DbTransaction transaction,AuthoritativeIdentity actor,string document,CancellationToken token)
+        =>Procedure(transaction,"AP_PurchaseRequest_CreatePOStp",[("@PurchaseRequestID",DbType.String,document,50),
+            ("@User",DbType.AnsiString,actor.PrincipalId,50)],token);
 }

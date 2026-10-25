@@ -546,7 +546,7 @@ export function TabErpScreen({
     } else {
       setCreateFeedback({
         type: "error",
-        message: getActionErrorMessage(res.outcome, res.code),
+        message: getActionErrorMessage(res.outcome, res.code, res.message),
       });
     }
   };

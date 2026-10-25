@@ -428,7 +428,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
     } else {
       setActionFeedback({
         type: "error",
-        message: getActionErrorMessage(res.outcome, res.code),
+        message: getActionErrorMessage(res.outcome, res.code, res.message),
       });
     }
   };

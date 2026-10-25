@@ -62,8 +62,14 @@ public sealed partial class SqlErpScreenCommands:IErpSqlCommandExecutor
             ErpCommandOutcome.Cancelled=>new(ErpReadOutcome.Cancelled),_=>new(ErpReadOutcome.Unavailable,Code:result.Code)
         };
     }
-    private sealed class Stop(ErpCommandOutcome outcome,string code):Exception
-    {internal ErpCommandResult Result{get;}=new(outcome,code);}
+    private sealed class Stop(ErpCommandOutcome outcome,string code,string? message=null):Exception
+    {internal ErpCommandResult Result{get;}=new(outcome,code,null,NativeText(message));}
+    // ERP-authored refusal text, trimmed and bounded for display.
+    private static string? NativeText(string? message)
+    {
+        var text=message?.Trim();
+        return string.IsNullOrEmpty(text)?null:text.Length<=500?text:text[..500];
+    }
     private static void Require(bool value,ErpCommandOutcome outcome,string code){if(!value)throw new Stop(outcome,code);}
     private async Task<ErpCommandResult> Run(string module,string operation,JsonElement intent,bool observation,CancellationToken token)
     {
@@ -158,6 +164,12 @@ public sealed partial class SqlErpScreenCommands:IErpSqlCommandExecutor
         catch(Stop stop){result=stop.Result;}
         catch(ErpDocumentNumberExhaustedException){result=new(ErpCommandOutcome.Conflict,"document_number_exhausted");}
         catch(OperationCanceledException){result=new(ErpCommandOutcome.Cancelled);}
+        catch(SqlException error) when (error.Number>=50000)
+        {
+            // A native procedure THROW is ERP's business refusal (e.g. "Cần nhập lý do không duyệt"),
+            // not an outage: report it as a conflict with ERP's own message.
+            result=new(ErpCommandOutcome.Conflict,"native_action_rejected",null,NativeText(error.Message));
+        }
         catch(Exception error)
         {
             try{diagnostic?.Invoke(new(module,operation,stage,error.GetType().Name,error is SqlException sql?sql.Number:null,

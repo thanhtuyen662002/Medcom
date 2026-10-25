@@ -31746,12 +31746,23 @@
                 "type": "null"
               }
             ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "outcome",
           "code",
-          "receipt"
+          "receipt",
+          "message"
         ]
       },
       "ErpCommandOutcome": {
@@ -132303,12 +132314,23 @@
                 "type": "null"
               }
             ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "outcome",
           "code",
-          "receipt"
+          "receipt",
+          "message"
         ],
         "x-medcom-response-contract": 3
       },
@@ -136529,12 +136551,23 @@
                 "type": "null"
               }
             ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "outcome",
           "code",
-          "receipt"
+          "receipt",
+          "message"
         ],
         "x-medcom-response-contract": 3
       },
@@ -163751,12 +163784,23 @@
                 "type": "null"
               }
             ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "outcome",
           "code",
-          "receipt"
+          "receipt",
+          "message"
         ],
         "x-medcom-response-contract": 3
       },

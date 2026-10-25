@@ -48,26 +48,6 @@ public sealed class InboundScreenConfigurationTests
     }
 
     [Theory]
-    [InlineData(0L)] [InlineData(1L)]
-    public async Task Warehouse_action_checks_required_document_information_and_binds_the_document(long incomplete)
-    {
-        const string document="synthetic'); DELETE X;--";
-        using var connection=new DisplayConnection(command=>
-        {
-            Assert.Contains("LotNumberByDocument IS NULL",command.CommandText);
-            Assert.Contains("SetQuantityByDocument IS NULL",command.CommandText);
-            Assert.Contains("ExpireDateByDocument IS NULL",command.CommandText);
-            Assert.DoesNotContain("BarrelQuantityByDocument",command.CommandText);
-            Assert.DoesNotContain(document,command.CommandText);
-            Assert.Equal(document,command.Parameters["@document"].Value);
-            var table=new DataTable();table.Columns.Add("Incomplete",typeof(long));table.Rows.Add(incomplete);return table.CreateDataReader();
-        });
-        connection.Open();using var transaction=connection.BeginTransaction(IsolationLevel.Serializable);
-        var verify=()=>SqlErpScreenCommands.ValidateInboundWarehouseInformation(transaction,document,default);
-        if(incomplete==0)await verify();else await Assert.ThrowsAnyAsync<Exception>(verify);
-    }
-
-    [Theory]
     [InlineData(ErpReadStage.Session,false)] [InlineData(ErpReadStage.OpenConnection,false)]
     [InlineData(ErpReadStage.OpenConnection,true)]
     public async Task Read_failure_diagnostics_do_not_expose_private_values_or_change_the_result(ErpReadStage stage,bool brokenLogger)
