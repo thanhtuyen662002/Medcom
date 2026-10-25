@@ -55,7 +55,7 @@ public static class AuthEndpoints
                 await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
                     Principal(session), new AuthenticationProperties
                     {
-                        IsPersistent = false, ExpiresUtc = session.View.AbsoluteExpiresAt,
+                        IsPersistent = true, ExpiresUtc = session.View.AbsoluteExpiresAt,
                         AllowRefresh = false
                     });
             }

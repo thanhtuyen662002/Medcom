@@ -5,6 +5,7 @@ using Medcom.Infrastructure.PurchaseRequests;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
@@ -20,6 +21,14 @@ public static class ApiHost
         "ERP read unavailable; correlation {CorrelationId}; module {Module}; stage {Stage}; exception kind {ExceptionKind}; provider number {ProviderErrorNumber}; elapsed ms {ElapsedMilliseconds}",
         context.TraceIdentifier,diagnostic.Module,diagnostic.Stage,diagnostic.ExceptionKind,
         diagnostic.ProviderErrorNumber,diagnostic.ElapsedMilliseconds);
+
+    internal static void LogSessionStore(ILogger logger, string path, int restored, bool persisting)
+    {
+        if (persisting) logger.LogInformation(new EventId(1010, "WebSessionStore"),
+            "Web sessions persisted to {Path}; restored {Restored} at startup", path, restored);
+        else logger.LogWarning(new EventId(1010, "WebSessionStore"),
+            "Web session store {Path} is not writable; sessions stay in memory and end at restart", path);
+    }
 
     internal static void LogPurchaseReadUnavailable(ILogger logger, HttpContext context,
         PurchaseRequestReadDiagnostic diagnostic) => logger.LogWarning(
@@ -166,7 +175,21 @@ public static class ApiHost
         // Real ERP sign-in keeps sessions across deploys (disposed, so flushed, on shutdown).
         var sessionStore = builder.Configuration.GetValue("Legacy:Enabled", false)
             ? WebSessionFileStore.Create(builder.Configuration["Session:StorePath"]) : null;
-        if (sessionStore is not null) builder.Services.AddSingleton(sessionStore);
+        if (sessionStore is not null)
+        {
+            builder.Services.AddSingleton(sessionStore);
+            // The session cookie is an encrypted ticket: keep its key ring beside the
+            // session file so a restart can still read cookies issued before it.
+            string? keyRing = null;
+            try { keyRing = sessionStore.EnsurePrivateDirectory("keys"); }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+            if (keyRing is not null)
+            {
+                var protection = builder.Services.AddDataProtection().SetApplicationName("Medcom.Api")
+                    .PersistKeysToFileSystem(new DirectoryInfo(keyRing));
+                if (OperatingSystem.IsWindows()) protection.ProtectKeysWithDpapi();
+            }
+        }
         builder.Services.AddSingleton<IWebSessions, LocalWebSessions>();
         builder.Services.ConfigureHttpJsonOptions(options =>
             options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow);
@@ -251,6 +274,9 @@ public static class ApiHost
         configure?.Invoke(builder);
         var allRequestsSecure = SecureIngress.ReadConfiguration(builder.Configuration);
         var app = builder.Build();
+        if (app.Services.GetService<WebSessionFileStore>() is { } store
+            && app.Services.GetRequiredService<IWebSessions>() is LocalWebSessions local)
+            LogSessionStore(app.Logger, store.FilePath, local.Restored, local.Persisting == true);
         app.UseSecureIngress(allRequestsSecure);
         app.Use(RequestPerformance.Observe);
         var contentSecurityPolicy = WebSecurity.ContentSecurityPolicy(app.Environment.WebRootPath);

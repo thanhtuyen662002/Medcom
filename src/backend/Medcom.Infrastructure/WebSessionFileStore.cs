@@ -45,6 +45,20 @@ public sealed class WebSessionFileStore
         return path is null ? null : new WebSessionFileStore(path);
     }
 
+    public string FilePath => path;
+
+    /// <summary>Private folder beside the session file, also used for the cookie key ring.</summary>
+    public string EnsurePrivateDirectory(string name)
+    {
+        var directory = Path.Combine(Path.GetDirectoryName(path)!, name);
+        if (!Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+            Protect(directory);
+        }
+        return directory;
+    }
+
     public IReadOnlyList<Snapshot> Load()
     {
         try
