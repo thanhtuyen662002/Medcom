@@ -77,6 +77,34 @@ public sealed class WebSessionStoreTests : IDisposable
         Assert.Equal(directory, Path.GetDirectoryName(keys));
     }
 
+    [Fact]
+    public void An_unwritable_default_folder_falls_back_to_the_next_candidate()
+    {
+        Directory.CreateDirectory(directory);
+        // A folder "under" a regular file can never be created, like a profile folder
+        // an IIS app pool cannot write.
+        var blocker = Path.Combine(directory, "blocker");
+        File.WriteAllText(blocker, "");
+        var fallback = Path.Combine(directory, "fallback");
+        var store = WebSessionFileStore.Create(null, [Path.Combine(blocker, "Medcom"), fallback]);
+        Assert.Equal(Path.Combine(fallback, "web-sessions.json"), store!.FilePath);
+        Assert.Empty(Directory.GetFiles(fallback));
+        Assert.Null(WebSessionFileStore.Create(null, [Path.Combine(blocker, "a"), Path.Combine(blocker, "b")]));
+    }
+
+    [Fact]
+    public void Readiness_reports_session_persistence_without_paths()
+    {
+        var readiness = new LegacyReadiness();
+        string Status(string component) => readiness.Check().Checks.Single(check => check.Component == component).Status;
+        Assert.Equal("unavailable", Status("session_store"));
+        readiness.UpdateSessionPersistence(true, false);
+        readiness.Update(true, true);
+        Assert.Equal("healthy", Status("session_store"));
+        Assert.Equal("unavailable", Status("cookie_keys"));
+        Assert.Equal("healthy", Status("database"));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(directory)) Directory.Delete(directory, true);

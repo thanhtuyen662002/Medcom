@@ -24,25 +24,60 @@ public sealed class WebSessionFileStore
     }
 
     /// <summary>
-    /// Default location: the service account's own local profile, which it can write
-    /// and other users cannot read (the deploy config folder is read-only to the service).
-    /// Null when the account has no profile.
+    /// Candidate folders, most private first. Under IIS the app pool may run without a
+    /// loaded profile (LocalApplicationData then points at a folder it cannot write)
+    /// and the deploy config folder is read-only to it, so fall back to a shared data
+    /// folder and finally the process temp folder. Each folder is created private.
     /// </summary>
-    public static string? DefaultPath
+    public static IEnumerable<string> DefaultDirectories()
     {
-        get
-        {
-            var profile = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            return Path.IsPathFullyQualified(profile) ? Path.Combine(profile, "Medcom", "web-sessions.json") : null;
-        }
+        foreach (var directory in new[]
+                 {
+                     Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Medcom"),
+                     Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Medcom", "sessions"),
+                     Combine(Path.GetTempPath(), "Medcom-sessions")
+                 })
+            if (directory is not null) yield return directory;
     }
 
-    /// <summary>Configured store; null when disabled with "none" or no default location exists.</summary>
-    public static WebSessionFileStore? Create(string? configured)
+    /// <summary>
+    /// Configured store (used as given), or the first default folder that can really be
+    /// written; null when disabled with "none" or nothing is writable.
+    /// </summary>
+    public static WebSessionFileStore? Create(string? configured, IEnumerable<string>? candidates = null)
     {
         if (string.Equals(configured?.Trim(), "none", StringComparison.OrdinalIgnoreCase)) return null;
-        var path = string.IsNullOrWhiteSpace(configured) ? DefaultPath : configured.Trim();
-        return path is null ? null : new WebSessionFileStore(path);
+        if (!string.IsNullOrWhiteSpace(configured)) return new WebSessionFileStore(configured.Trim());
+        foreach (var directory in candidates ?? DefaultDirectories())
+        {
+            var store = new WebSessionFileStore(Path.Combine(directory, "web-sessions.json"));
+            if (store.CanWrite()) return store;
+        }
+        return null;
+    }
+
+    private static string? Combine(string root, params string[] parts) =>
+        Path.IsPathFullyQualified(root) ? Path.Combine([root, .. parts]) : null;
+
+    private bool CanWrite()
+    {
+        try
+        {
+            EnsureDirectory(Path.GetDirectoryName(path)!);
+            var probe = path + ".probe";
+            File.WriteAllBytes(probe, []);
+            File.Delete(probe);
+            return true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or NotSupportedException
+            or InvalidOperationException or System.Security.SecurityException) { return false; }
+    }
+
+    private static void EnsureDirectory(string directory)
+    {
+        if (Directory.Exists(directory)) return;
+        Directory.CreateDirectory(directory);
+        Protect(directory);
     }
 
     public string FilePath => path;
@@ -51,11 +86,7 @@ public sealed class WebSessionFileStore
     public string EnsurePrivateDirectory(string name)
     {
         var directory = Path.Combine(Path.GetDirectoryName(path)!, name);
-        if (!Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-            Protect(directory);
-        }
+        EnsureDirectory(directory);
         return directory;
     }
 
@@ -78,12 +109,7 @@ public sealed class WebSessionFileStore
     {
         try
         {
-            var directory = Path.GetDirectoryName(path)!;
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-                Protect(directory);
-            }
+            EnsureDirectory(Path.GetDirectoryName(path)!);
             var temporary = path + ".tmp";
             File.WriteAllBytes(temporary, JsonSerializer.SerializeToUtf8Bytes(items, Json));
             File.Move(temporary, path, overwrite: true);
