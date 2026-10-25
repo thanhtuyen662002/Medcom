@@ -281,13 +281,24 @@ public sealed partial class SqlErpScreenCommands
          parameter.Scale=(byte)(field.SqlType is "money" or "smallmoney"?4:int.Parse(args![1],CultureInfo.InvariantCulture));}
     }
     private static async Task One(DbCommand command,CancellationToken token)
-    {Require(await command.ExecuteNonQueryAsync(token)==1,ErpCommandOutcome.Unavailable,"unexpected_affected_rows");}
+    {Require(await Affected(command,token)==1,ErpCommandOutcome.Unavailable,"unexpected_affected_rows");}
+    // Rows changed by this statement only. ERP triggers (e.g. IV_InboundRequest_SaveBatchAdapterTrg,
+    // INSTEAD OF INSERT with SET NOCOUNT OFF) add their own counts to the client total, while
+    // @@ROWCOUNT right after the statement stays the statement's own count.
+    internal static async Task<int> Affected(DbCommand command,CancellationToken token)
+    {
+        var affected=command.CreateParameter();affected.ParameterName="@affected";affected.DbType=DbType.Int32;
+        affected.Direction=ParameterDirection.Output;command.Parameters.Add(affected);
+        command.CommandText=command.CommandText.TrimEnd().TrimEnd(';')+"; SET @affected=@@ROWCOUNT;";
+        var total=await command.ExecuteNonQueryAsync(token);
+        return affected.Value is int statement?statement:total;
+    }
     private static async Task DeleteRows(DbTransaction transaction,string table,string key,string document,string? line,int expected,CancellationToken token)
     {
         await using var command=ErpSqlPlan.Command(transaction,$"DELETE dbo.[{table}] WHERE [{key}]=@document AND {ErpSqlPlan.Exact("["+key+"]","@document")}"+
             (line is null?"":$" AND UserAutoID=@line AND {ErpSqlPlan.Exact("UserAutoID","@line")}")+";");
         ErpSqlPlan.Parameter(command,"@document",DbType.String,document,50);if(line is not null)ErpSqlPlan.Parameter(command,"@line",DbType.String,line,50);
-        Require(await command.ExecuteNonQueryAsync(token)==expected,ErpCommandOutcome.Conflict,"delete_affected_rows_changed");
+        Require(await Affected(command,token)==expected,ErpCommandOutcome.Conflict,"delete_affected_rows_changed");
     }
     private static async Task PhysicalKeys(DbTransaction transaction,ErpSqlPlan plan,string document,int lines,CancellationToken token)
     {
