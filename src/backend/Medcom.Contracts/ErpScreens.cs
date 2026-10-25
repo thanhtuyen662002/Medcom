@@ -96,8 +96,10 @@ public sealed record ErpCommandReceipt(string Module, string Operation, string I
 [JsonConverter(typeof(JsonStringEnumConverter<ErpCommandOutcome>))]
 public enum ErpCommandOutcome
 { Committed, Replayed, InvalidInput, Denied, Conflict, QualificationRequired, Unavailable, OutcomeUnknown, Cancelled }
+// Message carries ERP's own wording when a native procedure refuses (THROW or MsgType 1),
+// so the Web shows exactly what the WinForms client would show.
 public sealed record ErpCommandResult(ErpCommandOutcome Outcome, string? Code = null,
-    ErpCommandReceipt? Receipt = null);
+    ErpCommandReceipt? Receipt = null, string? Message = null);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ErpCommandLookupRequest(string Operation, JsonElement OriginalIntent);
 public sealed record ErpCommandObservation(string Outcome, ErpCommandReceipt? Receipt = null);

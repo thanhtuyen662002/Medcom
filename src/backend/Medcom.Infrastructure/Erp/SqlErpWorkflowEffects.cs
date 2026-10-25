@@ -69,7 +69,7 @@ public sealed partial class SqlErpScreenCommands
             {
                 Require(++count<=1000&&ordinal>=0,ErpCommandOutcome.Unavailable,"native_check_shape_changed");
                 var value=Convert.ToInt32(reader.GetValue(ordinal),CultureInfo.InvariantCulture);
-                Require(value!=1,ErpCommandOutcome.Conflict,"native_action_rejected");
+                if(value==1)throw new Stop(ErpCommandOutcome.Conflict,"native_action_rejected",NativeMessage(reader));
                 Require(value is 0 or 3,ErpCommandOutcome.Unavailable,"native_check_shape_changed");
             }
         }while(await reader.NextResultAsync(token));
@@ -145,24 +145,13 @@ public sealed partial class SqlErpScreenCommands
         var notes=Text(request.Payload,"notes");var operation=request.Operation;
         if(plan.Module=="inbound-requests")
         {
-            if(operation=="send-warehouse")
-            {
-                await ValidateInboundWarehouseInformation(transaction,document,token);
-            }
-            var status=operation=="send-management"?10:2;
-            await using var command=ErpSqlPlan.Command(transaction,"UPDATE dbo.IV_InboundRequestTbl SET StatusID=@status WHERE DocumentID=@document; INSERT dbo.IV_InboundRequestLogTbl(UserAutoID,DocumentID,UserName,StatusID,Notes) VALUES(@line,@document,@actor,@status,@notes);");
-            ErpSqlPlan.Parameter(command,"@document",DbType.AnsiString,document,50);ErpSqlPlan.Parameter(command,"@line",DbType.AnsiString,Guid.NewGuid().ToString("D"),50);
-            ErpSqlPlan.Parameter(command,"@actor",DbType.AnsiString,actor.PrincipalId,50);ErpSqlPlan.Parameter(command,"@status",DbType.Int32,status);
-            ErpSqlPlan.Parameter(command,"@notes",DbType.String,notes,-1);
-            Require(await command.ExecuteNonQueryAsync(token)==2,ErpCommandOutcome.Unavailable,"inbound_send_failed");return;
+            await InboundSend(transaction,actor,operation,document,notes,token);return;
         }
         if(plan.Module=="purchase-approvals")
         {
             var field=plan.Screen.Fields["header"].Single(f=>f.Column=="Notes");
             Require(ErpInputRules.Value(field,ErpInputRules.Serialize(notes)),ErpCommandOutcome.InvalidInput,"approval_notes_invalid");
-            await using var command=ErpSqlPlan.Command(transaction,"UPDATE dbo.AP_PurchaseRequestTbl SET StatusID=@status,isLock=@locked,Notes=@notes WHERE PurchaseRequestID=@document;");
-            ErpSqlPlan.Parameter(command,"@document",DbType.String,document,50);ErpSqlPlan.Parameter(command,"@status",DbType.Int32,operation=="approve"?3:4);
-            ErpSqlPlan.Parameter(command,"@locked",DbType.Boolean,operation=="approve");ErpSqlPlan.Parameter(command,"@notes",DbType.String,notes,-1);await One(command,token);return;
+            await PurchaseDecision(transaction,actor,operation,document,notes,token);return;
         }
         if(plan.Module is "sales-order-pm" or "sales-order-sa")
         {
@@ -193,17 +182,16 @@ public sealed partial class SqlErpScreenCommands
         if(operation!="sync-requests")parameters.Add((procedure=="IV_InternalTransfer_RequestPMReturnStp"?"@Reason":"@Notes",DbType.String,notes,-1));
         await Procedure(transaction,procedure,parameters.ToArray(),token);
     }
-    internal static async Task ValidateInboundWarehouseInformation(DbTransaction transaction,string document,CancellationToken token)
-    {
-        // SY_FrmCfg/IV_InboundRequestFrm/LYS1/ExecSQLWithParaButtonCtl_1/CS4,
-        // rechecked on 2026-10-12: barrel quantity is optional for this action.
-        await using var check=ErpSqlPlan.Command(transaction,"SELECT COUNT_BIG(*) FROM dbo.IV_InboundRequestDetailsTbl WITH(HOLDLOCK) WHERE DocumentID=@document AND (LotNumberByDocument IS NULL OR SetQuantityByDocument IS NULL OR ExpireDateByDocument IS NULL);");
-        ErpSqlPlan.Parameter(check,"@document",DbType.AnsiString,document,50);
-        await using var rows=await check.ExecuteReaderAsync(token);
-        Require(await rows.ReadAsync(token)&&rows.FieldCount==1&&rows.GetInt64(0)==0
-            &&!await rows.ReadAsync(token)&&!await rows.NextResultAsync(token),
-            ErpCommandOutcome.Conflict,"inbound_document_information_incomplete");
-    }
+    // Same procedure as ERP's buttons: TM role in the branch, lot/expiry/quantity > 0 before the
+    // warehouse, concurrency lock, status move and history row.
+    internal static Task InboundSend(DbTransaction transaction,AuthoritativeIdentity actor,string operation,string document,string? notes,CancellationToken token)
+        =>Procedure(transaction,"IV_InboundRequest_ChangeWorkflowStatusStp",[("@DocumentID",DbType.AnsiString,document,50),
+            ("@User",DbType.AnsiString,actor.PrincipalId,100),("@Action",DbType.AnsiString,operation=="send-management"?"TM_SENDBLD":"TM_SENDWH",30),
+            ("@TargetStatus",DbType.Int32,null,0),("@SendTo",DbType.String,null,-1),("@Notes",DbType.String,notes,-1)],token);
+    // ERP's Duyệt / Không duyệt buttons: screen permission, reason required to reject, no PO yet.
+    internal static Task PurchaseDecision(DbTransaction transaction,AuthoritativeIdentity actor,string operation,string document,string? notes,CancellationToken token)
+        =>Procedure(transaction,"AP_PurchaseRequest_ApproveOrRejectStp",[("@PurchaseRequestID",DbType.String,document,50),
+            ("@User",DbType.AnsiString,actor.PrincipalId,100),("@Approve",DbType.Boolean,operation=="approve",0),("@Notes",DbType.String,notes,-1)],token);
     private static async Task ReturnStepAllowed(DbTransaction transaction,string module,int status,CancellationToken token)
     {
         var text=module=="sales-order-sa"?"SELECT COUNT_BIG(*) FROM dbo.AR_OrderStatusTbl WITH(HOLDLOCK) WHERE StatusID=@status AND IsReject=1 AND StatusID<14;"

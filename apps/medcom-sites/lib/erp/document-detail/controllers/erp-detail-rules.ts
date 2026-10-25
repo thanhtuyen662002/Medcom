@@ -10,7 +10,9 @@ export function formatVietnamDate(val: unknown): string {
   return `${d}/${m}/${y}`;
 }
 
-export function getActionErrorMessage(outcome: string, code?: string | null): string {
+export function getActionErrorMessage(outcome: string, code?: string | null, message?: string | null): string {
+  // ERP explained the refusal itself (e.g. "Cần nhập lý do không duyệt"): show it as ERP does.
+  if (message?.trim() && (outcome === "Conflict" || outcome === "InvalidInput")) return message.trim();
   switch (outcome) {
     case "InvalidInput":
       return "Thông tin chưa hợp lệ hoặc thiếu trường bắt buộc. Vui lòng kiểm tra lại.";

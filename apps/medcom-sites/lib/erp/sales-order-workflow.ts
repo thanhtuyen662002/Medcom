@@ -65,6 +65,7 @@ export class SalesCommandSession {
 }
 
 export function salesCommandMessage(result: ErpCommandResult): string {
+  if (result.message?.trim() && (result.outcome === "Conflict" || result.outcome === "InvalidInput")) return result.message.trim();
   switch (result.outcome) {
     case "Committed": case "Replayed": return "Đã cập nhật đơn hàng thành công.";
     case "Conflict": return "Đơn hàng đã thay đổi. Hãy tải lại dữ liệu trước khi tiếp tục.";

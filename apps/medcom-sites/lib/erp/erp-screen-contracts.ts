@@ -320,6 +320,8 @@ export const erpCommandResultSchema = z.object({
   outcome: erpCommandOutcomeSchema,
   code: z.string().nullable().optional(),
   receipt: erpCommandReceiptSchema.nullable().optional(),
+  /** ERP's own refusal wording (native procedure THROW or MsgType 1). */
+  message: z.string().nullable().optional(),
 });
 export type ErpCommandResult = z.infer<typeof erpCommandResultSchema>;
 
