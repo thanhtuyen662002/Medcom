@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { MedcomThemeIcons } from "@/components/brand/medcom-logo";
 import "./globals.css";
+// Kept apart from globals.css so loading effects ship even when a stale build cache reuses it.
+import "./loading-effects.css";
 
 export const metadata: Metadata = {
   title: "Medcom ERP",
