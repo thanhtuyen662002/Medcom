@@ -14,6 +14,7 @@ export const ROLE_QUEUE_STATUSES: Partial<Record<ErpScreenModule, readonly numbe
   "inbound-sa": [4, 5], // Đã gửi TP SA, Yêu cầu TP SA xem lại
   "inbound-tech": [8, 9], // Đã gửi Kỹ thuật, Yêu cầu Kỹ thuật xem lại
   "inbound-pm": [6, 7], // Đã gửi PM, Yêu cầu PM xem lại
+  "inbound-bld": [10], // Đã gửi BLĐ
   "internal-transfer-requests": [0, 30], // Nháp, PM yêu cầu NVKD chỉnh sửa
   "internal-transfer-pm": [10], // Đã gửi PM
   "internal-transfer-batches": [0, 10, 25, 45], // Đang lập đợt, Yêu cầu PM xem lại, Kỹ thuật / TP SA trả lại PM

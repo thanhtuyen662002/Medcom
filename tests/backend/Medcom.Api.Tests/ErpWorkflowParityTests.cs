@@ -135,6 +135,8 @@ public sealed class ErpWorkflowParityTests
     [InlineData("inbound-pm","reject","PM_RETURN")]
     [InlineData("inbound-pm","send-accounting","PM_SENDACCOUNT")]
     [InlineData("inbound-pm","return-step","PM_RETURNTO")]
+    [InlineData("inbound-bld","approve","BLD_APPROVE")]
+    [InlineData("inbound-bld","reject","BLD_CANCEL")]
     public async Task Inbound_step_buttons_pass_ERP_action_target_and_recipient(string module,string operation,string action)
     {
         // IV_GoodsInfoControlFrm / IV_GoodsStatusConfirmFrm / IV_GoodsQualityControlConfirmFrm LYS1 C4.
@@ -152,6 +154,7 @@ public sealed class ErpWorkflowParityTests
     [InlineData("inbound-sa","IV_GoodsInfoControlFrm","IN(4,5)",new[]{"send-tech","send-pm","reject","return-step"})]
     [InlineData("inbound-tech","IV_GoodsStatusConfirmFrm","IN(8,9)",new[]{"send-pm","reject","return-step"})]
     [InlineData("inbound-pm","IV_GoodsQualityControlConfirmFrm","IN(6,7)",new[]{"send-accounting","reject","return-step"})]
+    [InlineData("inbound-bld","IV_CargoHandlingPlanApprovalFrm","IN(10)",new[]{"approve","reject"})]
     public void Inbound_step_lists_keep_returned_requests_like_ERP(string module,string form,string statuses,string[] buttons)
     {
         // T0 TN3: history rows of the step, so a request sent back or passed on still lists.
@@ -163,9 +166,9 @@ public sealed class ErpWorkflowParityTests
         Assert.Equal(form,screen.FormId);
         Assert.Equal(buttons,screen.Actions.Where(a=>a.Control.StartsWith("ExecSQL",StringComparison.Ordinal)).Select(a=>a.Id).ToArray());
         Assert.DoesNotContain(screen.Fields["lines"],f=>f.Writable);
-        Assert.Equal(module=="inbound-sa",!screen.Fields["header"].Any(f=>f.Writable));
-        Assert.Equal(module!="inbound-pm",ErpWorkflowRules.HasActionOptions(module,"send-pm"));
-        Assert.True(ErpWorkflowRules.HasActionOptions(module,"return-step"));
+        Assert.Equal(module is "inbound-sa" or "inbound-bld",!screen.Fields["header"].Any(f=>f.Writable));
+        Assert.Equal(module is "inbound-sa" or "inbound-tech",ErpWorkflowRules.HasActionOptions(module,"send-pm"));
+        Assert.Equal(module!="inbound-bld",screen.Actions.Any(a=>a.Id=="return-step"));
     }
 
     [Fact]

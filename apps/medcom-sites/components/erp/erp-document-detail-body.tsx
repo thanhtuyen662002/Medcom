@@ -417,7 +417,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
     if (act.id === "delete") return deleteArmed ? "Bấm lần nữa để xóa" : "Xóa chứng từ";
     if (act.id === "submit") return "Gửi đề nghị";
     if (act.id === "send-purchase-order") return "Gửi đặt mua hàng";
-    if (act.id === "approve") return "Duyệt";
+    if (act.id === "approve") return module === "inbound-bld" && act.caption ? act.caption : "Duyệt";
     if (act.id === "reject") return module === "purchase-approvals" ? "Không duyệt" : module.startsWith("inbound-") && act.caption ? act.caption : "Từ chối";
     return act.caption || act.id;
   };

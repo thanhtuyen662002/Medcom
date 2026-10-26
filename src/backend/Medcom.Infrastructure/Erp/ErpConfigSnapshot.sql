@@ -14,6 +14,7 @@ INSERT @forms VALUES
   (N'AR_OrderComfirmFrm'),
   (N'FA_Move2026Frm'),
   (N'FA_Repair2026Frm'),
+  (N'IV_CargoHandlingPlanApprovalFrm'),
   (N'IV_GoodsInfoControlFrm'),
   (N'IV_GoodsQualityControlConfirmFrm'),
   (N'IV_GoodsStatusConfirmFrm'),

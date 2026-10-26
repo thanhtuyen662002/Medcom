@@ -81,6 +81,8 @@ function getModuleTitle(mod: ErpScreenModule): string {
       return "Kỹ thuật xác nhận hàng về";
     case "inbound-pm":
       return "PM xác nhận chất lượng hàng về";
+    case "inbound-bld":
+      return "BLĐ phê duyệt phương án hàng";
     case "purchase-approvals":
       return "Duyệt đề nghị mua hàng";
     case "sales-order-pm":

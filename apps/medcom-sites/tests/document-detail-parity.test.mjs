@@ -80,8 +80,8 @@ async function mounted(config, state, verify) {
   }
 }
 
-test('the parity manifest covers exactly the twenty generic modules and source-backed keys', () => {
-  assert.equal(configs.size, 20);
+test('the parity manifest covers exactly the twenty-one generic modules and source-backed keys', () => {
+  assert.equal(configs.size, 21);
   assert.deepEqual([...parity.keys()].sort(), [...configs.keys()].sort());
   assert.match(oldBody, /f\.itemCode \|\| f\.itemId \|\| f\.assetId/);
   assert.match(oldBody, /sumLineTotals\(detail\.lines\?\.rows \|\| \[\]\)/);
