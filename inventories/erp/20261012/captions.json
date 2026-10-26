@@ -176,7 +176,8 @@
       "source": "dbo.SY_FrmLstTbl.CaptionVN",
       "formMatches": 1,
       "menuMatches": 1
-    }
+    },
+    {"module": "inbound-warehouse", "formId": "IV_IncomingShipmentStatusFrm", "menuId": "07013", "caption": "Xác nhận tình trạng hàng về", "source": "dbo.SY_FrmLstTbl.CaptionVN", "formMatches": 1, "menuMatches": 1}
   ],
   "actions": [
     {
@@ -938,6 +939,11 @@
       "caption": "In m\u00E3 QR",
       "source": "dbo.SY_FrmCfg/IV_Output_QRCodeFrm/LYS1/PrintButtonCtl/BT",
       "matches": 1
-    }
+    },
+    {"module": "inbound-warehouse", "actionId": "create", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-warehouse", "actionId": "save", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-warehouse", "actionId": "delete", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-warehouse", "actionId": "send-sa", "control": "ExecSQLWithParaButtonCtl_1", "caption": "Gửi TP SA", "source": "dbo.SY_FrmCfg/IV_IncomingShipmentStatusFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT", "matches": 1},
+    {"module": "inbound-warehouse", "actionId": "reject", "control": "ExecSQLWithParaButtonCtl", "caption": "Từ chối", "source": "dbo.SY_FrmCfg/IV_IncomingShipmentStatusFrm/LYS1/ExecSQLWithParaButtonCtl/BT", "matches": 1}
   ]
 }

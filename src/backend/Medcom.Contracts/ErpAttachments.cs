@@ -23,7 +23,7 @@ public static class ErpAttachmentCatalog
     public const int MaximumFileBytes=10*1024*1024;
     public const int MaximumPreviewBytes=1024*1024;
     public const int MaximumMultipartBytes=MaximumFileBytes+MaximumPreviewBytes+262144;
-    public static IReadOnlyList<string> Modules{get;}=Array.AsReadOnly(new[]{"purchase-orders","sales-orders","sales-order-pm","sales-order-sa","inbound-requests"});
+    public static IReadOnlyList<string> Modules{get;}=Array.AsReadOnly(new[]{"purchase-orders","sales-orders","sales-order-pm","sales-order-sa","inbound-requests","inbound-warehouse"});
     public static bool Supports(string module)=>Modules.Contains(module,StringComparer.Ordinal);
     // Current SA form hides Edit (SY_FrmCfg HBE=1); expose its shared images as reads.
     public static bool Writable(string module)=>Supports(module)&&module!="sales-order-sa";
@@ -31,7 +31,8 @@ public static class ErpAttachmentCatalog
     {
         "purchase-orders"=>Array.AsReadOnly(new[]{new ErpAttachmentSlot(null,"")}),
         "sales-orders" or "sales-order-pm" or "sales-order-sa"=>Array.AsReadOnly(new[]{new ErpAttachmentSlot(2,"Tài liệu đính kèm")}),
-        "inbound-requests"=>Array.AsReadOnly(new[]{new ErpAttachmentSlot(2,"Ảnh chụp hư hỏng"),new(4,"Ảnh chụp trước khi dở hàng"),new(6,"Ảnh chụp sau khi dở hàng")}),
+        // The warehouse form (IV_IncomingShipmentStatusFrm LYS2) shows the same three photo slots.
+        "inbound-requests" or "inbound-warehouse"=>Array.AsReadOnly(new[]{new ErpAttachmentSlot(2,"Ảnh chụp hư hỏng"),new(4,"Ảnh chụp trước khi dở hàng"),new(6,"Ảnh chụp sau khi dở hàng")}),
         _=>Array.Empty<ErpAttachmentSlot>()
     };
 }

@@ -38,6 +38,8 @@ public static class ErpWorkflowInputs
         ("internal-transfer-warehouse-in","header") => typeof(ErpInternalTransferWarehouseInHeaderInput),
         ("internal-transfer-warehouse-in","lines") => typeof(ErpInternalTransferWarehouseInLinesInput),
         ("internal-transfer-warehouse-in","assets") => typeof(ErpInternalTransferWarehouseInAssetsInput),
+        ("inbound-warehouse","header") => typeof(ErpInboundWarehouseHeaderInput),
+        ("inbound-warehouse","lines") => typeof(ErpInboundWarehouseLinesInput),
         _ => null
     };
 }
@@ -428,4 +430,68 @@ public sealed record ErpInternalTransferWarehouseInLinesInput
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ErpInternalTransferWarehouseInAssetsInput
 {
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundWarehouseHeaderInput
+{
+    [JsonPropertyName("totalPalletQuantityByReal")]
+    public string? TotalPalletQuantityByReal { get; init; }
+    [JsonPropertyName("totalBarrelQuantityByReal")]
+    public string? TotalBarrelQuantityByReal { get; init; }
+    [JsonPropertyName("excessPackageQuantity")]
+    public string? ExcessPackageQuantity { get; init; }
+    [JsonPropertyName("lackOfPackageQuantity")]
+    public string? LackOfPackageQuantity { get; init; }
+    [JsonPropertyName("damagedPackageQuantity")]
+    public string? DamagedPackageQuantity { get; init; }
+    [JsonPropertyName("isDamageOutsidePackage")]
+    public bool? IsDamageOutsidePackage { get; init; }
+    [JsonPropertyName("damageDescription")]
+    public string? DamageDescription { get; init; }
+    [JsonPropertyName("damageInsideStatusId")]
+    public string? DamageInsideStatusId { get; init; }
+    [JsonPropertyName("locationDamageDetectedId")]
+    public string? LocationDamageDetectedId { get; init; }
+    [JsonPropertyName("locationDamageDescription")]
+    public string? LocationDamageDescription { get; init; }
+    [JsonPropertyName("resultDesciption")]
+    public string? ResultDesciption { get; init; }
+    [JsonPropertyName("totalQuantityInboundResult")]
+    public string? TotalQuantityInboundResult { get; init; }
+    [JsonPropertyName("goodAwaitingInboundResult")]
+    public string? GoodAwaitingInboundResult { get; init; }
+    [JsonPropertyName("resultNote")]
+    public string? ResultNote { get; init; }
+    [JsonPropertyName("datetimeRecorded")]
+    public string? DatetimeRecorded { get; init; }
+    [JsonPropertyName("imageURL")]
+    public string? ImageURL { get; init; }
+    [JsonPropertyName("notes")]
+    public string? Notes { get; init; }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundWarehouseLinesInput
+{
+    [JsonPropertyName("additional")]
+    public bool? Additional { get; init; }
+    [JsonPropertyName("lotNumberByReal")]
+    public string? LotNumberByReal { get; init; }
+    [JsonPropertyName("setQuantityByReal")]
+    public string? SetQuantityByReal { get; init; }
+    [JsonPropertyName("barrelQuantityByReal")]
+    public string? BarrelQuantityByReal { get; init; }
+    [JsonPropertyName("expireDateByReal")]
+    public string? ExpireDateByReal { get; init; }
+    [JsonPropertyName("randomTestQuantity")]
+    public string? RandomTestQuantity { get; init; }
+    [JsonPropertyName("testStatus")]
+    public string? TestStatus { get; init; }
+    [JsonPropertyName("noPalletNote")]
+    public string? NoPalletNote { get; init; }
+    [JsonPropertyName("palletNote")]
+    public string? PalletNote { get; init; }
+    [JsonPropertyName("checkerNote")]
+    public string? CheckerNote { get; init; }
 }

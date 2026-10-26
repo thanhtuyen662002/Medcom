@@ -9,7 +9,7 @@ internal static class SqlErpAttachmentStore
 {
     internal static string? Table(string module)=>module switch
     {"purchase-orders"=>"AP_POAttachTbl","sales-orders" or "sales-order-pm" or "sales-order-sa"=>"AR_OrderAttachTbl",
-        "inbound-requests"=>"IV_InboundRequestAttachTbl",_=>null};
+        "inbound-requests" or "inbound-warehouse"=>"IV_InboundRequestAttachTbl",_=>null};
     internal sealed record Row(string Id,string Name,int? Slot,int? FileType,long Length,string? ContentHash,string? PreviewHash)
     {
         internal string Token=>ErpInputRules.Fingerprint(new object?[]{Id,Name,Slot,FileType,Length,ContentHash,PreviewHash});
@@ -85,7 +85,7 @@ internal static class SqlErpAttachmentStore
         var sql=update?"UPDATE dbo.["+table+"] SET FileName=@name,FileType=1,Content=@content,Content2=@preview WHERE "+ErpSqlPlan.Exact("DocumentID","@document")+" AND "+ErpSqlPlan.Exact("UserAutoID","@id")+";"
             :"INSERT dbo.["+table+"](UserAutoID,DocumentID,FileName,FileType,STT,Content,Content2"+(module=="purchase-orders"?",UserCreate,DateCreate":"")+") VALUES(@id,@document,@name,1,@slot,@content,@preview"+(module=="purchase-orders"?",@actor,SYSUTCDATETIME()":"")+");";
         await using var command=ErpSqlPlan.Command(transaction,sql);Document(command,document);ErpSqlPlan.Parameter(command,"@id",DbType.AnsiString,id,50);
-        ErpSqlPlan.Parameter(command,"@name",DbType.String,name,500);ErpSqlPlan.Parameter(command,"@slot",module=="purchase-orders"||module=="inbound-requests"?DbType.Int32:DbType.String,slot is null?null:module=="purchase-orders"||module=="inbound-requests"?slot.Value:slot.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),100);
+        ErpSqlPlan.Parameter(command,"@name",DbType.String,name,500);ErpSqlPlan.Parameter(command,"@slot",module is "purchase-orders" or "inbound-requests" or "inbound-warehouse"?DbType.Int32:DbType.String,slot is null?null:module is "purchase-orders" or "inbound-requests" or "inbound-warehouse"?slot.Value:slot.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),100);
         ErpSqlPlan.Parameter(command,"@content",DbType.Binary,bytes,bytes.Length);ErpSqlPlan.Parameter(command,"@preview",DbType.Binary,preview,preview.Length);
         if(module=="purchase-orders")ErpSqlPlan.Parameter(command,"@actor",DbType.AnsiString,actor.Length<=50?actor:null,50);
         if(await command.ExecuteNonQueryAsync(token)!=1)throw new InvalidOperationException("Attachment write cardinality.");

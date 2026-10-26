@@ -59,7 +59,12 @@ export function getActionReasonMessage(reason?: string | null): string {
 // Header fields editable inline in the detail card. Lookup-backed keys render
 // the shared options combobox; dates render date inputs; the rest are text.
 // Rate follows the currency lookup and stays read-only.
+// Thủ kho (IV_IncomingShipmentStatusFrm): what the form leaves unlocked (T0 LCK) and lays out.
+const INBOUND_WAREHOUSE_HEADER = ["totalPalletQuantityByReal","totalBarrelQuantityByReal","excessPackageQuantity","lackOfPackageQuantity","damagedPackageQuantity",
+    "isDamageOutsidePackage","damageInsideStatusId","damageDescription","locationDamageDetectedId","locationDamageDescription","imageURL",
+    "resultDesciption","totalQuantityInboundResult","goodAwaitingInboundResult","resultNote","datetimeRecorded","notes"] as const;
 const EDITABLE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
+  "inbound-warehouse": INBOUND_WAREHOUSE_HEADER,
   "purchase-requests": [
     "personSuggest",
     "department",
@@ -104,6 +109,7 @@ export function editableHeaderKeys(module: ErpScreenModule): readonly string[] {
   return EDITABLE_HEADER_BY_MODULE[module] ?? DEFAULT_EDITABLE_HEADER_KEYS;
 }
 const REQUIRED_EDIT_KEYS: Record<string, readonly string[]> = {
+  "inbound-warehouse": [],
   "purchase-requests": ["personSuggest", "department", "objectId", "currencyId"],
   "sales-orders": ["documentDate", "objectId", "employeeId"],
 };
@@ -112,6 +118,10 @@ export function requiredEditKeys(module: ErpScreenModule): readonly string[] {
   return REQUIRED_EDIT_KEYS[module] ?? DEFAULT_REQUIRED_EDIT_KEYS;
 }
 const EDIT_LOOKUPS: Record<string, Record<string, string>> = {
+  "inbound-warehouse": {
+    damageInsideStatusId: "header.DamageInsideStatusID",
+    locationDamageDetectedId: "header.LocationDamageDetectedID",
+  },
   "purchase-requests": {
     personSuggest: "header.PersonSuggest",
     department: "header.Department",
@@ -134,6 +144,9 @@ export function editLookupId(module: ErpScreenModule, key: string): string | und
 // *Name / status companions that the backend Freeze validator rejects
 // (UnmappedMemberHandling.Disallow), so save must send only these keys.
 const SAVE_LINE_BY_MODULE: Record<string, readonly string[]> = {
+  // Thủ kho records what actually arrived (T1CS "Trên thực tế", "Kiểm tra xác suất").
+  "inbound-warehouse": ["lotNumberByReal", "setQuantityByReal", "barrelQuantityByReal", "expireDateByReal",
+    "randomTestQuantity", "testStatus", "noPalletNote", "palletNote", "checkerNote", "additional"],
   "purchase-requests": ["itemId", "quantity", "unitPrice", "budget", "timeRequired", "model"],
   "purchase-orders": ["itemId", "quantity", "unitPrice", "notes", "quantity2", "property", "property2"],
   "sales-orders": ["itemId", "quantity", "unitPrice", "discountPercent", "vATPercent", "vATQuantity", "dienGiai", "notes", "property", "property2", "parentId", "notes2", "costId", "storeHouseId", "vATId"],
@@ -141,7 +154,18 @@ const SAVE_LINE_BY_MODULE: Record<string, readonly string[]> = {
 export function saveLineKeys(module: ErpScreenModule): readonly string[] {
   return SAVE_LINE_BY_MODULE[module] ?? [];
 }
+/** Bit columns edited as Có/Không and sent as JSON booleans. */
+export const BOOLEAN_EDIT_KEYS: ReadonlySet<string> = new Set(["isDamageOutsidePackage", "additional"]);
+/** Draft text → API value: booleans as true/false, dates as ERP datetime, blanks as null. */
+export function editValue(key: string, raw: string): unknown {
+  const v = raw.trim();
+  if (!v) return null;
+  if (BOOLEAN_EDIT_KEYS.has(key)) return v === "true";
+  if (key.toLowerCase().includes("date")) return /^\d{4}-\d{2}-\d{2}$/.test(v) ? `${v}T00:00:00.000` : v;
+  return v;
+}
 export const SAVE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
+  "inbound-warehouse": INBOUND_WAREHOUSE_HEADER,
   "purchase-requests": [
     "purchaseDate",
     "purposeId",

@@ -85,6 +85,15 @@ Test `tests/document-detail-parity.test.mjs` đọc các hàng Header/Dòng/Sect
 | Header ẩn / đã có chỗ khác | `documentId`, `documentDateDisplay`, `branchReferenceState`, `objectReferenceState`, `orderTypeReferenceState`, `currencyReferenceState`, `packageTypeReferenceState`, `statusId`, `statusName`, `statusReferenceState`, `statusForeColor`, `statusBackColor`, `sendTo`, `qrPrintType`, `linkId`, `linkName`, `linkReferenceState`, `detailSaveToken`. Giữ nguyên allowlist hidden có chủ đích của T-005/T-006B; trạng thái/khóa/mã chứng từ đã có badge/heading, Display/ReferenceState/màu và audit/link/routing là metadata kỹ thuật. Lý do từng khóa: FIELD_EVIDENCE_PURCHASE_INBOUND.md, mục inbound-requests. |
 | Không có nguồn / backend cắt | sourceAmount bị backend cắt, quantity không có trong response; footer chỉ dùng amount, không thay bằng số bộ. Các HDE còn lại và alias đi kèm: visible-fields.json#inbound-requests, bảng “bị backend cắt” trong evidence nêu trên. Không khôi phục các khóa này vào config/fixture. |
 
+### `inbound-warehouse`
+
+| Phạm vi | Phải hiện / lý do không hiện |
+|---|---|
+| Header | `documentDate`, `orderNumber`, `invoiceNo`, `objectName`, `orderTypeName`, `packageTypeName`, `departurePoint`, `destinationPoint`, `isRain`, `totalPalletQuantityByDocument`, `totalBarrelQuantityByDocument`, `totalPalletQuantityByReal`, `totalBarrelQuantityByReal`, `excessPackageQuantity`, `lackOfPackageQuantity`, `damagedPackageQuantity`, `isDamageOutsidePackage`, `damageInsideStatusName`, `damageDescription`, `locationDamageDetectedName`, `locationDamageDescription`, `imageURL`, `resultDesciption`, `totalQuantityInboundResult`, `goodAwaitingInboundResult`, `resultNote`, `datetimeRecorded`, `notes` |
+| Dòng | `itemId`, `itemCode`, `itemName`, `unit`, `hangSX`, `lotNumberByDocument`, `expireDateByDocument`, `setQuantityByDocument`, `barrelQuantityByDocument`, `lotNumberByReal`, `expireDateByReal`, `setQuantityByReal`, `barrelQuantityByReal`, `randomTestQuantity`, `testStatus`, `checkerNote`, `noPalletNote`, `palletNote`, `additional` |
+| Header ẩn / đã có chỗ khác | Như `inbound-requests`, thêm `currencyId`, `rateExchange`, `declarationNumber`, `bBKCUrl`, `branchId`: form Thủ kho (IV_IncomingShipmentStatusFrm LYT1) không bày các trường này. |
+| Không có nguồn / backend cắt | Đơn giá/thành tiền: form Thủ kho ẩn (T1 HDE Amount;UnitPrice;SourceAmount). |
+
 ### `internal-transfer-requests`
 
 | Phạm vi | Phải hiện / lý do không hiện |

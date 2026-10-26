@@ -150,7 +150,7 @@ def audit(api, mapping, tables, erp_catalog=None):
                             and schema.get("x-medcom-sql-type-arguments") == field.get("typeArguments"), "ERP wire source provenance mismatch")
         erp_modules[screen["id"]] = {"form": screen["formId"], "source_fields": counts, "evidence": [ERP_WORKFLOWS if "directEditing" in screen else ERP_FIELDS, OPENAPI]}
         erp_read_paths.update([base, base + "/detail"])
-    require(len(erp_modules) == 19 and len(erp_read_paths) == 38, "Incomplete ERP form set")
+    require(len(erp_modules) == 20 and len(erp_read_paths) == 40, "Incomplete ERP form set")
     operations = []
     for path, item in api["paths"].items():
         for method, operation in item.items():

@@ -185,6 +185,8 @@ export function NotificationsSheet({
         return "purchase-requests";
       case "inbound-requests":
         return "inbound-requests";
+      case "inbound-warehouse":
+        return "inbound-warehouse";
       case "sales-orders":
         return "sales-orders";
       case "internal-transfer-requests":

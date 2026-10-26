@@ -13,7 +13,7 @@ test("PM and SA attachments expose exact read routes without admitting other mut
  }
 });
 test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted",()=>{
- assert.equal(erpScreenModules.length,19);
+ assert.equal(erpScreenModules.length,20);
  for(const m of erpScreenModules){
   assert.ok(routeAllowed(`api/erp/${m}/screen`,"GET"));
   assert.ok(routeAllowed(`api/erp/${m}`,"GET"));

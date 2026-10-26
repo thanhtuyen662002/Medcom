@@ -1,6 +1,6 @@
 import { isMoneyField } from "@/lib/erp/money";
 import type { DetailFieldConfig, DocumentDetailConfig, ErpScreenModule } from "../types";
-import { editableHeaderKeys, editLookupId, LEGACY_EDIT_LABELS, requiredEditKeys } from "./erp-detail-rules";
+import { BOOLEAN_EDIT_KEYS, editableHeaderKeys, editLookupId, LEGACY_EDIT_LABELS, requiredEditKeys } from "./erp-detail-rules";
 
 /** Project the existing editor rules onto the module's allowlist, without mutating it. */
 export function editableDetailConfig(config: DocumentDetailConfig, module: ErpScreenModule, editing: boolean): DocumentDetailConfig {
@@ -9,7 +9,8 @@ export function editableDetailConfig(config: DocumentDetailConfig, module: ErpSc
     if (!editing || !keys.includes(definition.key)) return definition;
     const lookupId = editLookupId(module, definition.key);
     return { ...definition, edit: {
-      input: lookupId ? "lookup" : definition.key.toLowerCase().includes("date") ? "date"
+      input: lookupId ? "lookup" : BOOLEAN_EDIT_KEYS.has(definition.key) ? "boolean"
+        : definition.key.toLowerCase().includes("date") ? "date"
         : isMoneyField(definition.key) ? "money" : "text",
       lookupId, required: requiredEditKeys(module).includes(definition.key),
       multiple: lookupId && (definition.key === "personSuggest" || definition.key === "department") ? true : undefined,

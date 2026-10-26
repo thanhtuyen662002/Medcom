@@ -19,6 +19,7 @@ export const erpScreenModules = [
   "machine-repairs",
   "purchase-orders",
   "inbound-requests",
+  "inbound-warehouse",
   "purchase-approvals",
   "sales-order-pm",
   "sales-order-sa",
@@ -44,6 +45,7 @@ const fullCudModules = [
 ] as const;
 
 const saveOnlyModules = [
+  "inbound-warehouse",
   "internal-transfer-pm",
   "internal-transfer-tech",
   "internal-transfer-sa",
@@ -91,6 +93,8 @@ const erpScreenPostRoutes = new Set([
   "api/erp/internal-transfer-requests/actions/recall",
   "api/erp/inbound-requests/actions/send-management",
   "api/erp/inbound-requests/actions/send-warehouse",
+  "api/erp/inbound-warehouse/actions/send-sa",
+  "api/erp/inbound-warehouse/actions/reject",
   "api/erp/purchase-approvals/actions/approve",
   "api/erp/purchase-approvals/actions/reject",
   "api/erp/sales-order-pm/actions/send-sa",

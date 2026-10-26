@@ -83,6 +83,6 @@ public sealed class ErpScreenEndpointTests
             Assert.Equal(section.Value.Count,schema.GetProperty("required").GetArrayLength());count+=section.Value.Count;
             Assert.Equal(section.Value.Select(c=>c.Name),schema.GetProperty("properties").EnumerateObject().Select(p=>p.Name));
         }
-        Assert.Equal(1516,count);
+        Assert.Equal(1587,count);
     }
 }

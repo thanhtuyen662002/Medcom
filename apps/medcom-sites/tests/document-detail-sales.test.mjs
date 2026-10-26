@@ -14,7 +14,7 @@ const leaves = {
   'lookup-field': `export const LookupField=props=><div data-lookup={props.lookupId} {...props}/>;`,
   'bottom-sheet': `export const UntitledBottomSheet=({open,children,title})=>open?<section data-sheet={title}>{children}</section>:null;`,
   'record-dialog': `export const RecordActionBar=({children})=><footer>{children}</footer>;export const RecordDetailHeading=({children})=><header>{children}</header>;export const RecordDetailStatus=({children})=><div>{children}</div>;`,
-  'request-presentation': `import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton=({children,variant,...props})=><button {...props}>{children}</button>;export const RequestInput=props=><input {...props}/>;export const RequestTextarea=props=><textarea {...props}/>;export const requestStyles={actions:''};`,
+  'request-presentation': `import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton=({children,variant,...props})=><button {...props}>{children}</button>;export const RequestInput=props=><input {...props}/>;export const RequestTextarea=props=><textarea {...props}/>;export const RequestSelect=props=><select {...props}/>;export const requestStyles={actions:''};`,
   'sales-order-attachment-list': `export const SalesOrderAttachmentList=props=><div data-attachments {...props}/>;`,
   'sales-order-action-dialog': `export const SalesOrderActionDialog=props=><div data-action={props.operation} {...props}/>;`,
   'sales-order-line-editor': `export const SalesOrderLineEditor=props=><div data-editor {...props}/>;`,

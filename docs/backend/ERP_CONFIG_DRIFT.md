@@ -17,4 +17,4 @@ Web dựa vào cấu hình và mã SQL của ERP: nút/hook của 19 form (`SY_F
    và trỏ `EmbeddedResource` trong `Medcom.Infrastructure.csproj` sang file mới.
 
 ## Bản mốc 26/10/2026
-520 mục: 347 nút/hook, 80 control, 66 thủ tục/hàm (gồm các thủ tục chúng gọi trực tiếp), 27 trigger. Chụp sau khi sửa #200/#201; các nút ERP Web chưa có (xem báo cáo đối chiếu) đã nằm trong bản mốc nên không bị báo lại.
+561 mục (20 form, gồm form Thủ kho từ 26/10): 378 nút/hook, 90 control, 66 thủ tục/hàm (gồm các thủ tục chúng gọi trực tiếp), 27 trigger. Chụp sau khi sửa #200/#201; các nút ERP Web chưa có (xem báo cáo đối chiếu) đã nằm trong bản mốc nên không bị báo lại.

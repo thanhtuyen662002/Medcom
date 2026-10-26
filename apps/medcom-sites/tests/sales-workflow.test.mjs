@@ -13,7 +13,7 @@ const leaves={
  'lookup-field':`export function LookupField(props){return <div data-lookup={props.label} onPick={props.onSelect}/>;}`,
  'bottom-sheet':`export const UntitledBottomSheet=({open,children})=>open?<div>{children}</div>:null;`,
  'record-dialog':`export const RecordActionBar=({children})=><div>{children}</div>;export const RecordDetailHeading=({children})=><div>{children}</div>;export const RecordDetailStatus=({children})=><div>{children}</div>;`,
- 'request-presentation':`import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton=({children,variant,...props})=><button {...props}>{children}</button>;export const RequestInput=props=><input {...props}/>;export const RequestTextarea=props=><textarea {...props}/>;export const requestDate=value=>value;export const requestStyles={actions:'actions'};`,
+ 'request-presentation':`import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton=({children,variant,...props})=><button {...props}>{children}</button>;export const RequestInput=props=><input {...props}/>;export const RequestTextarea=props=><textarea {...props}/>;export const RequestSelect=props=><select {...props}/>;export const requestDate=value=>value;export const requestStyles={actions:'actions'};`,
  'sales-order-attachment-list':`export const SalesOrderAttachmentList=()=>null;`,
  'document-detail-tabs':`export const DocumentDetailTabs=props=><div data-details={true} {...props}/>;`,
  'sales-order-action-dialog':`export const SalesOrderActionDialog=props=><div data-action={props.operation} message={props.message} onConfirm={props.onConfirm}/>;`,

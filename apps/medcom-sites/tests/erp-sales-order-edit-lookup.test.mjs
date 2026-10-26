@@ -18,7 +18,7 @@ const stubs={
   };`,
   'bottom-sheet':`export const UntitledBottomSheet=()=>null;`,
   'record-dialog':`export const RecordActionBar=({children})=><div>{children}</div>;export const RecordDetailHeading=()=>null;export const RecordDetailStatus=()=>null;`,
-  'request-presentation':`import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton=({children,variant,...props})=><button {...props}>{children}</button>;export const RequestInput=props=><input {...props}/>;export const RequestTextarea=props=><textarea {...props}/>;export const requestDate=value=>value;export const requestStyles={actions:''};`,
+  'request-presentation':`import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton=({children,variant,...props})=><button {...props}>{children}</button>;export const RequestInput=props=><input {...props}/>;export const RequestTextarea=props=><textarea {...props}/>;export const RequestSelect=props=><select {...props}/>;export const requestDate=value=>value;export const requestStyles={actions:''};`,
   'sales-order-attachment-list':`export const SalesOrderAttachmentList=()=>null;`,
   'document-detail-tabs':`export const DocumentDetailTabs=()=>null;`,
   'sales-order-action-dialog':`export const SalesOrderActionDialog=()=>null;`,

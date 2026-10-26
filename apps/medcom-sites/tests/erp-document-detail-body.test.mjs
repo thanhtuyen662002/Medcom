@@ -15,7 +15,7 @@ const leaves = {
   'button': `export const UntitledButton=({children,iconLeading,iconTrailing,variant,size,...props})=><button {...props}>{children}</button>;`,
   'lookup-field': `export const LookupField=props=><div data-lookup={props.lookupId} {...props}/>;export const fieldText=v=>v==null?'':String(v);export const choiceLabel=(c,f)=>c?.label||f;`,
   'record-dialog': `export const RecordDetailStatus=({children})=><div data-status="header">{children}</div>;export const RecordDetailHeading=({children,title,documentNumber})=><header>{title}{documentNumber}{children}</header>;export const RecordActionBar=({children,presentationAllowed=true})=>presentationAllowed?<footer>{children}</footer>:null;`,
-  'request-presentation': `import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton='button';export const RequestInput='input';export const RequestTextarea='textarea';export const requestStyles={actions:''};`,
+  'request-presentation': `import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton='button';export const RequestInput='input';export const RequestTextarea='textarea';export const RequestSelect='select';export const requestStyles={actions:''};`,
   'document-detail-dialog': `export const DocumentDetailDialog=({open,children,onRequestClose})=><section hidden={!open}><button aria-label="Đóng chi tiết kiểm thử" onClick={onRequestClose}/>{children}</section>;`,
   'sales-order-form': `export const SalesOrderForm=()=>null;`,
   'purchase-request-create-sheet': `export const PurchaseRequestCreateSheet=props=>props.open?<section data-edit={props.documentId} onSaved={props.onSaved} onClose={props.onClose}/>:null;`,
@@ -69,7 +69,7 @@ async function openRow(tree) {
 }
 
 test('registry covers all 19 ERP modules with the approved configs and keeps the sales body', () => {
-  assert.equal(erpScreenModules.length, 19);
+  assert.equal(erpScreenModules.length, 20);
   for (const screenModule of erpScreenModules) {
     const entry = getDocumentDetailEntry(screenModule);
     assert.ok(entry, screenModule);

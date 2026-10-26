@@ -97,6 +97,33 @@ public sealed class ErpWorkflowParityTests
         Assert.Contains("Máy A: Còn lại 2, đang nhập 5",result.Message);
     }
 
+    [Theory]
+    [InlineData("send-sa","WH_SENDSA")]
+    [InlineData("reject","WH_RETURN")]
+    public async Task Warehouse_buttons_run_the_ERP_inbound_transition(string operation,string action)
+    {
+        // IV_IncomingShipmentStatusFrm LYS1 C4: "Gửi TP SA" WH_SENDSA, "Từ chối" WH_RETURN.
+        var (transaction,commands)=Connection(_=>Message(3,"Đã cập nhật"));
+        await SqlErpScreenCommands.InboundSend(transaction,Actor,operation,"DN1",null,default);
+        Assert.Equal(action,Assert.Single(commands).Parameters["@Action"].Value);
+    }
+
+    [Fact]
+    public void Warehouse_list_shows_every_request_ever_sent_to_the_warehouse_like_ERP()
+    {
+        // T0 TN3/FTR: history rows with StatusID 2, so returned (3) and passed-on requests still list.
+        var plan=ErpSqlPlan.Get("inbound-warehouse")!;
+        Assert.Contains("IV_InboundRequestLogTbl",plan.ScopePredicate);
+        Assert.Contains("L.StatusID=2",plan.ScopePredicate);
+        Assert.Contains("H.BranchID=@branch",plan.ScopePredicate);
+        var screen=ErpScreenCatalog.Get("inbound-warehouse")!;
+        Assert.Equal("IV_IncomingShipmentStatusFrm",screen.FormId);
+        Assert.Equal(new[]{"send-sa","reject"},screen.Actions.Where(a=>a.Control.StartsWith("ExecSQL",StringComparison.Ordinal)).Select(a=>a.Id).ToArray());
+        Assert.DoesNotContain(screen.Actions,a=>a.Id is "create" or "delete"&&a.NativeVisible);
+        Assert.Contains(screen.Fields["lines"],f=>f.Column=="LotNumberByReal"&&f.Writable);
+        Assert.DoesNotContain(screen.Fields["lines"],f=>f.Column is "SetQuantityByDocument" or "UnitPrice" or "ItemID"&&f.Writable);
+    }
+
     [Fact]
     public async Task Row_counts_ignore_rows_added_by_ERP_triggers()
     {
