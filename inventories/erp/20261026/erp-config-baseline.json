@@ -209,6 +209,161 @@
   },
   {
    "category": "control",
+   "key": "IV_GoodsInfoControlFrm|AttachWebcamImageControlCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsInfoControlFrm|AttachWebcamImageControlCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsInfoControlFrm|AttachWebcamImageControlCtl_2",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsInfoControlFrm|AttachWebcamImageControlCtl_3",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsInfoControlFrm|ExecSQLWithParaButtonCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsInfoControlFrm|ExecSQLWithParaButtonCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsInfoControlFrm|ExecSQLWithParaButtonCtl_2",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsInfoControlFrm|ExecSQLWithParaButtonCtl_3",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsInfoControlFrm|PrintButtonCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsInfoControlFrm|PrintButtonCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsInfoControlFrm|StatusButtonCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsQualityControlConfirmFrm|AttachWebcamImageControlCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsQualityControlConfirmFrm|AttachWebcamImageControlCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsQualityControlConfirmFrm|AttachWebcamImageControlCtl_2",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsQualityControlConfirmFrm|AttachWebcamImageControlCtl_3",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsQualityControlConfirmFrm|ExecSQLWithParaButtonCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsQualityControlConfirmFrm|ExecSQLWithParaButtonCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsQualityControlConfirmFrm|ExecSQLWithParaButtonCtl_3",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsQualityControlConfirmFrm|PrintButtonCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsQualityControlConfirmFrm|PrintButtonCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsQualityControlConfirmFrm|StatusButtonCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsStatusConfirmFrm|AttachWebcamImageControlCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsStatusConfirmFrm|AttachWebcamImageControlCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsStatusConfirmFrm|AttachWebcamImageControlCtl_2",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsStatusConfirmFrm|AttachWebcamImageControlCtl_3",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsStatusConfirmFrm|ExecSQLWithParaButtonCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsStatusConfirmFrm|ExecSQLWithParaButtonCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsStatusConfirmFrm|ExecSQLWithParaButtonCtl_2",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsStatusConfirmFrm|PrintButtonCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsStatusConfirmFrm|StatusButtonCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_GoodsStatusConfirmFrm|WebLinkViewerCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
    "key": "IV_InboundRequestFrm|AttachWebcamImageControlCtl",
    "hash": null
   },
@@ -1161,6 +1316,536 @@
    "category": "form",
    "key": "FA_Repair2026Frm|DMK||",
    "hash": "BE2BB221B0FA337B11086B1141CCF85F1B919C5CD2EB1E7B5D311BE4674FA314"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|HBA||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|HBC||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|HBD||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|HBE||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|HBP||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_1|22",
+   "hash": "A2470297C35376BBA0A78D9E46B85B7C99EAED102891E62C9C288EC6177ED58E"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_1|BT",
+   "hash": "09F4EFC6DA623FFA80B8258527F96B8347BDA3F716C4B4DDBD5944C1E944FA4D"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_1|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_1|C4",
+   "hash": "7204F75066EC6D67B189BC09549116C57A7D66FAD94225EA5B0AB9DECDBACE4D"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_1|CS4",
+   "hash": "A92EFBBA6CDFBCBDDE6B530465FDFFC364720716BE2A57B3D226C0EA59246ED2"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_1|LBEX",
+   "hash": "195ABFC65C2F99F7E77CA346047167BD9C3D8B315CB0ED150DDC095A04EA9CAB"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_2|22",
+   "hash": "896AC2BE4D54992633C4D058977068BA459C953EEFBAA49E1F27B49E50937510"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_2|BT",
+   "hash": "D5982AD22313539EBC267D674F2ABE94FE37067F95CE74246C22114F3513ED1F"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_2|C1",
+   "hash": "C4019A7E2F3E6D46809D2BE1D29812CF595AAB23579935B7F49C2827AF037C66"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_2|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_2|C4",
+   "hash": "95B9886BD4194AE94CE6338FE4956B437EBD1AE57A2E1FD4A8642136D1A0A292"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_2|CS4",
+   "hash": "0A5AF49E8E21FE06F4CA9191C4F8672187573094483EC03CEA36C5C8ACC03D22"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_2|LBEX",
+   "hash": "195ABFC65C2F99F7E77CA346047167BD9C3D8B315CB0ED150DDC095A04EA9CAB"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_2|P1",
+   "hash": "AE18B98EA59BDB615A1327F2F7832A4C163A8FF5577292D51D6D6AE3353241AA"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_3|22",
+   "hash": "A994CDB2345F598D5FB3242D18C3F14393C6D7F7C84C5981FA26EF621D3EE1DA"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_3|BT",
+   "hash": "22D0F3A8E23A55492F6B6ECEB3B23C03524A505DC0E5FFF7AAF3F953D1DBAAFF"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_3|C1",
+   "hash": "C4019A7E2F3E6D46809D2BE1D29812CF595AAB23579935B7F49C2827AF037C66"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_3|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_3|C4",
+   "hash": "5DB531F7984FCA8B57A5BB72145B2DAE6E97A3E9D43147994330D3AA2F1667A3"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_3|CS4",
+   "hash": "0A5AF49E8E21FE06F4CA9191C4F8672187573094483EC03CEA36C5C8ACC03D22"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl_3|LBEX",
+   "hash": "195ABFC65C2F99F7E77CA346047167BD9C3D8B315CB0ED150DDC095A04EA9CAB"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl|22",
+   "hash": "8A1B269CB3742D2B64001A860186135763FBB30D0DE77D8B0213CD7A103ADC9E"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl|BT",
+   "hash": "03C30252A9C553DCFEE4F2C4507A5DB906979A74520A8FE3141879B92ED4E6CE"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl|C1",
+   "hash": "C4019A7E2F3E6D46809D2BE1D29812CF595AAB23579935B7F49C2827AF037C66"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl|C4",
+   "hash": "04D4E9DE9D2144068BDD757DAAA2BE327D7D7A984A2C7F8E47A899523D42C60B"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl|CS4",
+   "hash": "0A5AF49E8E21FE06F4CA9191C4F8672187573094483EC03CEA36C5C8ACC03D22"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl|LBEX",
+   "hash": "195ABFC65C2F99F7E77CA346047167BD9C3D8B315CB0ED150DDC095A04EA9CAB"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|ExecSQLWithParaButtonCtl|P1",
+   "hash": "AE18B98EA59BDB615A1327F2F7832A4C163A8FF5577292D51D6D6AE3353241AA"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|PrintButtonCtl_1|BT",
+   "hash": "E760990F52800C850A4C2DE18DC3C3544CEDBFA03EDD62ABDF1BE224309CB4A9"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|PrintButtonCtl_1|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|PrintButtonCtl_1|C4",
+   "hash": "508B5D6B0B6CE936682961F7A9D932E041F68A4FFDCC8583D4BD26714D9971A4"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|PrintButtonCtl_1|P1",
+   "hash": "29CFEFF4BC7540406BB55B206187C4007E598F24B6C42EA7E4CC7954CEEDB92C"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|PrintButtonCtl|BT",
+   "hash": "0712348AEA9CDCA6401D7618C528A7D5753D269CB84D14C20CF8EC4635F1BFC5"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|PrintButtonCtl|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|PrintButtonCtl|C4",
+   "hash": "1F8D853044666B49BA930BAF154A2839F5BF0E1A5490A70C53ACBE7C815E695E"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsInfoControlFrm|LYS1|PrintButtonCtl|P1",
+   "hash": "29CFEFF4BC7540406BB55B206187C4007E598F24B6C42EA7E4CC7954CEEDB92C"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|EBE||",
+   "hash": "730CC5AF1181A00DB395BEB1B988EC39FB66BB23B284DE07B5F5C848B49D5068"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|HBA||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|HBC||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|HBD||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|HBP||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_1|22",
+   "hash": "A994CDB2345F598D5FB3242D18C3F14393C6D7F7C84C5981FA26EF621D3EE1DA"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_1|BT",
+   "hash": "D2EA00A1665B34726FB26424A38703EDB2AD5910607FDD65765017B17C2768FC"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_1|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_1|C4",
+   "hash": "4818B466F2F73D690BE531461CFC80079D287743FCD513C7829554D1948B936C"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_1|CS4",
+   "hash": "0F8AAEAA316BEA420631E450CDF4CA607AC2CE8C1CD37115F91F9AFEA1CCA0EB"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_1|LBEX",
+   "hash": "E5DF2670C51F72ABF4232153A5781EBF2D79FF277B089F3F38EDF58F4F9D8013"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_3|22",
+   "hash": "896AC2BE4D54992633C4D058977068BA459C953EEFBAA49E1F27B49E50937510"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_3|BT",
+   "hash": "FB2CC34DF67F799E8428032D0017DFD5995B1E456FF649184CA42EADB8B08488"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_3|C1",
+   "hash": "C4019A7E2F3E6D46809D2BE1D29812CF595AAB23579935B7F49C2827AF037C66"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_3|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_3|C4",
+   "hash": "F5EBE88EF9F4FBE9D9AF3B4F71A01A34406AFD4F4002D0700A4EB465D715A1EF"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_3|CS4",
+   "hash": "0F8AAEAA316BEA420631E450CDF4CA607AC2CE8C1CD37115F91F9AFEA1CCA0EB"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_3|LBEX",
+   "hash": "E5DF2670C51F72ABF4232153A5781EBF2D79FF277B089F3F38EDF58F4F9D8013"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_3|P1",
+   "hash": "AE18B98EA59BDB615A1327F2F7832A4C163A8FF5577292D51D6D6AE3353241AA"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|22",
+   "hash": "8A1B269CB3742D2B64001A860186135763FBB30D0DE77D8B0213CD7A103ADC9E"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|BT",
+   "hash": "69A14AFD0ACB28DEE507D1F4217CE9E4CDB63BAEBE1A443A246A237A12A80804"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|C1",
+   "hash": "C4019A7E2F3E6D46809D2BE1D29812CF595AAB23579935B7F49C2827AF037C66"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|C4",
+   "hash": "B65ACDE9FA09177F6A7EFCFEA7685D28984DE94A390898B574CD1A7321769586"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|CS4",
+   "hash": "0F8AAEAA316BEA420631E450CDF4CA607AC2CE8C1CD37115F91F9AFEA1CCA0EB"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|LBEX",
+   "hash": "E5DF2670C51F72ABF4232153A5781EBF2D79FF277B089F3F38EDF58F4F9D8013"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|P1",
+   "hash": "AE18B98EA59BDB615A1327F2F7832A4C163A8FF5577292D51D6D6AE3353241AA"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|PrintButtonCtl_1|BT",
+   "hash": "E760990F52800C850A4C2DE18DC3C3544CEDBFA03EDD62ABDF1BE224309CB4A9"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|PrintButtonCtl_1|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|PrintButtonCtl_1|C4",
+   "hash": "508B5D6B0B6CE936682961F7A9D932E041F68A4FFDCC8583D4BD26714D9971A4"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|PrintButtonCtl_1|P1",
+   "hash": "29CFEFF4BC7540406BB55B206187C4007E598F24B6C42EA7E4CC7954CEEDB92C"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|PrintButtonCtl|BT",
+   "hash": "0712348AEA9CDCA6401D7618C528A7D5753D269CB84D14C20CF8EC4635F1BFC5"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|PrintButtonCtl|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|PrintButtonCtl|C4",
+   "hash": "1F8D853044666B49BA930BAF154A2839F5BF0E1A5490A70C53ACBE7C815E695E"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsQualityControlConfirmFrm|LYS1|PrintButtonCtl|P1",
+   "hash": "29CFEFF4BC7540406BB55B206187C4007E598F24B6C42EA7E4CC7954CEEDB92C"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|HBA||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|HBC||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|HBD||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|HBP||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_1|22",
+   "hash": "A2470297C35376BBA0A78D9E46B85B7C99EAED102891E62C9C288EC6177ED58E"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_1|BT",
+   "hash": "84728F40A4B94579EEC15BF7FB1893D760DD64969C82B7B38D575542528F46D7"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_1|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_1|C4",
+   "hash": "D200CE56255CD1211DDF09C98296035D13E4391E295A45C244A7143328AA0705"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_1|CS4",
+   "hash": "F5A6E5D6B953EFF9C60F964EFC02A0293B078A88FC8295425313EF87E50B9F52"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_1|LBEX",
+   "hash": "A8FD36A5F0AE6F352E5556E1EEBAC872C8FA637E9A3F8E67574EF2E48ED1E06F"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_2|22",
+   "hash": "896AC2BE4D54992633C4D058977068BA459C953EEFBAA49E1F27B49E50937510"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_2|BT",
+   "hash": "D5982AD22313539EBC267D674F2ABE94FE37067F95CE74246C22114F3513ED1F"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_2|C1",
+   "hash": "C4019A7E2F3E6D46809D2BE1D29812CF595AAB23579935B7F49C2827AF037C66"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_2|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_2|C4",
+   "hash": "0843155FF859FC12A847ADD124F63BC89DCE45ED427E02C834EB6A5874912D70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_2|CS4",
+   "hash": "F5A6E5D6B953EFF9C60F964EFC02A0293B078A88FC8295425313EF87E50B9F52"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_2|LBEX",
+   "hash": "A8FD36A5F0AE6F352E5556E1EEBAC872C8FA637E9A3F8E67574EF2E48ED1E06F"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl_2|P1",
+   "hash": "AE18B98EA59BDB615A1327F2F7832A4C163A8FF5577292D51D6D6AE3353241AA"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|22",
+   "hash": "8A1B269CB3742D2B64001A860186135763FBB30D0DE77D8B0213CD7A103ADC9E"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|BT",
+   "hash": "A74AF1DEEB3061D0B74886E99F6570EEC70E976658BAAF35DE6858DA282E8BB7"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|C1",
+   "hash": "C4019A7E2F3E6D46809D2BE1D29812CF595AAB23579935B7F49C2827AF037C66"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|C4",
+   "hash": "77231B220D313161804FFDC9ED69E3EA27F2E86ADD6AFCC8A0E6E13D3E65AC08"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|CS4",
+   "hash": "F5A6E5D6B953EFF9C60F964EFC02A0293B078A88FC8295425313EF87E50B9F52"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|LBEX",
+   "hash": "A8FD36A5F0AE6F352E5556E1EEBAC872C8FA637E9A3F8E67574EF2E48ED1E06F"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|ExecSQLWithParaButtonCtl|P1",
+   "hash": "AE18B98EA59BDB615A1327F2F7832A4C163A8FF5577292D51D6D6AE3353241AA"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|PrintButtonCtl_1|BT",
+   "hash": "27F8FAC3FFE9D1E3FC2F05F57D37A8DB31802FA9F626751A87AA4DBDC4993B05"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|PrintButtonCtl_1|C4",
+   "hash": "8F216D8AFC744EDE9F054F66413FCD08E259FA4386449D76AD3677601EDCC201"
+  },
+  {
+   "category": "form",
+   "key": "IV_GoodsStatusConfirmFrm|LYS1|PrintButtonCtl_1|P1",
+   "hash": "29CFEFF4BC7540406BB55B206187C4007E598F24B6C42EA7E4CC7954CEEDB92C"
   },
   {
    "category": "form",

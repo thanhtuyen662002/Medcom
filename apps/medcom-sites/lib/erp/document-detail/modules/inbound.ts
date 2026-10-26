@@ -231,3 +231,29 @@ export const inboundWarehouseDetailConfig = {
     ],
   },
 } as const satisfies DocumentDetailConfig;
+
+// TP SA (IV_GoodsInfoControlFrm), Kỹ thuật (IV_GoodsStatusConfirmFrm), PM (IV_GoodsQualityControlConfirmFrm):
+// the same LYT1/LYT2/LYT3 groups as Thủ kho; lines are locked on all three (T1 LCK).
+const { slots: _warehouseSlots, ...inboundStepLayout } = inboundWarehouseDetailConfig;
+void _warehouseSlots;
+export const inboundSaDetailConfig = {
+  ...inboundStepLayout,
+  modules: ["inbound-sa"],
+  title: "Kiểm soát thông tin hàng hóa",
+  closeLabel: "Đóng kiểm soát thông tin hàng hóa",
+} as const satisfies DocumentDetailConfig;
+export const inboundTechDetailConfig = {
+  ...inboundStepLayout,
+  modules: ["inbound-tech"],
+  title: "Xác nhận tình trạng hàng hóa",
+  closeLabel: "Đóng xác nhận tình trạng hàng hóa",
+  groups: inboundStepLayout.groups.map(group => group.id !== "damage" ? group
+    : { ...group, fields: [...group.fields, { key: "bBKCUrl", label: "Link BBKC", format: "url", hideWhenEmpty: false } as const] }),
+  hidden: inboundStepLayout.hidden.filter(key => key !== "bBKCUrl"),
+} as const satisfies DocumentDetailConfig;
+export const inboundPmDetailConfig = {
+  ...inboundStepLayout,
+  modules: ["inbound-pm"],
+  title: "Kiểm soát và xác nhận chất lượng hàng hóa",
+  closeLabel: "Đóng kiểm soát và xác nhận chất lượng hàng hóa",
+} as const satisfies DocumentDetailConfig;

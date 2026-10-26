@@ -11,6 +11,9 @@ export const ROLE_QUEUE_PAGE_SIZE = 100;
  */
 export const ROLE_QUEUE_STATUSES: Partial<Record<ErpScreenModule, readonly number[]>> = {
   "inbound-warehouse": [2, 3], // Đã gửi thủ kho, Yêu cầu thủ kho xem lại
+  "inbound-sa": [4, 5], // Đã gửi TP SA, Yêu cầu TP SA xem lại
+  "inbound-tech": [8, 9], // Đã gửi Kỹ thuật, Yêu cầu Kỹ thuật xem lại
+  "inbound-pm": [6, 7], // Đã gửi PM, Yêu cầu PM xem lại
   "internal-transfer-requests": [0, 30], // Nháp, PM yêu cầu NVKD chỉnh sửa
   "internal-transfer-pm": [10], // Đã gửi PM
   "internal-transfer-batches": [0, 10, 25, 45], // Đang lập đợt, Yêu cầu PM xem lại, Kỹ thuật / TP SA trả lại PM

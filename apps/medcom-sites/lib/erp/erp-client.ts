@@ -482,6 +482,7 @@ export class ErpClientService {
       page?: number;
       pageSize?: number;
       search?: string | null;
+      documentId?: string | null;
     }
   ) {
     return await getErpActionOptions(module, action, query);

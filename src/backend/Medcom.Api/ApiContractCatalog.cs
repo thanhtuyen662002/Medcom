@@ -357,7 +357,7 @@ internal static class ApiContractCatalog
                 var payloadType=ErpWorkflowRules.PayloadType(module,action.Operation);
                 paths[path+"/actions/"+action.Operation]!["post"]!["x-medcom-typed-payload"]=action.Operation=="send-pm"
                     ?Shape(module=="sales-orders"?typeof(ErpSendOrderPm):typeof(ErpSendTransferPm))
-                    :payloadType switch{"notes"=>Shape(typeof(ErpActionNotes)),"return"=>Shape(typeof(ErpReturnStep)),"transfer-tech"=>Shape(typeof(ErpTransferTechSend)),_=>Object()};
+                    :payloadType switch{"notes"=>Shape(typeof(ErpActionNotes)),"return"=>Shape(typeof(ErpReturnStep)),"transfer-tech"=>Shape(typeof(ErpTransferTechSend)),"pm"=>Shape(typeof(ErpSendOrderPm)),_=>Object()};
                 var actionPayload=schemas.Variant(typeof(ErpActionRequest),"Erp_"+id+"_"+action.Operation.Replace('-','_')+"_request");
                 schemas.Property(actionPayload,"payload",(JsonObject)paths[path+"/actions/"+action.Operation]!["post"]!["x-medcom-typed-payload"]!.DeepClone());
                 paths[path+"/actions/"+action.Operation]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(actionPayload);
@@ -385,7 +385,7 @@ internal static class ApiContractCatalog
                     schemas.Property(save,"lineChanges",new(){["type"]="array",["minItems"]=1,["maxItems"]=500,["items"]=new JsonObject{["oneOf"]=changes}});
                     paths[path+suffix]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(save);
                 }
-                foreach(var action in screen.Actions.Where(a=>a.Operation=="return-step"||module=="internal-transfer-tech"&&a.Operation=="send-sa"))
+                foreach(var action in screen.Actions.Where(a=>ErpWorkflowRules.HasActionOptions(module,a.Operation)))
                     Post("/actions/"+action.Operation+"/options",action.Operation.Replace('-','_')+"_options",typeof(ErpActionOptionsQuery),typeof(ErpScopedResponse<ErpChoicePage>));
             }
             if(module is "warehouse-qr" or "sales-qr")foreach(var scan in new[]{"add","delete"})Post("/qr/"+scan,"scan_"+scan,typeof(ErpScanRequest),typeof(ErpCommandResult));

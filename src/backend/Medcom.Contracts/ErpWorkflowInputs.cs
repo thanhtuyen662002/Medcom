@@ -40,6 +40,12 @@ public static class ErpWorkflowInputs
         ("internal-transfer-warehouse-in","assets") => typeof(ErpInternalTransferWarehouseInAssetsInput),
         ("inbound-warehouse","header") => typeof(ErpInboundWarehouseHeaderInput),
         ("inbound-warehouse","lines") => typeof(ErpInboundWarehouseLinesInput),
+        ("inbound-sa","header") => typeof(ErpInboundSaHeaderInput),
+        ("inbound-sa","lines") => typeof(ErpInboundSaLinesInput),
+        ("inbound-tech","header") => typeof(ErpInboundTechHeaderInput),
+        ("inbound-tech","lines") => typeof(ErpInboundTechLinesInput),
+        ("inbound-pm","header") => typeof(ErpInboundPmHeaderInput),
+        ("inbound-pm","lines") => typeof(ErpInboundPmLinesInput),
         _ => null
     };
 }
@@ -494,4 +500,48 @@ public sealed record ErpInboundWarehouseLinesInput
     public string? PalletNote { get; init; }
     [JsonPropertyName("checkerNote")]
     public string? CheckerNote { get; init; }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundSaHeaderInput
+{
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundSaLinesInput
+{
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundTechHeaderInput
+{
+    [JsonPropertyName("damagedPackageQuantity")]
+    public string? DamagedPackageQuantity { get; init; }
+    [JsonPropertyName("imageURL")]
+    public string? ImageURL { get; init; }
+    [JsonPropertyName("bBKCUrl")]
+    public string? BBKCUrl { get; init; }
+    [JsonPropertyName("notes")]
+    public string? Notes { get; init; }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundTechLinesInput
+{
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundPmHeaderInput
+{
+    [JsonPropertyName("damagedPackageQuantity")]
+    public string? DamagedPackageQuantity { get; init; }
+    [JsonPropertyName("imageURL")]
+    public string? ImageURL { get; init; }
+    [JsonPropertyName("notes")]
+    public string? Notes { get; init; }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundPmLinesInput
+{
 }

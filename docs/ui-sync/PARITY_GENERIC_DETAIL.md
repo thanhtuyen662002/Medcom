@@ -94,6 +94,33 @@ Test `tests/document-detail-parity.test.mjs` đọc các hàng Header/Dòng/Sect
 | Header ẩn / đã có chỗ khác | Như `inbound-requests`, thêm `currencyId`, `rateExchange`, `declarationNumber`, `bBKCUrl`, `branchId`: form Thủ kho (IV_IncomingShipmentStatusFrm LYT1) không bày các trường này. |
 | Không có nguồn / backend cắt | Đơn giá/thành tiền: form Thủ kho ẩn (T1 HDE Amount;UnitPrice;SourceAmount). |
 
+### `inbound-sa`
+
+| Phạm vi | Phải hiện / lý do không hiện |
+|---|---|
+| Header | `documentDate`, `orderNumber`, `invoiceNo`, `objectName`, `orderTypeName`, `packageTypeName`, `departurePoint`, `destinationPoint`, `isRain`, `totalPalletQuantityByDocument`, `totalBarrelQuantityByDocument`, `totalPalletQuantityByReal`, `totalBarrelQuantityByReal`, `excessPackageQuantity`, `lackOfPackageQuantity`, `damagedPackageQuantity`, `isDamageOutsidePackage`, `damageInsideStatusName`, `damageDescription`, `locationDamageDetectedName`, `locationDamageDescription`, `imageURL`, `resultDesciption`, `totalQuantityInboundResult`, `goodAwaitingInboundResult`, `resultNote`, `datetimeRecorded`, `notes` |
+| Dòng | `itemId`, `itemCode`, `itemName`, `unit`, `hangSX`, `lotNumberByDocument`, `expireDateByDocument`, `setQuantityByDocument`, `barrelQuantityByDocument`, `lotNumberByReal`, `expireDateByReal`, `setQuantityByReal`, `barrelQuantityByReal`, `randomTestQuantity`, `testStatus`, `checkerNote`, `noPalletNote`, `palletNote`, `additional` |
+| Header ẩn / đã có chỗ khác | Như `inbound-requests`, thêm `currencyId`, `rateExchange`, `declarationNumber`, `bBKCUrl`, `branchId`: form TP SA (IV_GoodsInfoControlFrm LYT1) không bày các trường này. |
+| Không có nguồn / backend cắt | Đơn giá/thành tiền: form TP ẩn (T1 HDE Amount;UnitPrice;SourceAmount). |
+
+### `inbound-tech`
+
+| Phạm vi | Phải hiện / lý do không hiện |
+|---|---|
+| Header | `documentDate`, `orderNumber`, `invoiceNo`, `objectName`, `orderTypeName`, `packageTypeName`, `departurePoint`, `destinationPoint`, `isRain`, `totalPalletQuantityByDocument`, `totalBarrelQuantityByDocument`, `totalPalletQuantityByReal`, `totalBarrelQuantityByReal`, `excessPackageQuantity`, `lackOfPackageQuantity`, `damagedPackageQuantity`, `isDamageOutsidePackage`, `damageInsideStatusName`, `damageDescription`, `locationDamageDetectedName`, `locationDamageDescription`, `imageURL`, `bBKCUrl`, `resultDesciption`, `totalQuantityInboundResult`, `goodAwaitingInboundResult`, `resultNote`, `datetimeRecorded`, `notes` |
+| Dòng | `itemId`, `itemCode`, `itemName`, `unit`, `hangSX`, `lotNumberByDocument`, `expireDateByDocument`, `setQuantityByDocument`, `barrelQuantityByDocument`, `lotNumberByReal`, `expireDateByReal`, `setQuantityByReal`, `barrelQuantityByReal`, `randomTestQuantity`, `testStatus`, `checkerNote`, `noPalletNote`, `palletNote`, `additional` |
+| Header ẩn / đã có chỗ khác | Như `inbound-requests`, thêm `currencyId`, `rateExchange`, `declarationNumber`, `branchId`: form Kỹ thuật (IV_GoodsStatusConfirmFrm LYT1) không bày các trường này. |
+| Không có nguồn / backend cắt | Đơn giá/thành tiền: form Kỹ ẩn (T1 HDE Amount;UnitPrice;SourceAmount). |
+
+### `inbound-pm`
+
+| Phạm vi | Phải hiện / lý do không hiện |
+|---|---|
+| Header | `documentDate`, `orderNumber`, `invoiceNo`, `objectName`, `orderTypeName`, `packageTypeName`, `departurePoint`, `destinationPoint`, `isRain`, `totalPalletQuantityByDocument`, `totalBarrelQuantityByDocument`, `totalPalletQuantityByReal`, `totalBarrelQuantityByReal`, `excessPackageQuantity`, `lackOfPackageQuantity`, `damagedPackageQuantity`, `isDamageOutsidePackage`, `damageInsideStatusName`, `damageDescription`, `locationDamageDetectedName`, `locationDamageDescription`, `imageURL`, `resultDesciption`, `totalQuantityInboundResult`, `goodAwaitingInboundResult`, `resultNote`, `datetimeRecorded`, `notes` |
+| Dòng | `itemId`, `itemCode`, `itemName`, `unit`, `hangSX`, `lotNumberByDocument`, `expireDateByDocument`, `setQuantityByDocument`, `barrelQuantityByDocument`, `lotNumberByReal`, `expireDateByReal`, `setQuantityByReal`, `barrelQuantityByReal`, `randomTestQuantity`, `testStatus`, `checkerNote`, `noPalletNote`, `palletNote`, `additional` |
+| Header ẩn / đã có chỗ khác | Như `inbound-requests`, thêm `currencyId`, `rateExchange`, `declarationNumber`, `bBKCUrl`, `branchId`: form PM (IV_GoodsQualityControlConfirmFrm LYT1) không bày các trường này. |
+| Không có nguồn / backend cắt | Đơn giá/thành tiền: form PM ẩn (T1 HDE Amount;UnitPrice;SourceAmount). |
+
 ### `internal-transfer-requests`
 
 | Phạm vi | Phải hiện / lý do không hiện |

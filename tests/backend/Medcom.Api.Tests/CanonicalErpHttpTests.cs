@@ -61,7 +61,7 @@ public sealed class CanonicalErpHttpTests
             using var response = await fixture.Client.GetAsync(path + "?branchId=QA-A");
             Assert.Equal("3", Assert.Single(response.Headers.GetValues("X-Medcom-Response-Contract")));
         }
-        Assert.Equal(1587, columns); Assert.Equal(0, fixture.Source.Commits);
+        Assert.Equal(1800, columns); Assert.Equal(0, fixture.Source.Commits);
     }
 
     internal sealed class SyntheticScreens : IErpScreenService

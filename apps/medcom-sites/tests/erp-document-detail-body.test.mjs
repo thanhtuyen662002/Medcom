@@ -68,8 +68,8 @@ async function openRow(tree) {
   await flush();
 }
 
-test('registry covers all 19 ERP modules with the approved configs and keeps the sales body', () => {
-  assert.equal(erpScreenModules.length, 20);
+test('registry covers all 23 ERP modules with the approved configs and keeps the sales body', () => {
+  assert.equal(erpScreenModules.length, 23);
   for (const screenModule of erpScreenModules) {
     const entry = getDocumentDetailEntry(screenModule);
     assert.ok(entry, screenModule);

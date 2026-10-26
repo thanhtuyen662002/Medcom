@@ -61,7 +61,7 @@ public sealed class ErpCudPresentationTests
                 Assert.Equal(definition.RequiresSavedDocument,action.RequiresSavedDocument);
             }
         }
-        Assert.Equal(75,visible);
+        Assert.Equal(87,visible);
     }
     [Theory]
     [InlineData(true,false,false,false)] [InlineData(true,true,false,false)]

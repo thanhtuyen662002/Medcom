@@ -177,7 +177,10 @@
       "formMatches": 1,
       "menuMatches": 1
     },
-    {"module": "inbound-warehouse", "formId": "IV_IncomingShipmentStatusFrm", "menuId": "07013", "caption": "Xác nhận tình trạng hàng về", "source": "dbo.SY_FrmLstTbl.CaptionVN", "formMatches": 1, "menuMatches": 1}
+    {"module": "inbound-warehouse", "formId": "IV_IncomingShipmentStatusFrm", "menuId": "07013", "caption": "Xác nhận tình trạng hàng về", "source": "dbo.SY_FrmLstTbl.CaptionVN", "formMatches": 1, "menuMatches": 1},
+    {"module": "inbound-sa", "formId": "IV_GoodsInfoControlFrm", "menuId": "07014", "caption": "Kiểm soát thông tin hàng hóa", "source": "dbo.SY_FrmLstTbl.CaptionVN", "formMatches": 1, "menuMatches": 1},
+    {"module": "inbound-tech", "formId": "IV_GoodsStatusConfirmFrm", "menuId": "07015", "caption": "Xác nhận tình trạng hàng hóa", "source": "dbo.SY_FrmLstTbl.CaptionVN", "formMatches": 1, "menuMatches": 1},
+    {"module": "inbound-pm", "formId": "IV_GoodsQualityControlConfirmFrm", "menuId": "07016", "caption": "Kiểm soát và xác nhận chất lượng hàng hóa", "source": "dbo.SY_FrmLstTbl.CaptionVN", "formMatches": 1, "menuMatches": 1}
   ],
   "actions": [
     {
@@ -944,6 +947,22 @@
     {"module": "inbound-warehouse", "actionId": "save", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
     {"module": "inbound-warehouse", "actionId": "delete", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
     {"module": "inbound-warehouse", "actionId": "send-sa", "control": "ExecSQLWithParaButtonCtl_1", "caption": "Gửi TP SA", "source": "dbo.SY_FrmCfg/IV_IncomingShipmentStatusFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT", "matches": 1},
-    {"module": "inbound-warehouse", "actionId": "reject", "control": "ExecSQLWithParaButtonCtl", "caption": "Từ chối", "source": "dbo.SY_FrmCfg/IV_IncomingShipmentStatusFrm/LYS1/ExecSQLWithParaButtonCtl/BT", "matches": 1}
+    {"module": "inbound-warehouse", "actionId": "reject", "control": "ExecSQLWithParaButtonCtl", "caption": "Từ chối", "source": "dbo.SY_FrmCfg/IV_IncomingShipmentStatusFrm/LYS1/ExecSQLWithParaButtonCtl/BT", "matches": 1},
+    {"module": "inbound-sa", "actionId": "send-tech", "control": "ExecSQLWithParaButtonCtl_3", "caption": "Gửi Kỹ thuật", "source": "dbo.SY_FrmCfg/IV_GoodsInfoControlFrm/LYS1/ExecSQLWithParaButtonCtl_3/BT", "matches": 1},
+    {"module": "inbound-sa", "actionId": "send-pm", "control": "ExecSQLWithParaButtonCtl_1", "caption": "Gửi PM (không thiết bị)", "source": "dbo.SY_FrmCfg/IV_GoodsInfoControlFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT", "matches": 1},
+    {"module": "inbound-sa", "actionId": "reject", "control": "ExecSQLWithParaButtonCtl", "caption": "Từ chối nhanh", "source": "dbo.SY_FrmCfg/IV_GoodsInfoControlFrm/LYS1/ExecSQLWithParaButtonCtl/BT", "matches": 1},
+    {"module": "inbound-sa", "actionId": "return-step", "control": "ExecSQLWithParaButtonCtl_2", "caption": "Chọn bước gửi về", "source": "dbo.SY_FrmCfg/IV_GoodsInfoControlFrm/LYS1/ExecSQLWithParaButtonCtl_2/BT", "matches": 1},
+    {"module": "inbound-tech", "actionId": "create", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-tech", "actionId": "save", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-tech", "actionId": "delete", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-tech", "actionId": "send-pm", "control": "ExecSQLWithParaButtonCtl_1", "caption": "Gửi PM", "source": "dbo.SY_FrmCfg/IV_GoodsStatusConfirmFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT", "matches": 1},
+    {"module": "inbound-tech", "actionId": "reject", "control": "ExecSQLWithParaButtonCtl", "caption": "Trả TP SA", "source": "dbo.SY_FrmCfg/IV_GoodsStatusConfirmFrm/LYS1/ExecSQLWithParaButtonCtl/BT", "matches": 1},
+    {"module": "inbound-tech", "actionId": "return-step", "control": "ExecSQLWithParaButtonCtl_2", "caption": "Chọn bước gửi về", "source": "dbo.SY_FrmCfg/IV_GoodsStatusConfirmFrm/LYS1/ExecSQLWithParaButtonCtl_2/BT", "matches": 1},
+    {"module": "inbound-pm", "actionId": "create", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-pm", "actionId": "save", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-pm", "actionId": "delete", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-pm", "actionId": "send-accounting", "control": "ExecSQLWithParaButtonCtl_1", "caption": "Gửi kế toán", "source": "dbo.SY_FrmCfg/IV_GoodsQualityControlConfirmFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT", "matches": 1},
+    {"module": "inbound-pm", "actionId": "reject", "control": "ExecSQLWithParaButtonCtl", "caption": "Trả lại bước trước", "source": "dbo.SY_FrmCfg/IV_GoodsQualityControlConfirmFrm/LYS1/ExecSQLWithParaButtonCtl/BT", "matches": 1},
+    {"module": "inbound-pm", "actionId": "return-step", "control": "ExecSQLWithParaButtonCtl_3", "caption": "Chọn gửi về", "source": "dbo.SY_FrmCfg/IV_GoodsQualityControlConfirmFrm/LYS1/ExecSQLWithParaButtonCtl_3/BT", "matches": 1}
   ]
 }
