@@ -85,6 +85,16 @@ Test `tests/document-detail-parity.test.mjs` đọc các hàng Header/Dòng/Sect
 | Header ẩn / đã có chỗ khác | `documentId`, `documentDateDisplay`, `branchReferenceState`, `objectReferenceState`, `orderTypeReferenceState`, `currencyReferenceState`, `packageTypeReferenceState`, `statusId`, `statusName`, `statusReferenceState`, `statusForeColor`, `statusBackColor`, `sendTo`, `qrPrintType`, `linkId`, `linkName`, `linkReferenceState`, `detailSaveToken`. Giữ nguyên allowlist hidden có chủ đích của T-005/T-006B; trạng thái/khóa/mã chứng từ đã có badge/heading, Display/ReferenceState/màu và audit/link/routing là metadata kỹ thuật. Lý do từng khóa: FIELD_EVIDENCE_PURCHASE_INBOUND.md, mục inbound-requests. |
 | Không có nguồn / backend cắt | sourceAmount bị backend cắt, quantity không có trong response; footer chỉ dùng amount, không thay bằng số bộ. Các HDE còn lại và alias đi kèm: visible-fields.json#inbound-requests, bảng “bị backend cắt” trong evidence nêu trên. Không khôi phục các khóa này vào config/fixture. |
 
+### `inbound-costs`
+
+| Phạm vi | Phải hiện / lý do không hiện |
+|---|---|
+| Header | `documentDate`, `orderNumber`, `invoiceNo`, `declarationNumber`, `branchName`, `objectName`, `orderTypeName`, `currencyName`, `rateExchange`, `departurePoint`, `destinationPoint`, `isRain`, `totalPalletQuantityByDocument`, `totalBarrelQuantityByDocument`, `damagedPackageQuantity`, `packageTypeName`, `notes`, `imageURL`, `bBKCUrl` |
+| Dòng | `itemId`, `itemCode`, `itemName`, `unit`, `hangSX`, `lotNumberByDocument`, `expireDateByDocument`, `lotNumberByReal`, `expireDateByReal`, `setQuantityByDocument`, `barrelQuantityByDocument`, `setQuantityByReal`, `barrelQuantityByReal`, `randomTestQuantity`, `testStatus`, `checkerNote`, `noPalletNote`, `palletNote`, `unit2`, `unitFactor`, `additional`, `contractId`, `unitPrice`, `amount` |
+| Tổng | Σ(amount); currencyId. Chỉ hiện khi hàm tính tổng trả khác null. |
+| Header ẩn / đã có chỗ khác | `documentId`, `documentDateDisplay`, `branchReferenceState`, `objectReferenceState`, `orderTypeReferenceState`, `currencyReferenceState`, `packageTypeReferenceState`, `statusId`, `statusName`, `statusReferenceState`, `statusForeColor`, `statusBackColor`, `sendTo`, `qrPrintType`, `linkId`, `linkName`, `linkReferenceState`, `detailSaveToken`. Giữ nguyên allowlist hidden có chủ đích của T-005/T-006B; trạng thái/khóa/mã chứng từ đã có badge/heading, Display/ReferenceState/màu và audit/link/routing là metadata kỹ thuật. Lý do từng khóa: FIELD_EVIDENCE_PURCHASE_INBOUND.md, mục inbound-requests. |
+| Không có nguồn / backend cắt | sourceAmount bị backend cắt, quantity không có trong response; footer chỉ dùng amount, không thay bằng số bộ. Các HDE còn lại và alias đi kèm: visible-fields.json#inbound-requests, bảng “bị backend cắt” trong evidence nêu trên. Không khôi phục các khóa này vào config/fixture. |
+
 ### `inbound-warehouse`
 
 | Phạm vi | Phải hiện / lý do không hiện |

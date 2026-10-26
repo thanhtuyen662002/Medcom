@@ -181,7 +181,8 @@
     {"module": "inbound-sa", "formId": "IV_GoodsInfoControlFrm", "menuId": "07014", "caption": "Kiểm soát thông tin hàng hóa", "source": "dbo.SY_FrmLstTbl.CaptionVN", "formMatches": 1, "menuMatches": 1},
     {"module": "inbound-tech", "formId": "IV_GoodsStatusConfirmFrm", "menuId": "07015", "caption": "Xác nhận tình trạng hàng hóa", "source": "dbo.SY_FrmLstTbl.CaptionVN", "formMatches": 1, "menuMatches": 1},
     {"module": "inbound-pm", "formId": "IV_GoodsQualityControlConfirmFrm", "menuId": "07016", "caption": "Kiểm soát và xác nhận chất lượng hàng hóa", "source": "dbo.SY_FrmLstTbl.CaptionVN", "formMatches": 1, "menuMatches": 1},
-    {"module": "inbound-bld", "formId": "IV_CargoHandlingPlanApprovalFrm", "menuId": "07017", "caption": "Phê duyệt phương án hàng hóa", "source": "dbo.SY_FrmLstTbl.CaptionVN", "formMatches": 1, "menuMatches": 1}
+    {"module": "inbound-bld", "formId": "IV_CargoHandlingPlanApprovalFrm", "menuId": "07017", "caption": "Phê duyệt phương án hàng hóa", "source": "dbo.SY_FrmLstTbl.CaptionVN", "formMatches": 1, "menuMatches": 1},
+    {"module": "inbound-costs", "formId": "IV_InboundRequestCTCPFrm", "menuId": "07012", "caption": "Chứng từ chi phí", "source": "dbo.SY_FrmLstTbl.CaptionVN", "formMatches": 1, "menuMatches": 1}
   ],
   "actions": [
     {
@@ -966,6 +967,11 @@
     {"module": "inbound-pm", "actionId": "reject", "control": "ExecSQLWithParaButtonCtl", "caption": "Trả lại bước trước", "source": "dbo.SY_FrmCfg/IV_GoodsQualityControlConfirmFrm/LYS1/ExecSQLWithParaButtonCtl/BT", "matches": 1},
     {"module": "inbound-pm", "actionId": "return-step", "control": "ExecSQLWithParaButtonCtl_3", "caption": "Chọn gửi về", "source": "dbo.SY_FrmCfg/IV_GoodsQualityControlConfirmFrm/LYS1/ExecSQLWithParaButtonCtl_3/BT", "matches": 1},
     {"module": "inbound-bld", "actionId": "approve", "control": "ExecSQLWithParaButtonCtl_1", "caption": "Phê duyệt", "source": "dbo.SY_FrmCfg/IV_CargoHandlingPlanApprovalFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT", "matches": 1},
-    {"module": "inbound-bld", "actionId": "reject", "control": "ExecSQLWithParaButtonCtl", "caption": "Hủy/PA khác", "source": "dbo.SY_FrmCfg/IV_CargoHandlingPlanApprovalFrm/LYS1/ExecSQLWithParaButtonCtl/BT", "matches": 1}
+    {"module": "inbound-bld", "actionId": "reject", "control": "ExecSQLWithParaButtonCtl", "caption": "Hủy/PA khác", "source": "dbo.SY_FrmCfg/IV_CargoHandlingPlanApprovalFrm/LYS1/ExecSQLWithParaButtonCtl/BT", "matches": 1},
+    {"module": "inbound-costs", "actionId": "create", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-costs", "actionId": "save", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-costs", "actionId": "delete", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-costs", "actionId": "save-costs", "control": "native-toolbar", "caption": "", "source": null, "matches": 0},
+    {"module": "inbound-requests", "actionId": "cancel-draft", "control": "ExecSQLWithParaButtonCtl_PartialCancel", "caption": "Hủy đợt nháp", "source": "dbo.SY_FrmCfg/IV_InboundRequestFrm/LYS1/ExecSQLWithParaButtonCtl_PartialCancel/BT", "matches": 1}
   ]
 }

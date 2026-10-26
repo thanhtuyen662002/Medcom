@@ -87,7 +87,7 @@ public static class ErpScreenCatalog
                 new ReadOnlyDictionary<string,IReadOnlyList<ErpFieldDefinition>>(fields),labels,
                 Array.AsReadOnly(lookups),evidence));
         }
-        if(result.Count!=24) throw new InvalidOperationException("ERP screen catalog incomplete.");
+        if(result.Count!=25) throw new InvalidOperationException("ERP screen catalog incomplete.");
         return result.ToFrozenDictionary(StringComparer.Ordinal);
     }
     public static string LookupId(string? grid,string field) => (grid switch

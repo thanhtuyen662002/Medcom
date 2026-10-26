@@ -183,6 +183,38 @@ public sealed class ErpWorkflowParityTests
     }
 
     [Fact]
+    public async Task Cancel_draft_runs_the_ERP_partial_inbound_cancel_procedure()
+    {
+        // IV_InboundRequestFrm LYS1 ExecSQLWithParaButtonCtl_PartialCancel C4: '{0}',N'{1}','{User}'.
+        var (transaction,commands)=Connection(_=>new DataTable());
+        await SqlErpScreenCommands.InboundDraftCancel(transaction,Actor,"DN1","Sai đợt",default);
+        var command=Assert.Single(commands);
+        Assert.Equal("EXEC dbo.[AP_POInboundPartial_CancelStp] @InboundRequestDocumentID,@Reason,@User;",command.CommandText);
+        Assert.Equal("DN1",command.Parameters["@InboundRequestDocumentID"].Value);
+        Assert.Equal("Sai đợt",command.Parameters["@Reason"].Value);
+        Assert.Equal(Actor.PrincipalId,command.Parameters["@User"].Value);
+        var screen=ErpScreenCatalog.Get("inbound-requests")!;
+        Assert.Contains(screen.Actions,a=>a.Id=="cancel-draft"&&a.Caption=="Hủy đợt nháp");
+    }
+
+    [Fact]
+    public void Cost_documents_screen_lists_requests_past_TM_and_only_edits_costs()
+    {
+        // IV_InboundRequestCTCPFrm T0 FTR: StatusID >= 2 AND StatusID NOT IN (11, 12).
+        var plan=ErpSqlPlan.Get("inbound-costs")!;
+        Assert.Contains("H.StatusID>=2 AND H.StatusID NOT IN(11,12)",plan.ScopePredicate);
+        var screen=ErpScreenCatalog.Get("inbound-costs")!;
+        Assert.Equal("IV_InboundRequestCTCPFrm",screen.FormId);
+        Assert.All(screen.Fields.Where(s=>s.Key!="costs").SelectMany(s=>s.Value),f=>Assert.False(f.Writable));
+        Assert.Contains(screen.Fields["costs"],f=>f.Column=="SourceAmount"&&f.Writable);
+        Assert.Contains(screen.Actions,a=>a.Id=="save-costs"&&a.NativeVisible);
+        Assert.DoesNotContain(screen.Actions,a=>a.Id is "create" or "save" or "delete"&&a.NativeVisible);
+        var state=new ErpActionContext("inbound-costs",Actor.PrincipalId,"DN1",13,false,null,null,0,false,false,new(true,false,true,false),true);
+        Assert.True(ErpWorkflowRules.StateAllows(state,"save-costs"));
+        Assert.False(ErpWorkflowRules.StateAllows(state with{StatusId=12},"save-costs"));
+    }
+
+    [Fact]
     public async Task Row_counts_ignore_rows_added_by_ERP_triggers()
     {
         // IV_InboundRequest_SaveBatchAdapterTrg (INSTEAD OF INSERT, SET NOCOUNT OFF) makes one inserted

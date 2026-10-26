@@ -18,6 +18,7 @@ INSERT @forms VALUES
   (N'IV_GoodsInfoControlFrm'),
   (N'IV_GoodsQualityControlConfirmFrm'),
   (N'IV_GoodsStatusConfirmFrm'),
+  (N'IV_InboundRequestCTCPFrm'),
   (N'IV_InboundRequestFrm'),
   (N'IV_IncomingShipmentStatusFrm'),
   (N'IV_InternalTransferAccountingFrm'),

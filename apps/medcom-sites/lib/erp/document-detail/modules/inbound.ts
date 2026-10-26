@@ -4,7 +4,7 @@ export const inboundRequestDetailConfig = {
   modules: ["inbound-requests"],
   title: "Chi tiết đề nghị nhập kho",
   closeLabel: "Đóng chi tiết đề nghị nhập kho",
-  slots: ["attachments"],
+  slots: ["costs", "attachments"],
   groups: [
     {
       id: "document-info",
@@ -269,4 +269,13 @@ export const inboundBldDetailConfig = {
   title: "Phê duyệt phương án hàng hóa",
   slots: ["attachments"],
   closeLabel: "Đóng phê duyệt phương án hàng hóa",
+} as const satisfies DocumentDetailConfig;
+
+// Chứng từ chi phí (IV_InboundRequestCTCPFrm): the request as TM sees it, read-only, with its cost documents editable.
+export const inboundCostsDetailConfig = {
+  ...inboundRequestDetailConfig,
+  modules: ["inbound-costs"],
+  title: "Chứng từ chi phí",
+  closeLabel: "Đóng chứng từ chi phí",
+  slots: ["costs", "attachments"],
 } as const satisfies DocumentDetailConfig;

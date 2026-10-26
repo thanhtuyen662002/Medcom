@@ -167,7 +167,7 @@ export function saveLineKeys(module: ErpScreenModule): readonly string[] {
 export const BOOLEAN_EDIT_KEYS: ReadonlySet<string> = new Set(["isDamageOutsidePackage", "additional"]);
 /** Draft text → API value: booleans as true/false, dates as ERP datetime, blanks as null. */
 /** Workflow buttons that open the choice/notes dialog (ERP ExecSQLWithPara prompts). */
-export const DIALOG_ACTION_MODULES: ReadonlySet<string> = new Set(["inbound-sa", "inbound-tech", "inbound-pm", "inbound-bld"]);
+export const DIALOG_ACTION_MODULES: ReadonlySet<string> = new Set(["inbound-requests", "inbound-sa", "inbound-tech", "inbound-pm", "inbound-bld", "inbound-costs"]);
 export function editValue(key: string, raw: string): unknown {
   const v = raw.trim();
   if (!v) return null;

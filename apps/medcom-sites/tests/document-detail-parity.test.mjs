@@ -80,8 +80,8 @@ async function mounted(config, state, verify) {
   }
 }
 
-test('the parity manifest covers exactly the twenty-one generic modules and source-backed keys', () => {
-  assert.equal(configs.size, 21);
+test('the parity manifest covers exactly the twenty-two generic modules and source-backed keys', () => {
+  assert.equal(configs.size, 22);
   assert.deepEqual([...parity.keys()].sort(), [...configs.keys()].sort());
   assert.match(oldBody, /f\.itemCode \|\| f\.itemId \|\| f\.assetId/);
   assert.match(oldBody, /sumLineTotals\(detail\.lines\?\.rows \|\| \[\]\)/);
@@ -269,7 +269,7 @@ test('section omissions are explicitly technical/duplicated; no old business val
   }
   assert.match(report, /documentId.*documentName.*lineName/);
   assert.deepEqual([...configs].filter(([, config]) => config.lines.footerTotal).map(([moduleId]) => moduleId).sort(),
-    ['inbound-requests', 'machine-repairs', 'purchase-approvals', 'purchase-orders', 'purchase-requests']);
+    ['inbound-costs', 'inbound-requests', 'machine-repairs', 'purchase-approvals', 'purchase-orders', 'purchase-requests']);
 });
 
 test('sales restores 1 dòng hàng đã tải and default generic wording remains dòng', () => {

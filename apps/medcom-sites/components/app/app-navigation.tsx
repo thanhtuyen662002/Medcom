@@ -27,6 +27,7 @@ export const navigationSections: readonly NavigationSection[] = [
   ] },
   { title: "Quản lý kho", items: [
     { id: "inbound-requests", label: "Đề nghị nhập hàng", icon: PackagePlus },
+    { id: "inbound-costs", label: "Chứng từ chi phí nhập hàng", icon: FileText },
     { id: "inbound-warehouse", label: "Thủ kho xác nhận hàng về", icon: PackageCheck },
     { id: "inbound-sa", label: "TP SA kiểm soát hàng về", icon: ClipboardList },
     { id: "inbound-tech", label: "Kỹ thuật xác nhận hàng về", icon: Wrench },

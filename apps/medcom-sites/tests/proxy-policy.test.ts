@@ -27,7 +27,7 @@ test("inbound photos: every step lists them, only steps whose form can edit may 
 });
 
 test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted",()=>{
- assert.equal(erpScreenModules.length,24);
+ assert.equal(erpScreenModules.length,25);
  for(const m of erpScreenModules){
   assert.ok(routeAllowed(`api/erp/${m}/screen`,"GET"));
   assert.ok(routeAllowed(`api/erp/${m}`,"GET"));
