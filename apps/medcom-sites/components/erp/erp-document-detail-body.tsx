@@ -13,9 +13,10 @@ import { DocumentDetailView } from "./document-detail/document-detail-view";
 import { detailStatus } from "@/lib/erp/document-detail/status";
 import { ErpLineEditor } from "./erp-line-editor";
 import { ErpFieldLineEditor } from "./erp-field-line-editor";
+import { SalesOrderActionDialog } from "./sales-order-action-dialog";
 import { editableDetailConfig } from "@/lib/erp/document-detail/controllers/erp-detail-model";
 import type { DetailAction, DocumentDetailHandlers, DocumentDetailModel } from "@/lib/erp/document-detail/model";
-import { WRITE_GATED_MODULES, MENU_ACTION_IDS, SAVE_HEADER_BY_MODULE, editableHeaderKeys, requiredEditKeys, editLookupId, saveLineKeys, editValue, lockBadgeState, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
+import { WRITE_GATED_MODULES, MENU_ACTION_IDS, DIALOG_ACTION_MODULES, SAVE_HEADER_BY_MODULE, editableHeaderKeys, requiredEditKeys, editLookupId, saveLineKeys, editValue, lockBadgeState, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
 
 // Event-only key generation, with the same clock/random evaluation as the original handlers.
 function editCommandKey(prefix: "save" | "del") {
@@ -376,14 +377,39 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
   const openWorkflowPrompt = (act: ErpActionState) => {
     setMenuOpen(false);
     setDeleteArmed(false);
-    setActionPromptModal({ open: true, action: act, notes: "" });
+    if (DIALOG_ACTION_MODULES.has(module)) setDialogAction(act);
+    else setActionPromptModal({ open: true, action: act, notes: "" });
+  };
+  // Choice + notes prompt (inbound SA / Kỹ thuật / PM): PM list and return steps come from the API.
+  const [dialogAction, setDialogAction] = useState<ErpActionState | null>(null);
+  const handleConfirmDialogAction = async (act: ErpActionState, payload: Record<string, unknown>) => {
+    if (!detail) return;
+    setExecutingAction(act.id);
+    setActionFeedback(null);
+    try {
+      const res = await erpClient.executeWorkflowAction(module, act.id, {
+        idempotencyKey: `act-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+        payload,
+      });
+      if (res.outcome === "Committed" || res.outcome === "Replayed") setDialogAction(null);
+      handleCommandOutcome(res);
+    } catch {
+      setActionFeedback({ type: "error", message: "Lỗi kết nối khi gửi thao tác tới máy chủ." });
+    } finally {
+      setExecutingAction(null);
+    }
   };
 
   const menuActs = writesGated
     ? []
     : (detail?.actions || []).filter(
         (a): a is ErpActionState =>
-          a.visible && (MENU_ACTION_IDS as readonly string[]).includes(a.id)
+          a.visible && ((MENU_ACTION_IDS as readonly string[]).includes(a.id)
+            // Inbound step screens: every ERP button of the form (Gửi TP SA, Gửi PM, Chọn bước gửi về…).
+            || (module === "inbound-warehouse" || DIALOG_ACTION_MODULES.has(module)) && a.id !== "create")
       );
 
   const menuLabel = (act: ErpActionState): string => {
@@ -392,7 +418,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
     if (act.id === "submit") return "Gửi đề nghị";
     if (act.id === "send-purchase-order") return "Gửi đặt mua hàng";
     if (act.id === "approve") return "Duyệt";
-    if (act.id === "reject") return module === "purchase-approvals" ? "Không duyệt" : "Từ chối";
+    if (act.id === "reject") return module === "purchase-approvals" ? "Không duyệt" : module.startsWith("inbound-") && act.caption ? act.caption : "Từ chối";
     return act.caption || act.id;
   };
 
@@ -938,6 +964,23 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
             </div>
           </div>
         </UntitledBottomSheet>
+      )}
+
+      {dialogAction && detail && (
+        <SalesOrderActionDialog
+          key={module + ":" + detail.documentId + ":" + dialogAction.id}
+          module={module}
+          operation={dialogAction.id}
+          branchId={currentBranch}
+          documentId={detail.documentId}
+          busy={executingAction === dialogAction.id}
+          title={dialogAction.caption || dialogAction.id}
+          intro={`Xác nhận thực hiện "${dialogAction.caption || dialogAction.id}" trên đề nghị nhập hàng ${detail.documentId}.`}
+          notesRequired={dialogAction.id === "reject" || dialogAction.id === "return-step"}
+          message={actionFeedback && actionFeedback.type !== "success" ? actionFeedback.message : undefined}
+          onClose={() => setDialogAction(null)}
+          onConfirm={payload => void handleConfirmDialogAction(dialogAction, payload)}
+        />
       )}
 
       {/* ACTION PROMPT MODAL (For general actions like reject, send-management, approve, dispatch, etc.) */}

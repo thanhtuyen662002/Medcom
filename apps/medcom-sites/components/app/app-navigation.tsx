@@ -28,6 +28,9 @@ export const navigationSections: readonly NavigationSection[] = [
   { title: "Quản lý kho", items: [
     { id: "inbound-requests", label: "Đề nghị nhập hàng", icon: PackagePlus },
     { id: "inbound-warehouse", label: "Thủ kho xác nhận hàng về", icon: PackageCheck },
+    { id: "inbound-sa", label: "TP SA kiểm soát hàng về", icon: ClipboardList },
+    { id: "inbound-tech", label: "Kỹ thuật xác nhận hàng về", icon: Wrench },
+    { id: "inbound-pm", label: "PM xác nhận chất lượng hàng về", icon: UserCheck },
   ] },
   { title: "Điều chuyển nội bộ", items: [
     { id: "internal-transfer-requests", label: "Đề nghị điều chuyển", icon: ArrowRightLeft },

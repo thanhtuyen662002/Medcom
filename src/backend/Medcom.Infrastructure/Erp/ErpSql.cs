@@ -57,6 +57,10 @@ internal sealed class ErpSqlPlan
         // IV_IncomingShipmentStatusFrm T0 TN3/FTR: requests ever sent to the warehouse (history status 2),
         // so a request returned to it (3) or already passed on still lists; actions stay status-bound.
         "inbound-warehouse"=>"H.BranchID=@branch AND EXISTS(SELECT 1 FROM dbo.IV_InboundRequestLogTbl L WITH(HOLDLOCK) WHERE L.DocumentID=H.DocumentID AND L.StatusID=2)",
+        // T0 TN3 of each form: history rows of the step (returned requests stay listed); PM also by SendTo like FTR.
+        "inbound-sa"=>"H.BranchID=@branch AND EXISTS(SELECT 1 FROM dbo.IV_InboundRequestLogTbl L WITH(HOLDLOCK) WHERE L.DocumentID=H.DocumentID AND L.StatusID IN(4,5))",
+        "inbound-tech"=>"H.BranchID=@branch AND EXISTS(SELECT 1 FROM dbo.IV_InboundRequestLogTbl L WITH(HOLDLOCK) WHERE L.DocumentID=H.DocumentID AND L.StatusID IN(8,9))",
+        "inbound-pm"=>$"H.BranchID=@branch AND (EXISTS(SELECT 1 FROM dbo.SY_String2TableFnc(COALESCE(H.SendTo,N'')) U WHERE {Exact("LTRIM(RTRIM(CONVERT(nvarchar(4000),U.Value)))","@actor")}) OR EXISTS(SELECT 1 FROM dbo.IV_InboundRequestLogTbl L WITH(HOLDLOCK) CROSS APPLY dbo.SY_String2TableFnc(COALESCE(L.SendTo,N'')) U WHERE L.DocumentID=H.DocumentID AND L.StatusID IN(6,7) AND {Exact("LTRIM(RTRIM(CONVERT(nvarchar(4000),U.Value)))","@actor")}))",
         "internal-transfer-pm"=>$"H.BranchID=@branch AND ( {Exact("H.AssignedPM","@actor")} OR EXISTS(SELECT 1 FROM dbo.SY_String2TableFnc(COALESCE(H.SendTo,N'')) U WHERE {Exact("LTRIM(RTRIM(CONVERT(nvarchar(4000),U.Value)))","@actor")}))",
         _ when HeaderKey=="BatchID"=>Module=="internal-transfer-warehouse-in"?"H.ToBranchID=@branch":"H.FromBranchID=@branch",
         "machine-movements" or "machine-repairs"=>$"""

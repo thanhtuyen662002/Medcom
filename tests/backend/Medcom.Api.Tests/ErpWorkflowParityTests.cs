@@ -46,7 +46,7 @@ public sealed class ErpWorkflowParityTests
     public async Task Inbound_send_runs_the_ERP_workflow_procedure(string operation,string action)
     {
         var (transaction,commands)=Connection(_=>Message(3,"Đã cập nhật"));
-        await SqlErpScreenCommands.InboundSend(transaction,Actor,operation,"DN1",null,default);
+        await SqlErpScreenCommands.InboundSend(transaction,Actor,"inbound-requests",operation,"DN1",null,default);
         var command=Assert.Single(commands);
         Assert.StartsWith("EXEC dbo.[IV_InboundRequest_ChangeWorkflowStatusStp] @DocumentID,@User,@Action,@TargetStatus,@SendTo,@Notes",command.CommandText);
         Assert.Equal(action,command.Parameters["@Action"].Value);
@@ -104,7 +104,7 @@ public sealed class ErpWorkflowParityTests
     {
         // IV_IncomingShipmentStatusFrm LYS1 C4: "Gửi TP SA" WH_SENDSA, "Từ chối" WH_RETURN.
         var (transaction,commands)=Connection(_=>Message(3,"Đã cập nhật"));
-        await SqlErpScreenCommands.InboundSend(transaction,Actor,operation,"DN1",null,default);
+        await SqlErpScreenCommands.InboundSend(transaction,Actor,"inbound-warehouse",operation,"DN1",null,default);
         Assert.Equal(action,Assert.Single(commands).Parameters["@Action"].Value);
     }
 
@@ -122,6 +122,61 @@ public sealed class ErpWorkflowParityTests
         Assert.DoesNotContain(screen.Actions,a=>a.Id is "create" or "delete"&&a.NativeVisible);
         Assert.Contains(screen.Fields["lines"],f=>f.Column=="LotNumberByReal"&&f.Writable);
         Assert.DoesNotContain(screen.Fields["lines"],f=>f.Column is "SetQuantityByDocument" or "UnitPrice" or "ItemID"&&f.Writable);
+    }
+
+    [Theory]
+    [InlineData("inbound-sa","reject","SA_RETURN")]
+    [InlineData("inbound-sa","send-pm","SA_SENDPM")]
+    [InlineData("inbound-sa","return-step","SA_RETURNTO")]
+    [InlineData("inbound-sa","send-tech","SA_SENDTECH")]
+    [InlineData("inbound-tech","reject","TECH_RETURN")]
+    [InlineData("inbound-tech","send-pm","TECH_SENDPM")]
+    [InlineData("inbound-tech","return-step","TECH_RETURNTO")]
+    [InlineData("inbound-pm","reject","PM_RETURN")]
+    [InlineData("inbound-pm","send-accounting","PM_SENDACCOUNT")]
+    [InlineData("inbound-pm","return-step","PM_RETURNTO")]
+    public async Task Inbound_step_buttons_pass_ERP_action_target_and_recipient(string module,string operation,string action)
+    {
+        // IV_GoodsInfoControlFrm / IV_GoodsStatusConfirmFrm / IV_GoodsQualityControlConfirmFrm LYS1 C4.
+        var (transaction,commands)=Connection(_=>Message(3,"Đã cập nhật"));
+        await SqlErpScreenCommands.InboundSend(transaction,Actor,module,operation,"DN1","Lý do",default,
+            operation=="return-step"?3:null,operation=="send-pm"?"pm.user":null);
+        var command=Assert.Single(commands);
+        Assert.Equal(action,command.Parameters["@Action"].Value);
+        Assert.Equal(operation=="return-step"?3:DBNull.Value,command.Parameters["@TargetStatus"].Value);
+        Assert.Equal(operation=="send-pm"?"pm.user":DBNull.Value,command.Parameters["@SendTo"].Value);
+        Assert.Equal("Lý do",command.Parameters["@Notes"].Value);
+    }
+
+    [Theory]
+    [InlineData("inbound-sa","IV_GoodsInfoControlFrm","IN(4,5)",new[]{"send-tech","send-pm","reject","return-step"})]
+    [InlineData("inbound-tech","IV_GoodsStatusConfirmFrm","IN(8,9)",new[]{"send-pm","reject","return-step"})]
+    [InlineData("inbound-pm","IV_GoodsQualityControlConfirmFrm","IN(6,7)",new[]{"send-accounting","reject","return-step"})]
+    public void Inbound_step_lists_keep_returned_requests_like_ERP(string module,string form,string statuses,string[] buttons)
+    {
+        // T0 TN3: history rows of the step, so a request sent back or passed on still lists.
+        var plan=ErpSqlPlan.Get(module)!;
+        Assert.Contains("L.StatusID "+statuses,plan.ScopePredicate);
+        Assert.Contains("H.BranchID=@branch",plan.ScopePredicate);
+        Assert.Equal(module=="inbound-pm",plan.ScopePredicate.Contains("@actor",StringComparison.Ordinal));
+        var screen=ErpScreenCatalog.Get(module)!;
+        Assert.Equal(form,screen.FormId);
+        Assert.Equal(buttons,screen.Actions.Where(a=>a.Control.StartsWith("ExecSQL",StringComparison.Ordinal)).Select(a=>a.Id).ToArray());
+        Assert.DoesNotContain(screen.Fields["lines"],f=>f.Writable);
+        Assert.Equal(module=="inbound-sa",!screen.Fields["header"].Any(f=>f.Writable));
+        Assert.Equal(module!="inbound-pm",ErpWorkflowRules.HasActionOptions(module,"send-pm"));
+        Assert.True(ErpWorkflowRules.HasActionOptions(module,"return-step"));
+    }
+
+    [Fact]
+    public void Inbound_PM_screen_only_lets_the_recipient_act()
+    {
+        var fields=new Dictionary<string,object?>{["sendTo"]="other.pm"};
+        var state=new ErpActionContext("inbound-pm",Actor.PrincipalId,"DN1",6,false,null,null,0,false,false,new(true,false,true,false),true,WorkflowFields:fields);
+        Assert.False(ErpWorkflowRules.StateAllows(state,"send-accounting"));
+        fields["sendTo"]=Actor.PrincipalId;
+        Assert.True(ErpWorkflowRules.StateAllows(state,"send-accounting"));
+        Assert.False(ErpWorkflowRules.StateAllows(state with{StatusId=8},"send-accounting"));
     }
 
     [Fact]

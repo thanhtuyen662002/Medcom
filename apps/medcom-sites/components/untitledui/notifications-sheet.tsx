@@ -187,6 +187,12 @@ export function NotificationsSheet({
         return "inbound-requests";
       case "inbound-warehouse":
         return "inbound-warehouse";
+      case "inbound-sa":
+        return "inbound-sa";
+      case "inbound-tech":
+        return "inbound-tech";
+      case "inbound-pm":
+        return "inbound-pm";
       case "sales-orders":
         return "sales-orders";
       case "internal-transfer-requests":

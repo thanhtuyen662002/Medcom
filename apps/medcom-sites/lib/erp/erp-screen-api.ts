@@ -361,6 +361,7 @@ export async function getErpActionOptions(
     page?: number;
     pageSize?: number;
     search?: string | null;
+    documentId?: string | null;
   },
   signal?: AbortSignal
 ): Promise<ErpChoicePage> {

@@ -18,7 +18,7 @@ public sealed class ErpPermissionsTests
         var source=new PermissionSource();source.Grants["purchase-requests"]=new(true,true,false,false);
         var result=await source.Service().PermissionsAsync("QA-A",default);
         Assert.Equal(ErpReadOutcome.Success,result.Outcome);Assert.Equal("QA-A",result.Value!.BranchId);
-        Assert.Equal(20,result.Value.Screens.Count);Assert.Equal(2,source.GrantReads);
+        Assert.Equal(23,result.Value.Screens.Count);Assert.Equal(2,source.GrantReads);
         Assert.Equal(1,source.Rows.Opens);Assert.Equal(1,source.Rows.Rollbacks);Assert.Equal(0,source.Rows.Commits);
         Assert.Equal(1,source.Rows.ConnectionDisposals);Assert.Equal(1,source.Rows.TransactionDisposals);
         var purchase=result.Value.Screens.Single(s=>s.Module=="purchase-requests");
@@ -80,7 +80,7 @@ public sealed class ErpPermissionsTests
         await fixture.Login();
         var body=await fixture.Json("/api/erp/permissions?branchId=QA-A");
         Assert.Equal(64,body.GetProperty("readScope").GetString()!.Length);
-        Assert.Equal(20,body.GetProperty("data").GetProperty("screens").GetArrayLength());
+        Assert.Equal(23,body.GetProperty("data").GetProperty("screens").GetArrayLength());
         var sample=body.GetProperty("data").GetProperty("screens")[0].GetProperty("actions")[0];
         Assert.False(sample.TryGetProperty("name",out _));Assert.False(sample.TryGetProperty("referenceState",out _));
         foreach(var query in new[]{"branchId=QA-A&role=admin","branchId=QA-A&userName=other","branchId=QA-A&branchId=QA-B"})
@@ -125,7 +125,7 @@ public sealed class ErpPermissionsTests
             if(!command.CommandText.Contains(ErpSqlAuthority.GrantProjection,StringComparison.Ordinal))return null;
             Assert.StartsWith(SqlLegacyPolicy.GrantsCte,command.CommandText);
             Assert.Equal(Rows.Username,command.Parameters["@username"].Value);Assert.Equal(Rows.Group,command.Parameters["@group"].Value);
-            Assert.Equal(22,command.Parameters.Count);Assert.All(command.Parameters.Cast<DbParameter>(),p=>Assert.Equal(DbType.AnsiString,p.DbType));
+            Assert.Equal(25,command.Parameters.Count);Assert.All(command.Parameters.Cast<DbParameter>(),p=>Assert.Equal(DbType.AnsiString,p.DbType));
             GrantReads++;if(Scenario=="sql-error")throw new InvalidOperationException("Synthetic database failure");
             var result=Table(typeof(string),typeof(string),typeof(bool),typeof(string),typeof(int),typeof(int),typeof(int),typeof(int));
             foreach(var screen in ErpScreenCatalog.ModuleIds.Select(m=>ErpScreenCatalog.Get(m)!))

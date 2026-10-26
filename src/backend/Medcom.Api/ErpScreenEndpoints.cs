@@ -85,7 +85,7 @@ public static class ErpScreenEndpoints
                     var section=action.Operation[5..];
                     MapCommand<ErpSectionSaveRequest>(app,path+"/sections/"+section+"/save",module,action.Operation,(service,request,token)=>service.SaveSectionAsync(module,section,request,token));
                 }
-                foreach(var action in ErpScreenCatalog.Get(module)!.Actions.Where(a=>a.Operation=="return-step"||module=="internal-transfer-tech"&&a.Operation=="send-sa"))
+                foreach(var action in ErpScreenCatalog.Get(module)!.Actions.Where(a=>ErpWorkflowRules.HasActionOptions(module,a.Operation)))
                     MapReadBody<ErpActionOptionsQuery,ErpChoicePage>(app,path+"/actions/"+action.Operation+"/options",module,(service,request,token)=>service.ActionOptionsAsync(module,action.Operation,request,token));
             }
             if(module is "warehouse-qr" or "sales-qr")

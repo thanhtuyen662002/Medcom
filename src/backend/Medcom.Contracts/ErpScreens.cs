@@ -74,7 +74,7 @@ public sealed record ErpTransferTechSend(string PrimarySaId,string SupportingSaI
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ErpSectionSaveRequest(string IdempotencyKey,string BranchId,string DocumentId,
     string ExpectedStateToken,IReadOnlyList<ErpLineChange> LineChanges);
-public sealed record ErpActionOptionsQuery(string BranchId,string Role="primary",int Page=1,int PageSize=20,string? Search=null);
+public sealed record ErpActionOptionsQuery(string BranchId,string Role="primary",int Page=1,int PageSize=20,string? Search=null,string? DocumentId=null);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ErpSendOrderPm(string PmId, string? Notes);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]

@@ -39,6 +39,9 @@ const transferBatch: readonly ErpListColumn[] = [
   { ...notes, keys: ["notes"] },
 ];
 
+const inboundStep: readonly ErpListColumn[] = [document, date, { id: "object", label: "Nhà cung cấp", keys: ["objectName"] },
+  { id: "order", label: "Đơn đặt hàng", keys: ["orderNumber"] }, status, { ...notes, keys: ["notes"] }];
+
 // Explicit exhaustive mapping: column presence is stable even on an empty page.
 export const ERP_LIST_COLUMNS: Record<ErpScreenModule, readonly ErpListColumn[]> = {
   "purchase-requests": purchase,
@@ -46,8 +49,10 @@ export const ERP_LIST_COLUMNS: Record<ErpScreenModule, readonly ErpListColumn[]>
   "purchase-orders": [document, date, { id: "object", label: "Nhà cung cấp", keys: ["objectName"] }, status, creator, notes],
   "inbound-requests": [document, date, { id: "object", label: "Đối tượng / Mục đích", keys: ["objectName"] },
     { id: "order", label: "Đơn đặt hàng", keys: ["orderNumber"] }, status, { ...notes, keys: ["notes"] }],
-  "inbound-warehouse": [document, date, { id: "object", label: "Nhà cung cấp", keys: ["objectName"] },
-    { id: "order", label: "Đơn đặt hàng", keys: ["orderNumber"] }, status, { ...notes, keys: ["notes"] }],
+  "inbound-warehouse": inboundStep,
+  "inbound-sa": inboundStep,
+  "inbound-tech": inboundStep,
+  "inbound-pm": inboundStep,
   "sales-orders": sales,
   "sales-order-pm": sales,
   "sales-order-sa": sales,

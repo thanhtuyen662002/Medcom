@@ -14,6 +14,8 @@ public sealed partial class SqlErpScreenCommands
         {
             ("inbound-requests","send-management")=>10,("inbound-requests","send-warehouse")=>2,
             ("inbound-warehouse","send-sa")=>4,("inbound-warehouse","reject")=>1,
+            ("inbound-sa","send-tech")=>8,("inbound-sa","send-pm")=>6,("inbound-sa","reject")=>3,
+            ("inbound-tech","send-pm")=>6,("inbound-tech","reject")=>5,("inbound-pm","send-accounting")=>13,
             ("purchase-approvals","approve")=>3,("purchase-approvals","reject")=>4,
             ("sales-order-pm","send-sa")=>14,("sales-order-pm","reject")=>11,
             ("sales-order-sa","send-accounting")=>18,("sales-order-sa","send-tech")=>16,("sales-order-sa","reject")=>13,
@@ -26,6 +28,7 @@ public sealed partial class SqlErpScreenCommands
         };
         var observed=after.Header.GetValueOrDefault("statusId")as int?;
         Require(expected>=0?observed==expected:request.Operation=="receive"?observed is 120 or 130:
+            request.Module=="inbound-pm"&&request.Operation=="reject"?observed is 5 or 9:
             request.Operation=="reject"?observed is 10 or 21 or 41 or 61:
             request.Operation=="sync-requests"&&observed==before.Header.GetValueOrDefault("statusId")as int?,
             ErpCommandOutcome.Unavailable,"native_action_postcondition_failed");
@@ -144,9 +147,12 @@ public sealed partial class SqlErpScreenCommands
         ErpFrozenCommand request,string document,CancellationToken token)
     {
         var notes=Text(request.Payload,"notes");var operation=request.Operation;
-        if(plan.Module is "inbound-requests" or "inbound-warehouse")
+        if(plan.Module.StartsWith("inbound-",StringComparison.Ordinal))
         {
-            await InboundSend(transaction,actor,operation,document,notes,token);return;
+            int? target=null;string? sendTo=null;
+            if(operation=="return-step"){target=request.Payload.GetProperty("statusId").GetInt32();await ReturnStepAllowed(transaction,plan.Module,target.Value,token,document);}
+            if(operation=="send-pm"){sendTo=Text(request.Payload,"pmId");await Pm(transaction,sendTo!,null,token);}
+            await InboundSend(transaction,actor,plan.Module,operation,document,notes,token,target,sendTo);return;
         }
         if(plan.Module=="purchase-approvals")
         {
@@ -185,26 +191,40 @@ public sealed partial class SqlErpScreenCommands
     }
     // Same procedure as ERP's buttons: TM role in the branch, lot/expiry/quantity > 0 before the
     // warehouse, concurrency lock, status move and history row.
-    internal static Task InboundSend(DbTransaction transaction,AuthoritativeIdentity actor,string operation,string document,string? notes,CancellationToken token)
+    internal static Task InboundSend(DbTransaction transaction,AuthoritativeIdentity actor,string module,string operation,string document,string? notes,
+        CancellationToken token,int? target=null,string? sendTo=null)
         =>Procedure(transaction,"IV_InboundRequest_ChangeWorkflowStatusStp",[("@DocumentID",DbType.AnsiString,document,50),
-            ("@User",DbType.AnsiString,actor.PrincipalId,100),("@Action",DbType.AnsiString,InboundAction(operation),30),
-            ("@TargetStatus",DbType.Int32,null,0),("@SendTo",DbType.String,null,-1),("@Notes",DbType.String,notes,-1)],token);
-    // @Action codes of IV_InboundRequest_ChangeWorkflowStatusStp per Web operation (SY_FrmCfg LYS1 C4).
-    internal static string InboundAction(string operation)=>operation switch
+            ("@User",DbType.AnsiString,actor.PrincipalId,100),("@Action",DbType.AnsiString,InboundAction(module,operation),30),
+            ("@TargetStatus",DbType.Int32,target,0),("@SendTo",DbType.String,sendTo,-1),("@Notes",DbType.String,notes,-1)],token);
+    // @Action codes of IV_InboundRequest_ChangeWorkflowStatusStp per form button (SY_FrmCfg LYS1 C4).
+    internal static string InboundAction(string module,string operation)=>(module,operation) switch
     {
-        "send-management"=>"TM_SENDBLD","send-warehouse"=>"TM_SENDWH",
-        "send-sa"=>"WH_SENDSA","reject"=>"WH_RETURN",
+        ("inbound-requests","send-management")=>"TM_SENDBLD",("inbound-requests","send-warehouse")=>"TM_SENDWH",
+        ("inbound-warehouse","send-sa")=>"WH_SENDSA",("inbound-warehouse","reject")=>"WH_RETURN",
+        ("inbound-sa","reject")=>"SA_RETURN",("inbound-sa","send-pm")=>"SA_SENDPM",("inbound-sa","send-tech")=>"SA_SENDTECH",("inbound-sa","return-step")=>"SA_RETURNTO",
+        ("inbound-tech","reject")=>"TECH_RETURN",("inbound-tech","send-pm")=>"TECH_SENDPM",("inbound-tech","return-step")=>"TECH_RETURNTO",
+        ("inbound-pm","reject")=>"PM_RETURN",("inbound-pm","send-accounting")=>"PM_SENDACCOUNT",("inbound-pm","return-step")=>"PM_RETURNTO",
         _=>throw new Stop(ErpCommandOutcome.InvalidInput,"invalid_action")
+    };
+    // LYS1 property 26 of each "Chọn bước gửi về" button.
+    internal static string? InboundReturnSteps(string module)=>module switch
+    {
+        "inbound-sa"=>"IsReject=1 AND StatusID<4",
+        "inbound-tech"=>"IsReject=1 AND StatusID IN(1,3,5)",
+        "inbound-pm"=>"IsReject=1 AND (StatusID IN(1,3,5) OR (StatusID=9 AND dbo.IV_InboundRequest_HasEquipmentFnc(@document)=1))",
+        _=>null
     };
     // ERP's Duyệt / Không duyệt buttons: screen permission, reason required to reject, no PO yet.
     internal static Task PurchaseDecision(DbTransaction transaction,AuthoritativeIdentity actor,string operation,string document,string? notes,CancellationToken token)
         =>Procedure(transaction,"AP_PurchaseRequest_ApproveOrRejectStp",[("@PurchaseRequestID",DbType.String,document,50),
             ("@User",DbType.AnsiString,actor.PrincipalId,100),("@Approve",DbType.Boolean,operation=="approve",0),("@Notes",DbType.String,notes,-1)],token);
-    private static async Task ReturnStepAllowed(DbTransaction transaction,string module,int status,CancellationToken token)
+    private static async Task ReturnStepAllowed(DbTransaction transaction,string module,int status,CancellationToken token,string? document=null)
     {
-        var text=module=="sales-order-sa"?"SELECT COUNT_BIG(*) FROM dbo.AR_OrderStatusTbl WITH(HOLDLOCK) WHERE StatusID=@status AND IsReject=1 AND StatusID<14;"
+        var text=InboundReturnSteps(module)is {} steps?"SELECT COUNT_BIG(*) FROM dbo.IV_InboundRequestStatusTbl WITH(HOLDLOCK) WHERE StatusID=@status AND "+steps+";"
+            :module=="sales-order-sa"?"SELECT COUNT_BIG(*) FROM dbo.AR_OrderStatusTbl WITH(HOLDLOCK) WHERE StatusID=@status AND IsReject=1 AND StatusID<14;"
             :"SELECT COUNT_BIG(*) FROM dbo.IV_InternalTransferBatchStatusTbl WITH(HOLDLOCK) WHERE StatusID=@status AND IsReject=1 AND IsActive=1 AND StatusID IN(10,21,41,61);";
         await using var command=ErpSqlPlan.Command(transaction,text);ErpSqlPlan.Parameter(command,"@status",DbType.Int32,status);
+        ErpSqlPlan.Parameter(command,"@document",DbType.AnsiString,document,50);
         Require(await command.ExecuteScalarAsync(token)is long count&&count==1,ErpCommandOutcome.InvalidInput,"return_step_invalid");
     }
 }

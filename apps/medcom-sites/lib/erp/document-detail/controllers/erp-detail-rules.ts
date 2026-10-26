@@ -63,8 +63,13 @@ export function getActionReasonMessage(reason?: string | null): string {
 const INBOUND_WAREHOUSE_HEADER = ["totalPalletQuantityByReal","totalBarrelQuantityByReal","excessPackageQuantity","lackOfPackageQuantity","damagedPackageQuantity",
     "isDamageOutsidePackage","damageInsideStatusId","damageDescription","locationDamageDetectedId","locationDamageDescription","imageURL",
     "resultDesciption","totalQuantityInboundResult","goodAwaitingInboundResult","resultNote","datetimeRecorded","notes"] as const;
+// Kỹ thuật (IV_GoodsStatusConfirmFrm) and PM (IV_GoodsQualityControlConfirmFrm): unlocked and laid out.
+const INBOUND_TECH_HEADER = ["damagedPackageQuantity", "imageURL", "bBKCUrl", "notes"] as const;
+const INBOUND_PM_HEADER = ["damagedPackageQuantity", "imageURL", "notes"] as const;
 const EDITABLE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
   "inbound-warehouse": INBOUND_WAREHOUSE_HEADER,
+  "inbound-tech": INBOUND_TECH_HEADER,
+  "inbound-pm": INBOUND_PM_HEADER,
   "purchase-requests": [
     "personSuggest",
     "department",
@@ -110,6 +115,8 @@ export function editableHeaderKeys(module: ErpScreenModule): readonly string[] {
 }
 const REQUIRED_EDIT_KEYS: Record<string, readonly string[]> = {
   "inbound-warehouse": [],
+  "inbound-tech": [],
+  "inbound-pm": [],
   "purchase-requests": ["personSuggest", "department", "objectId", "currencyId"],
   "sales-orders": ["documentDate", "objectId", "employeeId"],
 };
@@ -118,6 +125,8 @@ export function requiredEditKeys(module: ErpScreenModule): readonly string[] {
   return REQUIRED_EDIT_KEYS[module] ?? DEFAULT_REQUIRED_EDIT_KEYS;
 }
 const EDIT_LOOKUPS: Record<string, Record<string, string>> = {
+  "inbound-tech": {},
+  "inbound-pm": {},
   "inbound-warehouse": {
     damageInsideStatusId: "header.DamageInsideStatusID",
     locationDamageDetectedId: "header.LocationDamageDetectedID",
@@ -157,6 +166,8 @@ export function saveLineKeys(module: ErpScreenModule): readonly string[] {
 /** Bit columns edited as Có/Không and sent as JSON booleans. */
 export const BOOLEAN_EDIT_KEYS: ReadonlySet<string> = new Set(["isDamageOutsidePackage", "additional"]);
 /** Draft text → API value: booleans as true/false, dates as ERP datetime, blanks as null. */
+/** Workflow buttons that open the choice/notes dialog (ERP ExecSQLWithPara prompts). */
+export const DIALOG_ACTION_MODULES: ReadonlySet<string> = new Set(["inbound-sa", "inbound-tech", "inbound-pm"]);
 export function editValue(key: string, raw: string): unknown {
   const v = raw.trim();
   if (!v) return null;
@@ -166,6 +177,8 @@ export function editValue(key: string, raw: string): unknown {
 }
 export const SAVE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
   "inbound-warehouse": INBOUND_WAREHOUSE_HEADER,
+  "inbound-tech": INBOUND_TECH_HEADER,
+  "inbound-pm": INBOUND_PM_HEADER,
   "purchase-requests": [
     "purchaseDate",
     "purposeId",
