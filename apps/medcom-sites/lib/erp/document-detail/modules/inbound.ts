@@ -4,6 +4,7 @@ export const inboundRequestDetailConfig = {
   modules: ["inbound-requests"],
   title: "Chi tiết đề nghị nhập kho",
   closeLabel: "Đóng chi tiết đề nghị nhập kho",
+  slots: ["attachments"],
   groups: [
     {
       id: "document-info",
@@ -139,7 +140,7 @@ export const inboundWarehouseDetailConfig = {
   modules: ["inbound-warehouse"],
   title: "Xác nhận tình trạng hàng về",
   closeLabel: "Đóng xác nhận tình trạng hàng về",
-  slots: ["lines-editor"],
+  slots: ["lines-editor", "attachments"],
   groups: [
     {
       id: "document-info",
@@ -240,12 +241,14 @@ export const inboundSaDetailConfig = {
   ...inboundStepLayout,
   modules: ["inbound-sa"],
   title: "Kiểm soát thông tin hàng hóa",
+  slots: ["attachments"],
   closeLabel: "Đóng kiểm soát thông tin hàng hóa",
 } as const satisfies DocumentDetailConfig;
 export const inboundTechDetailConfig = {
   ...inboundStepLayout,
   modules: ["inbound-tech"],
   title: "Xác nhận tình trạng hàng hóa",
+  slots: ["attachments"],
   closeLabel: "Đóng xác nhận tình trạng hàng hóa",
   groups: inboundStepLayout.groups.map(group => group.id !== "damage" ? group
     : { ...group, fields: [...group.fields, { key: "bBKCUrl", label: "Link BBKC", format: "url", hideWhenEmpty: false } as const] }),
@@ -255,6 +258,7 @@ export const inboundPmDetailConfig = {
   ...inboundStepLayout,
   modules: ["inbound-pm"],
   title: "Kiểm soát và xác nhận chất lượng hàng hóa",
+  slots: ["attachments"],
   closeLabel: "Đóng kiểm soát và xác nhận chất lượng hàng hóa",
 } as const satisfies DocumentDetailConfig;
 
@@ -263,5 +267,6 @@ export const inboundBldDetailConfig = {
   ...inboundStepLayout,
   modules: ["inbound-bld"],
   title: "Phê duyệt phương án hàng hóa",
+  slots: ["attachments"],
   closeLabel: "Đóng phê duyệt phương án hàng hóa",
 } as const satisfies DocumentDetailConfig;

@@ -96,6 +96,8 @@ const transport = `
     async getErpModuleDetail(module,{documentId}){const row=rows.find(item=>item.documentId===documentId)??rows[0];
       return {documentId,header:{...row,...row.fields,branchName:'Chi nhánh QA',department:'Bộ phận kiểm thử'},lines:page([]),sections:{},actions:[],stateToken:'a'.repeat(64)}},
     async getLookupOptions(){return {items:statuses.map((label,id)=>({id:String(id),label})),page:1,hasMore:false,requiredParameters:[]}},
+    async getAttachments(){return {supported:true,slots:[{slotId:2,slotName:'Ảnh chụp hư hỏng'}],canUpload:false,canDelete:false,
+      documentStateToken:'a'.repeat(64),rows:[],page:1,pageSize:100,hasMore:false}},
   };`;
 
 test('375×812 and 1280×860: real tabs, portal bounds, themes, detail labels, overlays and touch targets', { timeout: 150000 }, async () => {

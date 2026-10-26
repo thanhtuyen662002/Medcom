@@ -25656,6 +25656,370 @@
         ]
       }
     },
+    "/api/erp/inbound-bld/attachments/content": {
+      "get": {
+        "operationId": "inbound_bld_attachment_content",
+        "responses": {
+          "200": {
+            "description": "Authorized original/preview attachment bytes; no JSON envelope.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Response-Contract": {
+                "schema": {
+                  "type": "string",
+                  "const": "3"
+                }
+              }
+            },
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t ph\u01B0\u01A1ng \u00E1n h\u00E0ng h\u00F3a"
+        ],
+        "x-medcom-capability": "inbound-bld.read",
+        "parameters": [
+          {
+            "name": "branchId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "documentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "attachmentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "preview",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ]
+      }
+    },
+    "/api/erp/inbound-bld/attachments/delete": {
+      "post": {
+        "operationId": "inbound_bld_attachment_delete",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpAttachmentResult"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Response-Contract": {
+                "schema": {
+                  "type": "string",
+                  "const": "3"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": [],
+            "CsrfCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t ph\u01B0\u01A1ng \u00E1n h\u00E0ng h\u00F3a"
+        ],
+        "x-medcom-capability": "inbound-bld.read",
+        "parameters": [
+          {
+            "name": "X-Medcom-Read-Scope",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErpAttachmentDelete"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/erp/inbound-bld/attachments/upload": {
+      "post": {
+        "operationId": "inbound_bld_attachment_upload",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpAttachmentResult"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Response-Contract": {
+                "schema": {
+                  "type": "string",
+                  "const": "3"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": [],
+            "CsrfCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t ph\u01B0\u01A1ng \u00E1n h\u00E0ng h\u00F3a"
+        ],
+        "x-medcom-capability": "inbound-bld.read",
+        "parameters": [
+          {
+            "name": "X-Medcom-Read-Scope",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "branchId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "documentId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "expectedStateToken": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "attachmentId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "expectedAttachmentToken": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG/PNG original image, \u003C=10 MiB. File header and extension must agree. Name comes from the file part."
+                  },
+                  "preview": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Optional JPEG/PNG thumbnail \u003C=1 MiB. If omitted, the original bytes are stored as Content2 for native ERP compatibility."
+                  },
+                  "slotId": {
+                    "type": "integer",
+                    "enum": [
+                      2,
+                      4,
+                      6
+                    ]
+                  }
+                },
+                "required": [
+                  "idempotencyKey",
+                  "branchId",
+                  "documentId",
+                  "expectedStateToken",
+                  "file",
+                  "slotId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/erp/inbound-pm/attachments": {
       "get": {
         "operationId": "inbound_pm_attachments",
@@ -25762,6 +26126,370 @@
             }
           }
         ]
+      }
+    },
+    "/api/erp/inbound-pm/attachments/content": {
+      "get": {
+        "operationId": "inbound_pm_attachment_content",
+        "responses": {
+          "200": {
+            "description": "Authorized original/preview attachment bytes; no JSON envelope.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Response-Contract": {
+                "schema": {
+                  "type": "string",
+                  "const": "3"
+                }
+              }
+            },
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ki\u1EC3m so\u00E1t v\u00E0 x\u00E1c nh\u1EADn ch\u1EA5t l\u01B0\u1EE3ng h\u00E0ng h\u00F3a"
+        ],
+        "x-medcom-capability": "inbound-pm.read",
+        "parameters": [
+          {
+            "name": "branchId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "documentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "attachmentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "preview",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ]
+      }
+    },
+    "/api/erp/inbound-pm/attachments/delete": {
+      "post": {
+        "operationId": "inbound_pm_attachment_delete",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpAttachmentResult"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Response-Contract": {
+                "schema": {
+                  "type": "string",
+                  "const": "3"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": [],
+            "CsrfCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ki\u1EC3m so\u00E1t v\u00E0 x\u00E1c nh\u1EADn ch\u1EA5t l\u01B0\u1EE3ng h\u00E0ng h\u00F3a"
+        ],
+        "x-medcom-capability": "inbound-pm.read",
+        "parameters": [
+          {
+            "name": "X-Medcom-Read-Scope",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErpAttachmentDelete"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/erp/inbound-pm/attachments/upload": {
+      "post": {
+        "operationId": "inbound_pm_attachment_upload",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpAttachmentResult"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Response-Contract": {
+                "schema": {
+                  "type": "string",
+                  "const": "3"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": [],
+            "CsrfCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ki\u1EC3m so\u00E1t v\u00E0 x\u00E1c nh\u1EADn ch\u1EA5t l\u01B0\u1EE3ng h\u00E0ng h\u00F3a"
+        ],
+        "x-medcom-capability": "inbound-pm.read",
+        "parameters": [
+          {
+            "name": "X-Medcom-Read-Scope",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "branchId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "documentId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "expectedStateToken": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "attachmentId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "expectedAttachmentToken": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG/PNG original image, \u003C=10 MiB. File header and extension must agree. Name comes from the file part."
+                  },
+                  "preview": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Optional JPEG/PNG thumbnail \u003C=1 MiB. If omitted, the original bytes are stored as Content2 for native ERP compatibility."
+                  },
+                  "slotId": {
+                    "type": "integer",
+                    "enum": [
+                      2,
+                      4,
+                      6
+                    ]
+                  }
+                },
+                "required": [
+                  "idempotencyKey",
+                  "branchId",
+                  "documentId",
+                  "expectedStateToken",
+                  "file",
+                  "slotId"
+                ]
+              }
+            }
+          }
+        }
       }
     },
     "/api/erp/inbound-requests/attachments": {
@@ -26344,6 +27072,370 @@
         ]
       }
     },
+    "/api/erp/inbound-sa/attachments/content": {
+      "get": {
+        "operationId": "inbound_sa_attachment_content",
+        "responses": {
+          "200": {
+            "description": "Authorized original/preview attachment bytes; no JSON envelope.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Response-Contract": {
+                "schema": {
+                  "type": "string",
+                  "const": "3"
+                }
+              }
+            },
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ki\u1EC3m so\u00E1t th\u00F4ng tin h\u00E0ng h\u00F3a"
+        ],
+        "x-medcom-capability": "inbound-sa.read",
+        "parameters": [
+          {
+            "name": "branchId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "documentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "attachmentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "preview",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ]
+      }
+    },
+    "/api/erp/inbound-sa/attachments/delete": {
+      "post": {
+        "operationId": "inbound_sa_attachment_delete",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpAttachmentResult"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Response-Contract": {
+                "schema": {
+                  "type": "string",
+                  "const": "3"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": [],
+            "CsrfCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ki\u1EC3m so\u00E1t th\u00F4ng tin h\u00E0ng h\u00F3a"
+        ],
+        "x-medcom-capability": "inbound-sa.read",
+        "parameters": [
+          {
+            "name": "X-Medcom-Read-Scope",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErpAttachmentDelete"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/erp/inbound-sa/attachments/upload": {
+      "post": {
+        "operationId": "inbound_sa_attachment_upload",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpAttachmentResult"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Response-Contract": {
+                "schema": {
+                  "type": "string",
+                  "const": "3"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": [],
+            "CsrfCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ki\u1EC3m so\u00E1t th\u00F4ng tin h\u00E0ng h\u00F3a"
+        ],
+        "x-medcom-capability": "inbound-sa.read",
+        "parameters": [
+          {
+            "name": "X-Medcom-Read-Scope",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "branchId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "documentId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "expectedStateToken": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "attachmentId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "expectedAttachmentToken": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG/PNG original image, \u003C=10 MiB. File header and extension must agree. Name comes from the file part."
+                  },
+                  "preview": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Optional JPEG/PNG thumbnail \u003C=1 MiB. If omitted, the original bytes are stored as Content2 for native ERP compatibility."
+                  },
+                  "slotId": {
+                    "type": "integer",
+                    "enum": [
+                      2,
+                      4,
+                      6
+                    ]
+                  }
+                },
+                "required": [
+                  "idempotencyKey",
+                  "branchId",
+                  "documentId",
+                  "expectedStateToken",
+                  "file",
+                  "slotId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/erp/inbound-tech/attachments": {
       "get": {
         "operationId": "inbound_tech_attachments",
@@ -26450,6 +27542,370 @@
             }
           }
         ]
+      }
+    },
+    "/api/erp/inbound-tech/attachments/content": {
+      "get": {
+        "operationId": "inbound_tech_attachment_content",
+        "responses": {
+          "200": {
+            "description": "Authorized original/preview attachment bytes; no JSON envelope.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Response-Contract": {
+                "schema": {
+                  "type": "string",
+                  "const": "3"
+                }
+              }
+            },
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn t\u00ECnh tr\u1EA1ng h\u00E0ng h\u00F3a"
+        ],
+        "x-medcom-capability": "inbound-tech.read",
+        "parameters": [
+          {
+            "name": "branchId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "documentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "attachmentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "preview",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ]
+      }
+    },
+    "/api/erp/inbound-tech/attachments/delete": {
+      "post": {
+        "operationId": "inbound_tech_attachment_delete",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpAttachmentResult"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Response-Contract": {
+                "schema": {
+                  "type": "string",
+                  "const": "3"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": [],
+            "CsrfCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn t\u00ECnh tr\u1EA1ng h\u00E0ng h\u00F3a"
+        ],
+        "x-medcom-capability": "inbound-tech.read",
+        "parameters": [
+          {
+            "name": "X-Medcom-Read-Scope",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErpAttachmentDelete"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/erp/inbound-tech/attachments/upload": {
+      "post": {
+        "operationId": "inbound_tech_attachment_upload",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpAttachmentResult"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Current authorized session/read scope; correlation only.",
+                "schema": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "X-Medcom-Response-Contract": {
+                "schema": {
+                  "type": "string",
+                  "const": "3"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": [],
+            "CsrfCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn t\u00ECnh tr\u1EA1ng h\u00E0ng h\u00F3a"
+        ],
+        "x-medcom-capability": "inbound-tech.read",
+        "parameters": [
+          {
+            "name": "X-Medcom-Read-Scope",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "branchId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "documentId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "expectedStateToken": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "attachmentId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "expectedAttachmentToken": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG/PNG original image, \u003C=10 MiB. File header and extension must agree. Name comes from the file part."
+                  },
+                  "preview": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Optional JPEG/PNG thumbnail \u003C=1 MiB. If omitted, the original bytes are stored as Content2 for native ERP compatibility."
+                  },
+                  "slotId": {
+                    "type": "integer",
+                    "enum": [
+                      2,
+                      4,
+                      6
+                    ]
+                  }
+                },
+                "required": [
+                  "idempotencyKey",
+                  "branchId",
+                  "documentId",
+                  "expectedStateToken",
+                  "file",
+                  "slotId"
+                ]
+              }
+            }
+          }
+        }
       }
     },
     "/api/erp/inbound-warehouse/attachments": {

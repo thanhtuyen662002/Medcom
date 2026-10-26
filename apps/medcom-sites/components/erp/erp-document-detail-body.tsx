@@ -8,12 +8,14 @@ import { UntitledBottomSheet } from "@/components/untitledui/bottom-sheet";
 import { UntitledButton } from "@/components/untitledui/button";
 import { QrCamera } from "@/lib/erp/qr-camera";
 import { SalesCommandSession } from "@/lib/erp/sales-order-workflow";
+import { attachmentModules, type AttachmentModule } from "@/lib/erp/proxy-policy";
 import { getDocumentDetailEntry, type DocumentDetailBodyProps } from "@/lib/erp/document-detail/registry";
 import { DocumentDetailView } from "./document-detail/document-detail-view";
 import { detailStatus } from "@/lib/erp/document-detail/status";
 import { ErpLineEditor } from "./erp-line-editor";
 import { ErpFieldLineEditor } from "./erp-field-line-editor";
 import { SalesOrderActionDialog } from "./sales-order-action-dialog";
+import { InboundPhotoPanel } from "./inbound-photo-panel";
 import { editableDetailConfig } from "@/lib/erp/document-detail/controllers/erp-detail-model";
 import type { DetailAction, DocumentDetailHandlers, DocumentDetailModel } from "@/lib/erp/document-detail/model";
 import { WRITE_GATED_MODULES, MENU_ACTION_IDS, DIALOG_ACTION_MODULES, SAVE_HEADER_BY_MODULE, editableHeaderKeys, requiredEditKeys, editLookupId, saveLineKeys, editValue, lockBadgeState, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
@@ -22,6 +24,9 @@ import { WRITE_GATED_MODULES, MENU_ACTION_IDS, DIALOG_ACTION_MODULES, SAVE_HEADE
 function editCommandKey(prefix: "save" | "del") {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
 }
+
+const isInboundPhotoModule = (module: string): module is AttachmentModule =>
+  (attachmentModules as readonly string[]).includes(module) && module.startsWith("inbound-");
 
 export function ErpDocumentDetailBody({ module, branchId: currentBranch, documentId: selectedDocId,
   onClose, onChanged, onCloseGuardChange, onOpenGuardChange, onEditPurchaseRequest, onDeleted, reloadVersion,
@@ -774,6 +779,10 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
                 patchEditLine={patchEditLine} columns={config.lines.columns} />
             : <ErpFieldLineEditor module={module} detail={detail} editLines={editLines}
                 patchEditLine={patchEditLine} columns={config.lines.columns} /> : undefined,
+        attachments: detail && isInboundPhotoModule(module) ? (
+          <InboundPhotoPanel module={module} branchId={currentBranch} documentId={detail.documentId}
+            onUploaded={() => handleOpenDetail(detail.documentId)} />
+        ) : undefined,
         "qr-scan": isQrModule && detail ? (
 <div className="p-4 rounded-2xl bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/40 space-y-3">
                     <div className="flex items-center justify-between">

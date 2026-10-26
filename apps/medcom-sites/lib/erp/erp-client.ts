@@ -27,7 +27,8 @@ import {
   type PurchaseReadback,
   type PurchasePage,
 } from "./purchase-request-api";
-import { type ErpScreenModule } from "./proxy-policy";
+import { type AttachmentModule, type ErpScreenModule } from "./proxy-policy";
+import type { SalesOrderAttachmentUpload } from "./sales-order-attachments";
 import {
   getErpScreen,
   getErpList,
@@ -49,6 +50,8 @@ import {
   selectErpDraft,
   validateErpPaste,
   lookupErpCommand,
+  getSalesOrderAttachments,
+  uploadSalesOrderAttachment,
 } from "./erp-screen-api";
 import {
   getNotificationsList,
@@ -372,6 +375,14 @@ export class ErpClientService {
     }
   ) {
     return await getErpOptions(module, query);
+  }
+
+  public async getAttachments(module: AttachmentModule, branchId: string, documentId: string, pageSize = 20, signal?: AbortSignal) {
+    return await getSalesOrderAttachments(branchId, documentId, 1, signal, module, pageSize);
+  }
+
+  public async uploadAttachment(request: SalesOrderAttachmentUpload, signal?: AbortSignal) {
+    return await uploadSalesOrderAttachment(request, signal);
   }
 
   public async getPmOptions(

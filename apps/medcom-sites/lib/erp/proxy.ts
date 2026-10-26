@@ -1,12 +1,12 @@
-import {resolveErpOrigins,erpCookies,relayCookie,routeAllowed,purchaseCommandRoute,inboundRoute,inboundCommandRoute,erpScreenRoute,erpScreenPostRoute,notificationRoute,notificationReadRoute,requestBodyLimit,salesOrderAttachmentUploadRoute} from "./proxy-policy";
+import {resolveErpOrigins,erpCookies,relayCookie,routeAllowed,purchaseCommandRoute,inboundRoute,inboundCommandRoute,erpScreenRoute,erpScreenPostRoute,notificationRoute,notificationReadRoute,requestBodyLimit,attachmentUploadRoute,attachmentContentRoute} from "./proxy-policy";
 const problem=(status:number,code:string)=>Response.json({code},{status,headers:{"Cache-Control":"no-store"}});
 export async function proxyErpRequest(request:Request,path:string[],configuredOrigin:string|undefined,configuredPublicOrigin:string|undefined,upstreamFetch:typeof fetch=fetch,localHttpsMode?:string){
  const route=path.join("/");
  if(!routeAllowed(route,request.method))return problem(404,"endpoint_unavailable");
  const inbound=inboundRoute(route),inboundCommand=request.method==="POST"&&inboundCommandRoute(route);
  const erpScreen=erpScreenRoute(route),erpScreenPost=request.method==="POST"&&erpScreenPostRoute(route);
- const attachmentUpload=request.method==="POST"&&salesOrderAttachmentUploadRoute(route);
- const attachmentContent=route==="api/erp/sales-orders/attachments/content";
+ const attachmentUpload=request.method==="POST"&&attachmentUploadRoute(route);
+ const attachmentContent=attachmentContentRoute(route);
  const notification=notificationRoute(route),notificationRead=request.method==="POST"&&notificationReadRoute(route);
  // A decoded slash must not turn one catchall segment into an admitted route.
  if((inbound||erpScreen||notification)&&path.some(segment=>segment.includes("/")))return problem(404,"endpoint_unavailable");
