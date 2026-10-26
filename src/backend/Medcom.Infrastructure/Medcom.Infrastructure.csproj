@@ -4,5 +4,7 @@
     <ProjectReference Include="../Medcom.Contracts/Medcom.Contracts.csproj" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.3" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
+    <EmbeddedResource Include="Erp/ErpConfigSnapshot.sql" LogicalName="Medcom.ErpConfigSnapshot.sql" />
+    <EmbeddedResource Include="../../../inventories/erp/20261026/erp-config-baseline.json" LogicalName="Medcom.ErpConfigBaseline" />
   </ItemGroup>
 </Project>

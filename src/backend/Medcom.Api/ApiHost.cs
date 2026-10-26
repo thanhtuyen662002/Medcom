@@ -114,6 +114,8 @@ public static class ApiHost
             builder.Services.AddSingleton<LegacyReadiness>();
             builder.Services.AddSingleton<IPlatformReadiness>(provider=>provider.GetRequiredService<LegacyReadiness>());
             builder.Services.AddHostedService<LegacyHealthMonitor>();
+            builder.Services.AddSingleton<Medcom.Infrastructure.Erp.ErpConfigDriftCheck>();
+            builder.Services.AddHostedService<ErpConfigDriftMonitor>();
             builder.Services.AddSingleton<IIdentityAuthority, LegacyIdentityAuthority>();
             if (erpWrites is not null)
             {
@@ -376,6 +378,12 @@ public static class ApiHost
             AuthEndpoints.Current(context).Identity.Capabilities.Contains("platform.status", StringComparer.Ordinal)
             ? Results.Ok(new { contractVersion = 1, status = AuthEndpoints.Current(context).Identity.CredentialStamp is null ? "foundation_only" : "read_only_adapter" })
             : Results.Problem(statusCode: 403, title: "Access denied."));
+        // Details of the ERP configuration drift check (names only, never SQL text).
+        app.MapGet("/api/platform/erp-config-drift", (HttpContext context) =>
+            !AuthEndpoints.Current(context).Identity.Capabilities.Contains("platform.status", StringComparer.Ordinal)
+                ? Results.Problem(statusCode: 403, title: "Access denied.")
+                : Results.Ok(context.RequestServices.GetService<Medcom.Infrastructure.Erp.ErpConfigDriftCheck>()?.Latest
+                    ?? new Medcom.Contracts.ErpConfigDriftReport("unavailable", null, Medcom.Infrastructure.Erp.ErpConfigDriftCheck.Baseline, 0, 0, [])));
         AuthEndpoints.Map(app);
         var data=app.MapGroup("").AddEndpointFilter<CanonicalResponseFilter>().AddEndpointFilter<FeDisplayFilter>();
         DocumentEndpoints.Map(data);

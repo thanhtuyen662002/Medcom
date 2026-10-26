@@ -145,6 +145,7 @@ internal static class ApiContractCatalog
         Add("post","/api/notifications/{id}/read","notificationSetRead",Shape(typeof(ErpScopedResponse<NotificationRow>)),"current-erp-recipient-native-mark-read",request:typeof(NotificationReadRequest),parameters:(JsonArray)notificationId.DeepClone());
         Add("get", "/api/platform/metadata", "platformMetadata", Object(("contractVersion", new() { ["type"] = "integer", ["const"] = 1 }),
             ("status", new() { ["type"] = "string", ["enum"] = Array(["foundation_only", "read_only_adapter"]) })), "identity-observation", "platform.status");
+        Add("get", "/api/platform/erp-config-drift", "platformErpConfigDrift", Shape(typeof(ErpConfigDriftReport)), "erp-configuration-observation", "platform.status");
         Add("get", "/api/auth/csrf", "authCsrf", Object(("token", new() { ["type"] = Array(["string", "null"]) })), "antiforgery-bootstrap", anonymous: true);
         Add("post", "/api/auth/login", "authLogin", Shape(typeof(SessionView)), "legacy-identity-provider-required", anonymous: true, request: typeof(LoginRequest));
         Add("get", "/api/auth/session", "authSession", Shape(typeof(SessionView)), "authenticated-session");
