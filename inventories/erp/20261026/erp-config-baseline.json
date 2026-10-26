@@ -209,6 +209,41 @@
   },
   {
    "category": "control",
+   "key": "IV_CargoHandlingPlanApprovalFrm|AttachWebcamImageControlCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_CargoHandlingPlanApprovalFrm|AttachWebcamImageControlCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_CargoHandlingPlanApprovalFrm|AttachWebcamImageControlCtl_2",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_CargoHandlingPlanApprovalFrm|AttachWebcamImageControlCtl_3",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_CargoHandlingPlanApprovalFrm|ExecSQLWithParaButtonCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_CargoHandlingPlanApprovalFrm|ExecSQLWithParaButtonCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_CargoHandlingPlanApprovalFrm|StatusButtonCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
    "key": "IV_GoodsInfoControlFrm|AttachWebcamImageControlCtl",
    "hash": null
   },
@@ -1316,6 +1351,101 @@
    "category": "form",
    "key": "FA_Repair2026Frm|DMK||",
    "hash": "BE2BB221B0FA337B11086B1141CCF85F1B919C5CD2EB1E7B5D311BE4674FA314"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|HBA||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|HBC||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|HBD||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|HBE||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|HBP||",
+   "hash": "E79E418E48623569D75E2A7B09AE88ED9B77B126A445B9FF9DC6989A08EFA079"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl_1|22",
+   "hash": "A994CDB2345F598D5FB3242D18C3F14393C6D7F7C84C5981FA26EF621D3EE1DA"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl_1|BT",
+   "hash": "537664DB2C7A2367499B326187040377BDC3DB7A98EEA9D6C20B3621FD5741EC"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl_1|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl_1|C4",
+   "hash": "806FA1C5028B7D1CF8818294535C1FD361204ACC6F1106910F2CC1D6E4986EB1"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl_1|CS4",
+   "hash": "547F6B96B5654CCB496B2987A7A631761CE46B48E288478439ED1E536F35BEFA"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl_1|LBEX",
+   "hash": "05755DD3569138D9B62BED6C2EBE5AFD9F220CD1A40A8AC5453A932F4E40F0DB"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl|22",
+   "hash": "8A1B269CB3742D2B64001A860186135763FBB30D0DE77D8B0213CD7A103ADC9E"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl|BT",
+   "hash": "997F49065EECD4B2BE0E716897FDE6A8348373A9F654B4564092E2ADB73D1D82"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl|C1",
+   "hash": "C4019A7E2F3E6D46809D2BE1D29812CF595AAB23579935B7F49C2827AF037C66"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl|C2",
+   "hash": "62D57B9285A1DA882C72BAB5AE9F468016B81D8C842A17A186A0568D0BC43F70"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl|C4",
+   "hash": "9A43C1AA5C6A73296FD81032F56F9794F1B77D603364CC43767002A8383169CE"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl|CS4",
+   "hash": "547F6B96B5654CCB496B2987A7A631761CE46B48E288478439ED1E536F35BEFA"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl|LBEX",
+   "hash": "05755DD3569138D9B62BED6C2EBE5AFD9F220CD1A40A8AC5453A932F4E40F0DB"
+  },
+  {
+   "category": "form",
+   "key": "IV_CargoHandlingPlanApprovalFrm|LYS1|ExecSQLWithParaButtonCtl|P1",
+   "hash": "AE18B98EA59BDB615A1327F2F7832A4C163A8FF5577292D51D6D6AE3353241AA"
   },
   {
    "category": "form",

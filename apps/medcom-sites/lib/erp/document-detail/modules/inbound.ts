@@ -257,3 +257,11 @@ export const inboundPmDetailConfig = {
   title: "Kiểm soát và xác nhận chất lượng hàng hóa",
   closeLabel: "Đóng kiểm soát và xác nhận chất lượng hàng hóa",
 } as const satisfies DocumentDetailConfig;
+
+// BLĐ (IV_CargoHandlingPlanApprovalFrm): same groups, read-only (HBE), status 10 only.
+export const inboundBldDetailConfig = {
+  ...inboundStepLayout,
+  modules: ["inbound-bld"],
+  title: "Phê duyệt phương án hàng hóa",
+  closeLabel: "Đóng phê duyệt phương án hàng hóa",
+} as const satisfies DocumentDetailConfig;

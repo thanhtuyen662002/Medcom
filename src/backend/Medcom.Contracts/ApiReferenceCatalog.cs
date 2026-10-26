@@ -18,7 +18,7 @@ public static class ApiReferenceCatalog
         :Aliases.GetValueOrDefault(field);
     private static string StatusModule(string module)=>module switch
     {"purchase-approvals"=>"purchase-requests","sales-order-pm" or "sales-order-sa"=>"sales-orders",
-     "internal-transfer-pm"=>"internal-transfer-requests","inbound-warehouse" or "inbound-sa" or "inbound-tech" or "inbound-pm"=>"inbound-requests",
+     "internal-transfer-pm"=>"internal-transfer-requests","inbound-warehouse" or "inbound-sa" or "inbound-tech" or "inbound-pm" or "inbound-bld"=>"inbound-requests",
      "internal-transfer-batches" or "internal-transfer-tech" or "internal-transfer-sa" or "internal-transfer-accounting"
        or "internal-transfer-warehouse-out" or "internal-transfer-warehouse-in"=>"internal-transfer-batches",_=>module};
     private static IReadOnlyList<ReferenceBinding> Load()

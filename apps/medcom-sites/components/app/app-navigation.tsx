@@ -31,6 +31,7 @@ export const navigationSections: readonly NavigationSection[] = [
     { id: "inbound-sa", label: "TP SA kiểm soát hàng về", icon: ClipboardList },
     { id: "inbound-tech", label: "Kỹ thuật xác nhận hàng về", icon: Wrench },
     { id: "inbound-pm", label: "PM xác nhận chất lượng hàng về", icon: UserCheck },
+    { id: "inbound-bld", label: "BLĐ phê duyệt phương án hàng", icon: CheckCircle2 },
   ] },
   { title: "Điều chuyển nội bộ", items: [
     { id: "internal-transfer-requests", label: "Đề nghị điều chuyển", icon: ArrowRightLeft },
@@ -102,7 +103,7 @@ export function NavigationList({ activeTab, onSelect, tabAccess, onRetryTabs, ba
   };
 
   return <div className="flex min-h-0 flex-1 flex-col">
-    <div className="shrink-0 px-3 pb-3 pt-3">
+    <div className="shrink-0 px-3 pb-2 pt-2">
       <label htmlFor={searchId} className="sr-only">Tìm phân hệ</label>
       <div className="relative">
         <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-3 size-5 text-neutral-400" />

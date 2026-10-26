@@ -46,6 +46,8 @@ public static class ErpWorkflowInputs
         ("inbound-tech","lines") => typeof(ErpInboundTechLinesInput),
         ("inbound-pm","header") => typeof(ErpInboundPmHeaderInput),
         ("inbound-pm","lines") => typeof(ErpInboundPmLinesInput),
+        ("inbound-bld","header") => typeof(ErpInboundBldHeaderInput),
+        ("inbound-bld","lines") => typeof(ErpInboundBldLinesInput),
         _ => null
     };
 }
@@ -543,5 +545,15 @@ public sealed record ErpInboundPmHeaderInput
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ErpInboundPmLinesInput
+{
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundBldHeaderInput
+{
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundBldLinesInput
 {
 }

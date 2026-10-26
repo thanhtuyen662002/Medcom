@@ -11,6 +11,8 @@ interface BranchSwitcherProps {
   currentBranch: string;
   onBranchChange: (branchId: string) => void;
   compact?: boolean;
+  /** Fill the container (desktop sidebar) instead of the header's capped width. */
+  fullWidth?: boolean;
 }
 
 /** Header copy sits beside the MEDCOMTECH logo, so the company prefix is dropped there. */
@@ -19,14 +21,14 @@ export function shortBranchName(name: string): string {
   return short ? short.charAt(0).toLocaleUpperCase("vi") + short.slice(1) : name;
 }
 
-export function BranchSwitcher({ branches, currentBranch, onBranchChange, compact = false }: BranchSwitcherProps) {
+export function BranchSwitcher({ branches, currentBranch, onBranchChange, compact = false, fullWidth = false }: BranchSwitcherProps) {
   const [open, setOpen] = useState(false);
   const active = branches.find(branch => branch.id === currentBranch);
   const label = active?.name || (currentBranch ? `Chi nhánh ${currentBranch}` : "Chưa có chi nhánh");
   const shown = active?.name ? shortBranchName(active.name) : label;
   return <Popover open={open} onOpenChange={setOpen}>
     <PopoverTrigger asChild><AppButton variant="ghost" aria-label={`Chọn chi nhánh: ${label}`} title={label} disabled={branches.length === 0}
-      className={compact ? "min-w-0 flex-1 justify-start gap-1.5 px-1 text-left" : "min-w-0 max-w-64 justify-start border border-neutral-200 px-3 dark:border-neutral-700"}>
+      className={compact ? "min-w-0 flex-1 justify-start gap-1.5 px-1 text-left" : `min-w-0 ${fullWidth ? "w-full" : "max-w-64"} justify-start border border-neutral-200 px-3 dark:border-neutral-700`}>
       {!compact && <Building2 aria-hidden="true" className="size-5 shrink-0 text-brand-600 dark:text-brand-400" />}
       <span className="min-w-0 flex-1">
         {compact && <span className="block truncate text-xs font-medium text-neutral-500 dark:text-neutral-400">Chi nhánh</span>}

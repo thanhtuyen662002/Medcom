@@ -16,6 +16,7 @@ public sealed partial class SqlErpScreenCommands
             ("inbound-warehouse","send-sa")=>4,("inbound-warehouse","reject")=>1,
             ("inbound-sa","send-tech")=>8,("inbound-sa","send-pm")=>6,("inbound-sa","reject")=>3,
             ("inbound-tech","send-pm")=>6,("inbound-tech","reject")=>5,("inbound-pm","send-accounting")=>13,
+            ("inbound-bld","approve")=>13,("inbound-bld","reject")=>12,
             ("purchase-approvals","approve")=>3,("purchase-approvals","reject")=>4,
             ("sales-order-pm","send-sa")=>14,("sales-order-pm","reject")=>11,
             ("sales-order-sa","send-accounting")=>18,("sales-order-sa","send-tech")=>16,("sales-order-sa","reject")=>13,
@@ -204,6 +205,7 @@ public sealed partial class SqlErpScreenCommands
         ("inbound-sa","reject")=>"SA_RETURN",("inbound-sa","send-pm")=>"SA_SENDPM",("inbound-sa","send-tech")=>"SA_SENDTECH",("inbound-sa","return-step")=>"SA_RETURNTO",
         ("inbound-tech","reject")=>"TECH_RETURN",("inbound-tech","send-pm")=>"TECH_SENDPM",("inbound-tech","return-step")=>"TECH_RETURNTO",
         ("inbound-pm","reject")=>"PM_RETURN",("inbound-pm","send-accounting")=>"PM_SENDACCOUNT",("inbound-pm","return-step")=>"PM_RETURNTO",
+        ("inbound-bld","approve")=>"BLD_APPROVE",("inbound-bld","reject")=>"BLD_CANCEL",
         _=>throw new Stop(ErpCommandOutcome.InvalidInput,"invalid_action")
     };
     // LYS1 property 26 of each "Chọn bước gửi về" button.
