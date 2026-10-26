@@ -36,8 +36,10 @@ jobs:
   backend-windows:
     runs-on: windows-latest
     # Full backend tests plus the inspector/package gates exceeded the former
-    # 20-minute job budget on run 38197496469. Keep every gate and allow completion.
-    timeout-minutes: 30
+    # 20-minute job budget on run 38197496469, then the 30-minute one on run
+    # 40263372118 once a 20th ERP screen was added (test step alone > 28 min).
+    # Keep every gate and allow completion.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:

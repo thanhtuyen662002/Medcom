@@ -6,9 +6,11 @@ export const ROLE_QUEUE_PAGE_SIZE = 100;
 /**
  * ERP statuses that wait on the role a screen serves ("Chờ tôi xử lý").
  * "Yêu cầu X xem lại" / "X trả lại" are X's turn. Agreed with the owner 2026-10-24.
- * Sources: IV_InternalTransferRequestStatusTbl, IV_InternalTransferBatchStatusTbl, AR_OrderStatusTbl.
+ * Sources: IV_InternalTransferRequestStatusTbl, IV_InternalTransferBatchStatusTbl, AR_OrderStatusTbl,
+ * IV_InboundRequestStatusTbl.
  */
 export const ROLE_QUEUE_STATUSES: Partial<Record<ErpScreenModule, readonly number[]>> = {
+  "inbound-warehouse": [2, 3], // Đã gửi thủ kho, Yêu cầu thủ kho xem lại
   "internal-transfer-requests": [0, 30], // Nháp, PM yêu cầu NVKD chỉnh sửa
   "internal-transfer-pm": [10], // Đã gửi PM
   "internal-transfer-batches": [0, 10, 25, 45], // Đang lập đợt, Yêu cầu PM xem lại, Kỹ thuật / TP SA trả lại PM

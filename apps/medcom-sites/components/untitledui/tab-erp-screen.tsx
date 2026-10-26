@@ -73,6 +73,8 @@ function getModuleTitle(mod: ErpScreenModule): string {
       return "Đề nghị mua hàng (PO)";
     case "inbound-requests":
       return "Đề nghị nhập kho";
+    case "inbound-warehouse":
+      return "Thủ kho xác nhận hàng về";
     case "purchase-approvals":
       return "Duyệt đề nghị mua hàng";
     case "sales-order-pm":

@@ -15,6 +15,7 @@ INSERT @forms VALUES
   (N'FA_Move2026Frm'),
   (N'FA_Repair2026Frm'),
   (N'IV_InboundRequestFrm'),
+  (N'IV_IncomingShipmentStatusFrm'),
   (N'IV_InternalTransferAccountingFrm'),
   (N'IV_InternalTransferBatchFrm'),
   (N'IV_InternalTransferPMFrm'),

@@ -12,9 +12,10 @@ import { getDocumentDetailEntry, type DocumentDetailBodyProps } from "@/lib/erp/
 import { DocumentDetailView } from "./document-detail/document-detail-view";
 import { detailStatus } from "@/lib/erp/document-detail/status";
 import { ErpLineEditor } from "./erp-line-editor";
+import { ErpFieldLineEditor } from "./erp-field-line-editor";
 import { editableDetailConfig } from "@/lib/erp/document-detail/controllers/erp-detail-model";
 import type { DetailAction, DocumentDetailHandlers, DocumentDetailModel } from "@/lib/erp/document-detail/model";
-import { WRITE_GATED_MODULES, MENU_ACTION_IDS, SAVE_HEADER_BY_MODULE, editableHeaderKeys, requiredEditKeys, editLookupId, saveLineKeys, lockBadgeState, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
+import { WRITE_GATED_MODULES, MENU_ACTION_IDS, SAVE_HEADER_BY_MODULE, editableHeaderKeys, requiredEditKeys, editLookupId, saveLineKeys, editValue, lockBadgeState, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
 
 // Event-only key generation, with the same clock/random evaluation as the original handlers.
 function editCommandKey(prefix: "save" | "del") {
@@ -262,8 +263,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
       for (const k of keys) {
         const v = (editHeader[k] ?? "").trim();
         if (k === "purposeId") edited[k] = v ? Number(v) : null;
-        else
-          edited[k] = k.toLowerCase().includes("date") ? (v ? `${v}T00:00:00.000` : null) : v ? v : null;
+        else edited[k] = editValue(k, v);
       }
       const base = (detail.header || {}) as Record<string, unknown>;
       const allow = SAVE_HEADER_BY_MODULE[module];
@@ -303,7 +303,8 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
           const itemId = (draft.itemId ?? "").trim();
           const qty = (draft.quantity ?? "").trim();
           const priceVal = (draft.unitPrice ?? "").trim();
-          if (!itemId || !/^\d+(\.\d+)?$/.test(qty) || !/^\d+(\.\d+)?$/.test(priceVal)) {
+          // Item/quantity/price rules apply to editors that change those; recorded-value editors skip them.
+          if (lineKeys.includes("quantity") && (!itemId || !/^\d+(\.\d+)?$/.test(qty) || !/^\d+(\.\d+)?$/.test(priceVal))) {
             setActionFeedback({
               type: "warning",
               message: "Mỗi dòng cần Mã hàng, Số lượng và Đơn giá hợp lệ.",
@@ -316,7 +317,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
           for (const k of lineKeys) {
             const cur = f[k] == null ? "" : String(f[k]).trim();
             const next = (draft[k] ?? "").trim();
-            values[k] = next ? next : null;
+            values[k] = editValue(k, next);
             if (next !== cur) changed = true;
           }
           if (changed) lineChanges.push({ kind: "Update", lineId: row.lineId, values });
@@ -742,8 +743,11 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
       onMenuOpenChange={open => { setMenuOpen(open); setDeleteArmed(false); }}
       slots={{
         "lines-editor": detail && editing && saveLineKeys(module).length > 0
-          ? <ErpLineEditor module={module} detail={detail} editLines={editLines}
-              patchEditLine={patchEditLine} columns={config.lines.columns} /> : undefined,
+          ? saveLineKeys(module).includes("quantity")
+            ? <ErpLineEditor module={module} detail={detail} editLines={editLines}
+                patchEditLine={patchEditLine} columns={config.lines.columns} />
+            : <ErpFieldLineEditor module={module} detail={detail} editLines={editLines}
+                patchEditLine={patchEditLine} columns={config.lines.columns} /> : undefined,
         "qr-scan": isQrModule && detail ? (
 <div className="p-4 rounded-2xl bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/40 space-y-3">
                     <div className="flex items-center justify-between">

@@ -46,6 +46,8 @@ export const ERP_LIST_COLUMNS: Record<ErpScreenModule, readonly ErpListColumn[]>
   "purchase-orders": [document, date, { id: "object", label: "Nhà cung cấp", keys: ["objectName"] }, status, creator, notes],
   "inbound-requests": [document, date, { id: "object", label: "Đối tượng / Mục đích", keys: ["objectName"] },
     { id: "order", label: "Đơn đặt hàng", keys: ["orderNumber"] }, status, { ...notes, keys: ["notes"] }],
+  "inbound-warehouse": [document, date, { id: "object", label: "Nhà cung cấp", keys: ["objectName"] },
+    { id: "order", label: "Đơn đặt hàng", keys: ["orderNumber"] }, status, { ...notes, keys: ["notes"] }],
   "sales-orders": sales,
   "sales-order-pm": sales,
   "sales-order-sa": sales,

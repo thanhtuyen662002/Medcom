@@ -13,6 +13,7 @@ public sealed partial class SqlErpScreenCommands
         var expected=(request.Module,request.Operation) switch
         {
             ("inbound-requests","send-management")=>10,("inbound-requests","send-warehouse")=>2,
+            ("inbound-warehouse","send-sa")=>4,("inbound-warehouse","reject")=>1,
             ("purchase-approvals","approve")=>3,("purchase-approvals","reject")=>4,
             ("sales-order-pm","send-sa")=>14,("sales-order-pm","reject")=>11,
             ("sales-order-sa","send-accounting")=>18,("sales-order-sa","send-tech")=>16,("sales-order-sa","reject")=>13,
@@ -143,7 +144,7 @@ public sealed partial class SqlErpScreenCommands
         ErpFrozenCommand request,string document,CancellationToken token)
     {
         var notes=Text(request.Payload,"notes");var operation=request.Operation;
-        if(plan.Module=="inbound-requests")
+        if(plan.Module is "inbound-requests" or "inbound-warehouse")
         {
             await InboundSend(transaction,actor,operation,document,notes,token);return;
         }
@@ -186,8 +187,15 @@ public sealed partial class SqlErpScreenCommands
     // warehouse, concurrency lock, status move and history row.
     internal static Task InboundSend(DbTransaction transaction,AuthoritativeIdentity actor,string operation,string document,string? notes,CancellationToken token)
         =>Procedure(transaction,"IV_InboundRequest_ChangeWorkflowStatusStp",[("@DocumentID",DbType.AnsiString,document,50),
-            ("@User",DbType.AnsiString,actor.PrincipalId,100),("@Action",DbType.AnsiString,operation=="send-management"?"TM_SENDBLD":"TM_SENDWH",30),
+            ("@User",DbType.AnsiString,actor.PrincipalId,100),("@Action",DbType.AnsiString,InboundAction(operation),30),
             ("@TargetStatus",DbType.Int32,null,0),("@SendTo",DbType.String,null,-1),("@Notes",DbType.String,notes,-1)],token);
+    // @Action codes of IV_InboundRequest_ChangeWorkflowStatusStp per Web operation (SY_FrmCfg LYS1 C4).
+    internal static string InboundAction(string operation)=>operation switch
+    {
+        "send-management"=>"TM_SENDBLD","send-warehouse"=>"TM_SENDWH",
+        "send-sa"=>"WH_SENDSA","reject"=>"WH_RETURN",
+        _=>throw new Stop(ErpCommandOutcome.InvalidInput,"invalid_action")
+    };
     // ERP's Duyệt / Không duyệt buttons: screen permission, reason required to reject, no PO yet.
     internal static Task PurchaseDecision(DbTransaction transaction,AuthoritativeIdentity actor,string operation,string document,string? notes,CancellationToken token)
         =>Procedure(transaction,"AP_PurchaseRequest_ApproveOrRejectStp",[("@PurchaseRequestID",DbType.String,document,50),

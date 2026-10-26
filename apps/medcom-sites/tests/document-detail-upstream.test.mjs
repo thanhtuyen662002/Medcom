@@ -12,7 +12,7 @@ await mkdir(output, { recursive: true });
 const leaves = {
   'erp-client': `export const erpClient={getErpModuleDetail:(...args)=>globalThis.qaUpstreamDetail(...args)};`,
   'record-dialog': `export const RecordDetailHeading=({children})=><header>{children}</header>;export const RecordDetailStatus=({children})=><div data-status="header">{children}</div>;export const RecordActionBar=({children,presentationAllowed})=>presentationAllowed?<footer>{children}</footer>:null;`,
-  'request-presentation': `import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton='button';export const RequestInput='input';export const RequestTextarea='textarea';export const requestStyles={actions:''};`,
+  'request-presentation': `import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton='button';export const RequestInput='input';export const RequestTextarea='textarea';export const RequestSelect='select';export const requestStyles={actions:''};`,
   'bottom-sheet': `export const UntitledBottomSheet=({open,children})=>open?<section>{children}</section>:null;`,
   'sales-order-attachment-list': `export const SalesOrderAttachmentList=()=>null;`,
   'sales-order-action-dialog': `export const SalesOrderActionDialog=()=>null;`,

@@ -15,7 +15,7 @@ const leaves = {
   'button': `export const UntitledButton=({children,iconLeading,iconTrailing,variant,size,...props})=><button {...props}>{children}</button>;`,
   'lookup-field': `export const LookupField=props=><div data-lookup={props.lookupId} {...props}/>;`,
   'record-dialog': `export const RecordDetailHeading=({children,title,documentNumber})=><header>{title}{documentNumber}{children}</header>;export const RecordDetailStatus=({children})=><div data-status="header">{children}</div>;export const RecordActionBar=({children,presentationAllowed})=>presentationAllowed?<footer>{children}</footer>:null;`,
-  'request-presentation': `import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton='button';export const RequestInput='input';export const RequestTextarea='textarea';export const requestStyles={actions:''};`,
+  'request-presentation': `import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton='button';export const RequestInput='input';export const RequestTextarea='textarea';export const RequestSelect='select';export const requestStyles={actions:''};`,
   'sales-order-form': `export const SalesOrderForm=()=>null;`,
   'qr-camera': `export class QrCamera{start(){}stop(){}}`,
 };

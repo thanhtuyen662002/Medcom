@@ -23,7 +23,7 @@ public static class ErpWorkflowRules
         if(operation=="delete")return state.Module=="inbound-requests"&&!state.IsLocked
             ||state.Module=="internal-transfer-batches"&&state.StatusId==0&&state.LineCount==0;
         if(operation=="save"||operation.StartsWith("save-",StringComparison.Ordinal))
-            return row.GetProperty("directEditing").GetBoolean()&&(state.Module!="inbound-requests"||!state.IsLocked);
+            return row.GetProperty("directEditing").GetBoolean()&&(state.Module is not ("inbound-requests" or "inbound-warehouse")||!state.IsLocked);
         return row.GetProperty("buttons").EnumerateArray().Any(b=>b.GetProperty("operation").GetString()==operation);
     }
     public static string? PayloadType(string module,string operation)=>ErpScreenCatalog.IsWorkflow(module)

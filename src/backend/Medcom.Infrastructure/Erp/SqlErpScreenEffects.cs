@@ -197,7 +197,7 @@ public sealed partial class SqlErpScreenCommands
             Require(ErpInputRules.Value(field,json),ErpCommandOutcome.InvalidInput,"calculated_value_requires_rounding");row[name]=json;
         }
         if(plan.Module=="purchase-requests")Decimal("totalPrice",Number("quantity")*Number("unitPrice"));
-        if(plan.Module=="inbound-requests")foreach(var native in new[]{"ItemCode","HangSX","UnitFactor"})
+        if(plan.Module is "inbound-requests" or "inbound-warehouse")foreach(var native in new[]{"ItemCode","HangSX","UnitFactor"})
         {
             var name=NativeJsonName(native);
             if(plan.Screen.Fields["lines"].Any(f=>f.Column==native&&!f.Writable)&&source.TryGetValue(native,out var value))Set(name,value);

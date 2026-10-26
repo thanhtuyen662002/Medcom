@@ -7,7 +7,7 @@ import type { DocumentDetailHandlers, DocumentDetailModel } from "@/lib/erp/docu
 import type { DetailFieldConfig, DetailGroupConfig, ErpScreenModule } from "@/lib/erp/document-detail/types";
 import { LookupField } from "@/components/untitledui/lookup-field";
 import { MoneyInput } from "../money-input";
-import { RequestInput, RequestTextarea } from "../request-presentation";
+import { RequestInput, RequestSelect, RequestTextarea } from "../request-presentation";
 import { DetailSection, detailStyles } from "./presentation";
 
 function fieldValue(field: DetailFieldConfig, header: Record<string, unknown>): unknown {
@@ -62,7 +62,10 @@ function FieldEditor({ field, model, module, onChange, onLookupSelect, onLookupM
   const common = { id, value, required: edit.required, maxLength: edit.maxLength, disabled };
   return <div className={detailStyles.field}>
     <label htmlFor={id}>{field.label}{edit.required ? " *" : ""}</label>
-    {edit.input === "textarea" ? <RequestTextarea {...common} rows={3} onChange={event => change(event.target.value)} />
+    {edit.input === "boolean" ? <RequestSelect id={id} value={value} disabled={disabled} onChange={event => change(event.target.value)}>
+        <option value="">—</option><option value="true">Có</option><option value="false">Không</option>
+      </RequestSelect>
+      : edit.input === "textarea" ? <RequestTextarea {...common} rows={3} onChange={event => change(event.target.value)} />
       : edit.input === "money" ? <MoneyInput {...common} onValueChange={change} />
       : <RequestInput {...common} type={edit.input === "date" ? "date" : "text"} onChange={event => change(event.target.value)} />}
   </div>;

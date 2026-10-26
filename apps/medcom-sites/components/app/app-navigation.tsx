@@ -27,6 +27,7 @@ export const navigationSections: readonly NavigationSection[] = [
   ] },
   { title: "Quản lý kho", items: [
     { id: "inbound-requests", label: "Đề nghị nhập hàng", icon: PackagePlus },
+    { id: "inbound-warehouse", label: "Thủ kho xác nhận hàng về", icon: PackageCheck },
   ] },
   { title: "Điều chuyển nội bộ", items: [
     { id: "internal-transfer-requests", label: "Đề nghị điều chuyển", icon: ArrowRightLeft },

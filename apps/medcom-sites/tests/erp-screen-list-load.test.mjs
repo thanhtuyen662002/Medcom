@@ -43,7 +43,7 @@ export const erpClient={
 };`,
  'bottom-sheet':`export const UntitledBottomSheet=({open,children})=>open?<div data-testid="bottom-sheet">{children}</div>:null;`,
  'record-dialog':`export const RecordDetailStatus=({children})=><div>{children}</div>;export const RecordDetailHeading=({children})=><header>{children}</header>;export const RecordActionBar=({children,presentationAllowed=true})=>presentationAllowed?<footer>{children}</footer>:null;`,
- 'request-presentation':`import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton='button';export const RequestInput='input';export const RequestTextarea='textarea';export const requestStyles={actions:''};`,
+ 'request-presentation':`import React from 'react';export const RecordDetailContext=React.createContext(true);export const RequestButton='button';export const RequestInput='input';export const RequestTextarea='textarea';export const RequestSelect='select';export const requestStyles={actions:''};`,
  'button':`export const UntitledButton=({children,iconLeading,iconTrailing,variant,size,...rest})=><button type="button" {...rest}>{children}</button>;`,
  'lookup-field':`export const LookupField=()=>null; export const fieldText=(v)=>v==null?'':String(v); export const choiceLabel=(c,f)=>c&&c.label?c.label:f;`,
  'document-detail-dialog':`export const DocumentDetailDialog=({open,children})=>open?<div>{children}</div>:null;`,

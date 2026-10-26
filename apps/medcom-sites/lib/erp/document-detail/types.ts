@@ -31,7 +31,7 @@ export interface DetailFieldConfig {
   /** Presence allows editing when the save action permits it. */
   edit?: {
     /** Control used to edit the field. */
-    input: "date" | "text" | "textarea" | "money" | "lookup";
+    input: "date" | "text" | "textarea" | "money" | "lookup" | "boolean";
     /** Lookup identity; required when input is lookup. */
     lookupId?: string;
     /** Lookup parameter names mapped to draft keys, or fixed null values. */
