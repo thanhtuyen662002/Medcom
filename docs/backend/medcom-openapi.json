@@ -451,6 +451,50 @@
         "x-medcom-response-contract": 3
       }
     },
+    "/api/platform/erp-config-drift": {
+      "get": {
+        "operationId": "platformErpConfigDrift",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpConfigDriftReportCanonicalV3_documentId"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-medcom-admission": "erp-configuration-observation",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-capability": "platform.status",
+        "x-medcom-response-contract": 3
+      }
+    },
     "/api/auth/csrf": {
       "get": {
         "operationId": "authCsrf",
@@ -25006,6 +25050,71 @@
         },
         "required": [
           "isView"
+        ]
+      },
+      "ErpConfigDriftReport": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "checkedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "baseline": {
+            "type": "string"
+          },
+          "watched": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unverifiable": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpConfigDriftItem"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "checkedAt",
+          "baseline",
+          "watched",
+          "unverifiable",
+          "changes"
+        ]
+      },
+      "ErpConfigDriftItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "change": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "key",
+          "change"
         ]
       },
       "SessionView": {
@@ -116101,6 +116210,73 @@
           "branchReferenceState"
         ],
         "x-medcom-response-presentation": "reference-names-v1",
+        "x-medcom-response-contract": 3
+      },
+      "ErpConfigDriftReportCanonicalV3_documentId": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "checkedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "baseline": {
+            "type": "string"
+          },
+          "watched": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unverifiable": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpConfigDriftItemCanonicalV3_documentId"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "checkedAt",
+          "baseline",
+          "watched",
+          "unverifiable",
+          "changes"
+        ],
+        "x-medcom-response-contract": 3
+      },
+      "ErpConfigDriftItemCanonicalV3_documentId": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "change": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "key",
+          "change"
+        ],
         "x-medcom-response-contract": 3
       },
       "SessionViewCanonicalV3_documentId": {
