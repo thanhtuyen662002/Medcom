@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ApiError } from "./api";
-import { type ErpScreenModule } from "./proxy-policy";
+import { type AttachmentModule, type ErpScreenModule } from "./proxy-policy";
 import { attachmentPageSchema, attachmentResultSchema, type SalesOrderAttachmentUpload } from "./sales-order-attachments";
 import {
   erpScreenDescriptionSchema,
@@ -217,8 +217,8 @@ async function refreshReadScope(signal?: AbortSignal): Promise<void> {
   throw new ApiError(r.status, "read_scope_changed", r.headers.get("x-correlation-id") ?? undefined);
 }
 
-export async function getSalesOrderAttachments(branchId: string, documentId: string, page = 1, signal?: AbortSignal, module: "sales-orders" | "sales-order-pm" | "sales-order-sa" = "sales-orders") {
-  return erpGet(`api/erp/${module}/attachments`, attachmentPageSchema, { branchId, documentId, page, pageSize: 20 }, signal);
+export async function getSalesOrderAttachments(branchId: string, documentId: string, page = 1, signal?: AbortSignal, module: AttachmentModule = "sales-orders", pageSize = 20) {
+  return erpGet(`api/erp/${module}/attachments`, attachmentPageSchema, { branchId, documentId, page, pageSize }, signal);
 }
 
 export async function uploadSalesOrderAttachment(request: SalesOrderAttachmentUpload, signal?: AbortSignal) {
@@ -228,9 +228,9 @@ export async function uploadSalesOrderAttachment(request: SalesOrderAttachmentUp
     const form = new FormData();
     form.set("idempotencyKey", request.idempotencyKey); form.set("branchId", request.branchId);
     form.set("documentId", request.documentId); form.set("expectedStateToken", request.expectedStateToken);
-    form.set("slotId", "2"); form.set("file", request.file, request.file.name);
+    form.set("slotId", String(request.slotId ?? 2)); form.set("file", request.file, request.file.name);
     // The browser owns the multipart boundary. Never stringify/decode the image bytes.
-    const response = await fetch("/api/erp/api/erp/sales-orders/attachments/upload", {
+    const response = await fetch(`/api/erp/api/erp/${request.module ?? "sales-orders"}/attachments/upload`, {
       method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error", signal,
       headers: { Accept: "application/json", "X-CSRF-TOKEN": csrf, "X-Medcom-Read-Scope": activeReadScope! }, body: form,
     });
@@ -246,7 +246,7 @@ export async function uploadSalesOrderAttachment(request: SalesOrderAttachmentUp
     if (!parsed.success) throw new ApiError(502, "invalid_attachment_response");
     if (parsed.data.outcome === "Committed" || parsed.data.outcome === "Replayed") {
       const receipt = parsed.data.receipt;
-      if (!receipt || receipt.module !== "sales-orders" || receipt.documentId !== request.documentId ||
+      if (!receipt || receipt.module !== (request.module ?? "sales-orders") || receipt.documentId !== request.documentId ||
         receipt.idempotencyKey !== request.idempotencyKey || receipt.deleted || !receipt.attachmentId)
         throw new ApiError(502, "invalid_attachment_receipt");
     }

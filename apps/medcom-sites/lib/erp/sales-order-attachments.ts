@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { AttachmentModule } from "./proxy-policy";
 
 // Live /api/contracts/openapi.json, checked 2026-10-16: sales-orders attachments.
 export const attachmentRowSchema = z.object({
@@ -22,6 +23,8 @@ export type SalesOrderAttachmentPage = z.infer<typeof attachmentPageSchema>;
 export type SalesOrderAttachmentRow = z.infer<typeof attachmentRowSchema>;
 export type SalesOrderAttachmentUpload = {
   idempotencyKey: string; branchId: string; documentId: string; expectedStateToken: string; file: File;
+  /** Defaults to the sales order "Tài liệu đính kèm" slot 2. */
+  module?: AttachmentModule; slotId?: number;
 };
 export type DraftAttachment = {
   key: string; file: File; status: "queued" | "uploading" | "uploaded" | "error"; error?: string;
@@ -38,6 +41,6 @@ export async function validateAttachmentFile(file: File): Promise<string | null>
   return null;
 }
 
-export function attachmentContentUrl(branchId: string, documentId: string, attachmentId: string, preview = true, module: "sales-orders" | "sales-order-pm" | "sales-order-sa" = "sales-orders"): string {
+export function attachmentContentUrl(branchId: string, documentId: string, attachmentId: string, preview = true, module: AttachmentModule = "sales-orders"): string {
   return `/api/erp/api/erp/${module}/attachments/content?${new URLSearchParams({ branchId, documentId, attachmentId, preview: String(preview) })}`;
 }

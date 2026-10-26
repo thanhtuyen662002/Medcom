@@ -68,8 +68,14 @@ const legacyDraftModules = [
   "machine-repairs",
 ] as const;
 
+/** Screens whose photos the Web lists, and the ones whose form can add photos (backend still checks state/rights). */
+export const attachmentModules = ["sales-orders", "sales-order-pm", "sales-order-sa", "inbound-requests", "inbound-warehouse",
+  "inbound-sa", "inbound-tech", "inbound-pm", "inbound-bld"] as const;
+export type AttachmentModule = typeof attachmentModules[number];
+const attachmentUploadModules: readonly AttachmentModule[] = ["sales-orders", "inbound-requests", "inbound-warehouse", "inbound-tech", "inbound-pm"];
+
 const erpScreenPostRoutes = new Set([
-  "api/erp/sales-orders/attachments/upload",
+  ...attachmentUploadModules.map(m => `api/erp/${m}/attachments/upload`),
   ...erpScreenModules.map(m => `api/erp/${m}/options`),
   ...erpScreenModules.map(m => `api/erp/${m}/commands/lookup`),
   ...fullCudModules.flatMap(m => [
@@ -151,12 +157,7 @@ const erpScreenPostRoutes = new Set([
 export function erpScreenPostRoute(path:string){return erpScreenPostRoutes.has(path);}
 
 const erpScreenGetRoutes = new Set([
-  "api/erp/sales-orders/attachments",
-  "api/erp/sales-orders/attachments/content",
-  "api/erp/sales-order-pm/attachments",
-  "api/erp/sales-order-pm/attachments/content",
-  "api/erp/sales-order-sa/attachments",
-  "api/erp/sales-order-sa/attachments/content",
+  ...attachmentModules.flatMap(m => [`api/erp/${m}/attachments`, `api/erp/${m}/attachments/content`]),
   "api/erp/permissions",
   ...erpScreenModules.flatMap(m => [
     `api/erp/${m}/screen`,
@@ -191,8 +192,9 @@ export function notificationReadRoute(path:string):boolean{
 }
 export function notificationRoute(path:string):boolean{return notificationGetRoute(path)||notificationReadRoute(path);}
 
-export function salesOrderAttachmentUploadRoute(path:string){return path==="api/erp/sales-orders/attachments/upload";}
-export function requestBodyLimit(path:string,method:string){return method==="POST"&&salesOrderAttachmentUploadRoute(path)?12*1024*1024:method==="POST"&&(purchaseCommandRoute(path)||inboundCommandRoute(path)||erpScreenPostRoute(path)||notificationReadRoute(path))?1048576:16384;}
+export function attachmentUploadRoute(path:string){return attachmentUploadModules.some(m=>path===`api/erp/${m}/attachments/upload`);}
+export function attachmentContentRoute(path:string){return attachmentModules.some(m=>path===`api/erp/${m}/attachments/content`);}
+export function requestBodyLimit(path:string,method:string){return method==="POST"&&attachmentUploadRoute(path)?12*1024*1024:method==="POST"&&(purchaseCommandRoute(path)||inboundCommandRoute(path)||erpScreenPostRoute(path)||notificationReadRoute(path))?1048576:16384;}
 const routes = new Map([
  ...[...purchaseCommandRoutes].map(path=>[path,["POST"]] as [string,string[]]),
  ...[...inboundCommandRoutes].map(path=>[path,["POST"]] as [string,string[]]),

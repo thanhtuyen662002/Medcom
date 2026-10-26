@@ -13,6 +13,19 @@ test("PM and SA attachments expose exact read routes without admitting other mut
   assert.equal(routeAllowed(`api/erp/${module}/attachments/other`,"GET"),false);
  }
 });
+test("inbound photos: every step lists them, only steps whose form can edit may upload",()=>{
+ for(const module of ["inbound-requests","inbound-warehouse","inbound-sa","inbound-tech","inbound-pm","inbound-bld"]){
+  for(const suffix of ["attachments","attachments/content"])assert.equal(routeAllowed(`api/erp/${module}/${suffix}`,"GET"),true);
+  assert.equal(routeAllowed(`api/erp/${module}/attachments/delete`,"POST"),false);
+ }
+ for(const module of ["inbound-requests","inbound-warehouse","inbound-tech","inbound-pm"]){
+  assert.equal(routeAllowed(`api/erp/${module}/attachments/upload`,"POST"),true);
+  assert.equal(requestBodyLimit(`api/erp/${module}/attachments/upload`,"POST"),12*1024*1024);
+ }
+ // TP SA and BLĐ forms hide Edit (HBE), so their photos are read-only as in ERP.
+ for(const module of ["inbound-sa","inbound-bld"])assert.equal(routeAllowed(`api/erp/${module}/attachments/upload`,"POST"),false);
+});
+
 test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted",()=>{
  assert.equal(erpScreenModules.length,24);
  for(const m of erpScreenModules){

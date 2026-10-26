@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { Loader2, RefreshCw, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { getSalesOrderAttachments } from "@/lib/erp/erp-screen-api";
 import { attachmentContentUrl, type SalesOrderAttachmentPage } from "@/lib/erp/sales-order-attachments";
-import type { SalesOrderModule } from "@/lib/erp/sales-order-workflow";
+import type { AttachmentModule } from "@/lib/erp/proxy-policy";
 
-export function SalesOrderAttachmentList({ branchId, documentId, embedded = false, module = "sales-orders" }: { branchId: string; documentId: string; embedded?: boolean; module?: SalesOrderModule }) {
+export function SalesOrderAttachmentList({ branchId, documentId, embedded = false, module = "sales-orders" }: { branchId: string; documentId: string; embedded?: boolean; module?: AttachmentModule }) {
   const [page, setPage] = useState(1), [refresh, setRefresh] = useState(0);
   const [result, setResult] = useState<{ key: string; data?: SalesOrderAttachmentPage; error?: string }>();
   const key = JSON.stringify([branchId, documentId, page, refresh, module]);
