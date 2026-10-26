@@ -46,7 +46,7 @@ export function DesktopSidebar({ currentBranch, onBranchChange, branches, active
         <AppButton variant="ghost" size="icon" aria-label="Đăng xuất" title="Đăng xuất" onClick={onLogout}><LogOut aria-hidden="true" className="size-5" /></AppButton>
       </div>
       <div className="flex items-center gap-1">
-        <a href="/help" target="_blank" rel="noopener noreferrer" className={`${navigationItemClassName(false)} min-w-0 flex-1`}><BookOpen aria-hidden="true" className="size-5 shrink-0" /><span className="truncate">Hướng dẫn sử dụng</span></a>
+        <a href="/help" target="_blank" rel="noopener noreferrer" aria-label="Hướng dẫn sử dụng (mở tab mới)" title="Hướng dẫn sử dụng" className={`${navigationItemClassName(false)} min-w-0 flex-1`}><BookOpen aria-hidden="true" className="size-5 shrink-0" /><span className="truncate">Hướng dẫn</span></a>
         <AppButton variant="ghost" size="icon" aria-label="Thông báo" title="Thông báo" onClick={onNotificationsClick} className="relative"><Bell aria-hidden="true" className="size-5" />
           {unreadNotifications > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-brand-600 dark:bg-brand-400" />}
         </AppButton>
