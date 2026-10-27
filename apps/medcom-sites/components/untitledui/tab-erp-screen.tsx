@@ -990,7 +990,7 @@ export function TabErpScreen({
 
   return (
     <div className="min-w-0 space-y-2 pb-24 animate-uui-fade-in">
-      <ScreenHeader title={title} branch={currentBranch} count={rows.length} />
+      <ScreenHeader title={title} branch={currentBranch} count={rows.length} helpScreen={module} />
       <ScreenToolbar
         search={search} onSearchChange={setSearch} debounceMs={null}
         onSearch={value => {

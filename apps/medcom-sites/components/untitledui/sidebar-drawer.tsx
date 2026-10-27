@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { BookOpen, LogOut, Moon, Sun, X } from "lucide-react";
+import { LogOut, Moon, Sun, X } from "lucide-react";
 import { AppButton } from "@/components/app/app-button";
 import { NavigationList, type NavigationAccess } from "@/components/app/app-navigation";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
@@ -51,11 +51,7 @@ export function SidebarDrawer({ open, onClose, activeTab, onSelectTab, userName 
         <AppButton variant="ghost" size="icon" aria-label="Đóng menu" onClick={onClose}><X aria-hidden="true" className="size-5" /></AppButton>
       </header>
       <NavigationList key={open ? "open" : "closed"} activeTab={activeTab} onSelect={tab => { onSelectTab(tab); onClose(); }} tabAccess={tabAccess} onRetryTabs={onRetryTabs} badges={queueBadges} />
-      <footer className="flex shrink-0 items-center gap-1 border-t border-neutral-200 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] dark:border-neutral-800">
-        <a href="/help" target="_blank" rel="noopener noreferrer" aria-label="Hướng dẫn sử dụng (mở tab mới)"
-          className="inline-flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-3 text-base font-medium text-neutral-700 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-brand-500 dark:text-neutral-200 dark:hover:bg-neutral-800">
-          <BookOpen aria-hidden="true" className="size-5 shrink-0" /><span className="truncate">Hướng dẫn</span>
-        </a>
+      <footer className="flex shrink-0 items-center justify-end gap-1 border-t border-neutral-200 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] dark:border-neutral-800">
         {onToggleDarkMode && <button type="button" className={footerIconClass} onClick={onToggleDarkMode} aria-pressed={isDarkMode}
           aria-label={isDarkMode ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"} title={isDarkMode ? "Giao diện sáng" : "Giao diện tối"}>
           {isDarkMode ? <Sun aria-hidden="true" className="size-5" /> : <Moon aria-hidden="true" className="size-5" />}

@@ -1550,3 +1550,13 @@
 @media print {.figureToolbar{display:none}.figure>.screenshotButton{border:0;background:white}.screenshotFrame{background:white;padding:0}.screenshotFrame img{max-height:600px;width:auto;box-shadow:none}.shell{font-size:12pt}.shell :is(.steps p,.section>p,.fields dt,.fields dd){font-size:12pt}}
 
 .brand strong {white-space:nowrap}
+
+/* Guide embedded in a screen's help sheet: no page chrome, follows the sheet's size and background. */
+.shell.embedded {
+  min-height:0;
+  background:transparent;
+  font-size:15px}
+.embedded .section:last-child {
+  margin-bottom:0;
+  padding-bottom:0;
+  border-bottom:0}
