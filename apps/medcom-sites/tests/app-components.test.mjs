@@ -204,7 +204,7 @@ test('pagination offers exactly 20/50/100 and forwards paging callbacks', async 
 
 test('header/create FAB keep desktop actions and mobile permission/safe-area placement', () => {
   const header = render(h(ScreenHeader, { title: 'Danh sách tổng hợp', branch: 'QA', count: 0, onCreate: noop }));
-  assert.match(header, /<h1[^>]*text-2xl font-bold/);
+  assert.match(header, /<h1[^>]*text-xl font-bold[^"]*sm:text-2xl/);
   assert.match(header, /Chi nhánh QA · 0 chứng từ/);
   assert.match(header, /hidden md:inline-flex/);
   assert.equal(render(h(CreateFab, { allowed: false, label: 'Tạo chứng từ', onClick: noop })), '');

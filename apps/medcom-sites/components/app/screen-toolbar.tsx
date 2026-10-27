@@ -43,7 +43,7 @@ export function ScreenToolbar({ search, onSearchChange, onSearch, onFilter, onRe
   }, [search]);
   useEffect(() => () => { if (pending.current !== null) clearTimeout(pending.current); }, []);
 
-  return <div data-app-toolbar className="sticky top-[var(--app-toolbar-top,0px)] z-30 flex min-w-0 items-center gap-2 border-b border-neutral-200 bg-white py-3 dark:border-neutral-800 dark:bg-neutral-900">
+  return <div data-app-toolbar className="sticky top-[var(--app-toolbar-top,0px)] z-30 flex min-w-0 items-center gap-2 border-b border-neutral-200 bg-white py-2 dark:border-neutral-800 dark:bg-neutral-900">
     <form role="search" aria-label={searchLabel} className="relative min-w-0 flex-1" onSubmit={event => { event.preventDefault(); cancel(); onSearch(search); }}>
       <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-3 size-5 text-neutral-400 dark:text-neutral-500" />
       <input ref={input} type="search" aria-label={searchLabel} placeholder={searchPlaceholder} value={search}
