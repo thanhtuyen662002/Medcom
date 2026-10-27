@@ -79,7 +79,9 @@ export function InboundCostsPanel({ module, detail, branchId, onSaved }: {
     finally { setBusy(false); }
   };
 
-  const buttonClass = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-neutral-300 bg-white px-3 text-sm font-semibold disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900";
+  const baseButton = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-3 text-sm font-semibold disabled:opacity-50";
+  const buttonClass = `${baseButton} border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800`;
+  const primaryButtonClass = `${baseButton} border-transparent bg-brand-600 text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600`;
   const value = (fields: Record<string, unknown>, field: CostField) => {
     const raw = fields[field.key];
     if (field.kind === "date") return formatVietnamDate(raw) || "—";
@@ -92,7 +94,7 @@ export function InboundCostsPanel({ module, detail, branchId, onSaved }: {
       <h4 className="text-base font-semibold text-black dark:text-white">Chứng từ chi phí {rows.length > 0 && `(${rows.length})`}</h4>
       {drafts ? <div className="flex gap-2">
         <button type="button" disabled={busy} onClick={() => { setDrafts(null); setError(null); }} className={buttonClass}><X aria-hidden className="size-4" />Hủy</button>
-        <button type="button" disabled={busy} onClick={() => void save()} className={`${buttonClass} border-transparent bg-brand-600 text-white`}>
+        <button type="button" disabled={busy} onClick={() => void save()} className={primaryButtonClass}>
           {busy ? <Loader2 aria-hidden className="size-4 animate-spin" /> : <Save aria-hidden className="size-4" />}Lưu chi phí</button>
       </div> : canEdit && <button type="button" onClick={start} className={buttonClass}><Pencil aria-hidden className="size-4" />Sửa chi phí</button>}
     </div>
