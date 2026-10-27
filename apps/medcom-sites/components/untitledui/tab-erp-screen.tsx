@@ -987,7 +987,7 @@ export function TabErpScreen({
   const title = navigationLabel(module) || screenMeta?.caption || getModuleTitle(module);
 
   return (
-    <div className="min-w-0 space-y-4 pb-24 animate-uui-fade-in">
+    <div className="min-w-0 space-y-2 pb-24 animate-uui-fade-in">
       <ScreenHeader title={title} branch={currentBranch} count={rows.length} />
       <ScreenToolbar
         search={search} onSearchChange={setSearch} debounceMs={null}
