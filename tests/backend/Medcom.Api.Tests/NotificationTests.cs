@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Reflection;
 using System.Text.Json;
 using Medcom.Application;
 using Medcom.Contracts;
@@ -79,7 +78,7 @@ public sealed class NotificationTests
         var row=NotificationSource.Sample();var identity=PurchaseQuerySource.NewIdentity();
         row=mode switch {"missing"=>row with{DocumentId=null},"unknown"=>row with{ErpFormName="dbo.SY_User",WebFormName=null},
             "ambiguous"=>row with{WebFormName="sales-orders"},_=>row};
-        var screens=DispatchProxy.Create<IErpScreenService,NotificationScreens>();
+        IErpScreenService screens=new NotificationScreens();
         var target=await NotificationNavigation.ResolveAsync(row,identity with{Capabilities=[]},screens,new UnavailableDocumentReader(),default);
         Assert.False(target.CanOpen);Assert.Equal(reason,target.Reason);Assert.Null(target.DetailApi);Assert.Empty(((NotificationScreens)(object)screens).Calls);
     }
@@ -88,7 +87,7 @@ public sealed class NotificationTests
     [InlineData("warehouse-qr")][InlineData("sales-qr")][InlineData("machine-movements")][InlineData("machine-repairs")]
     public async Task Click_uses_a_finite_form_and_original_document_key_in_an_authorized_branch(string module)
     {
-        var screens=DispatchProxy.Create<IErpScreenService,NotificationScreens>();var probe=(NotificationScreens)(object)screens;
+        var probe=new NotificationScreens();IErpScreenService screens=probe;
         probe.VisibleBranch="B2";
         var row=NotificationSource.Sample() with{ErpFormName=ErpScreenCatalog.Get(module)!.FormId,DocumentId="SYNTHETIC/1 & 2"};
         var identity=PurchaseQuerySource.NewIdentity() with{Capabilities=[module+".read"],BranchIds=["B1","B2"]};
@@ -146,16 +145,37 @@ internal sealed class NotificationSource:INotificationQueries
     public Task<ErpReadResult<NotificationRow>> DetailAsync(int id,CancellationToken token){Calls++;Details++;return Task.FromResult(Mode switch{"missing" or "lost" when Details>1=>new ErpReadResult<NotificationRow>(ErpReadOutcome.NotFound),"missing"=>new(ErpReadOutcome.NotFound),"denied"=>new(ErpReadOutcome.Denied),"unavailable"=>new(ErpReadOutcome.Unavailable),_=>new(ErpReadOutcome.Success,Mode=="changed"&&Details>1?Row with{DocumentId="OTHER"}:Row)});}
     public Task<ErpReadResult<NotificationRow>> SetReadAsync(int id,bool isView,CancellationToken token){Calls++;Writes++;Row=Row with{IsView=isView};return Task.FromResult(new ErpReadResult<NotificationRow>(ErpReadOutcome.Success,Row));}
 }
-public class NotificationScreens:DispatchProxy
+// Hand-written rather than DispatchProxy: the test process disables dynamic code
+// (see Medcom.Api.Tests.csproj). Every member other than DetailAsync, including the
+// interface's default-implemented ones, is still an unexpected document operation.
+public sealed class NotificationScreens:IErpScreenService
 {
     public string VisibleBranch="B1";public List<(string Module,string Branch,string Document,int Size)> Calls=[];
-    protected override object? Invoke(MethodInfo? method,object?[]? args)
+    private static Task<T> Unexpected<T>()=>throw new InvalidOperationException("Unexpected document operation");
+    public Task<ErpReadResult<ErpDocumentDetail>> DetailAsync(string module,string branch,string document,int page,int size,CancellationToken token)
     {
-        if(method?.Name!=nameof(IErpScreenService.DetailAsync)||args is null)throw new InvalidOperationException("Unexpected document operation");
-        var module=(string)args[0]!;var branch=(string)args[1]!;var document=(string)args[2]!;Calls.Add((module,branch,document,(int)args[4]!));
+        Calls.Add((module,branch,document,size));
         var row=new ErpDocumentDetail(document,branch,new string('a',64),new Dictionary<string,object?>(),new([],1,1,false),null,null,[]);
         return Task.FromResult(branch==VisibleBranch?new ErpReadResult<ErpDocumentDetail>(ErpReadOutcome.Success,row):new(ErpReadOutcome.NotFound));
     }
+    public Task<ErpReadResult<ErpPermissions>> PermissionsAsync(string branch,CancellationToken token)=>Unexpected<ErpReadResult<ErpPermissions>>();
+    public Task<ErpReadResult<ErpDocumentPage>> ListAsync(string module,ErpPageQuery query,CancellationToken token)=>Unexpected<ErpReadResult<ErpDocumentPage>>();
+    public Task<ErpReadResult<ErpStatusCounts>> StatusCountsAsync(string module,string branch,CancellationToken token)=>Unexpected<ErpReadResult<ErpStatusCounts>>();
+    public Task<ErpReadResult<IReadOnlyList<ErpActionState>>> ActionsAsync(string module,string branch,string? document,CancellationToken token)=>Unexpected<ErpReadResult<IReadOnlyList<ErpActionState>>>();
+    public Task<ErpReadResult<ErpContractInfo>> ContractAsync(string module,string branch,string document,CancellationToken token)=>Unexpected<ErpReadResult<ErpContractInfo>>();
+    public Task<ErpReadResult<ErpChoicePage>> OptionsAsync(string module,ErpLookupQuery query,CancellationToken token)=>Unexpected<ErpReadResult<ErpChoicePage>>();
+    public Task<ErpReadResult<ErpChoicePage>> PmOptionsAsync(string module,ErpPmLookupQuery query,CancellationToken token)=>Unexpected<ErpReadResult<ErpChoicePage>>();
+    public Task<ErpReadResult<ErpDraftSelection>> SelectionAsync(string module,ErpSelectionRequest request,CancellationToken token)=>Unexpected<ErpReadResult<ErpDraftSelection>>();
+    public Task<ErpReadResult<ErpDraftSelection>> PasteAsync(string module,ErpPasteRequest request,CancellationToken token)=>Unexpected<ErpReadResult<ErpDraftSelection>>();
+    public Task<ErpCommandResult> CreateAsync(string module,ErpCreateRequest request,CancellationToken token)=>Unexpected<ErpCommandResult>();
+    public Task<ErpCommandResult> SaveAsync(string module,ErpSaveRequest request,CancellationToken token)=>Unexpected<ErpCommandResult>();
+    public Task<ErpCommandResult> SaveSectionAsync(string module,string section,ErpSectionSaveRequest request,CancellationToken token)=>Unexpected<ErpCommandResult>();
+    public Task<ErpReadResult<ErpChoicePage>> ActionOptionsAsync(string module,string action,ErpActionOptionsQuery query,CancellationToken token)=>Unexpected<ErpReadResult<ErpChoicePage>>();
+    public Task<ErpReadResult<ErpItemPrice>> ItemPriceAsync(ErpItemPriceQuery query,CancellationToken token)=>Unexpected<ErpReadResult<ErpItemPrice>>();
+    public Task<ErpCommandResult> DeleteAsync(string module,ErpDeleteRequest request,CancellationToken token)=>Unexpected<ErpCommandResult>();
+    public Task<ErpCommandResult> ActionAsync(string module,string action,ErpActionRequest request,CancellationToken token)=>Unexpected<ErpCommandResult>();
+    public Task<ErpCommandResult> ScanAsync(string module,string action,ErpScanRequest request,CancellationToken token)=>Unexpected<ErpCommandResult>();
+    public Task<ErpReadResult<ErpCommandObservation>> ObserveAsync(string module,ErpCommandLookupRequest request,CancellationToken token)=>Unexpected<ErpReadResult<ErpCommandObservation>>();
 }
 internal sealed class NotificationDocuments:IDocumentReader
 {
