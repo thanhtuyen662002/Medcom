@@ -48,6 +48,9 @@ public static class ErpWorkflowInputs
         ("inbound-pm","lines") => typeof(ErpInboundPmLinesInput),
         ("inbound-bld","header") => typeof(ErpInboundBldHeaderInput),
         ("inbound-bld","lines") => typeof(ErpInboundBldLinesInput),
+        ("inbound-costs","header") => typeof(ErpInboundCostsHeaderInput),
+        ("inbound-costs","lines") => typeof(ErpInboundCostsLinesInput),
+        ("inbound-costs","costs") => typeof(ErpInboundCostsCostsInput),
         _ => null
     };
 }
@@ -556,4 +559,45 @@ public sealed record ErpInboundBldHeaderInput
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ErpInboundBldLinesInput
 {
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundCostsHeaderInput
+{
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundCostsLinesInput
+{
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpInboundCostsCostsInput
+{
+    [JsonPropertyName("objectId")]
+    public required string ObjectId { get; init; }
+    [JsonPropertyName("nCC")]
+    public string? NCC { get; init; }
+    [JsonPropertyName("memo")]
+    public string? Memo { get; init; }
+    [JsonPropertyName("notes")]
+    public string? Notes { get; init; }
+    [JsonPropertyName("costType")]
+    public string? CostType { get; init; }
+    [JsonPropertyName("currencyId")]
+    public string? CurrencyId { get; init; }
+    [JsonPropertyName("rateExchange")]
+    public string? RateExchange { get; init; }
+    [JsonPropertyName("sourceAmount")]
+    public string? SourceAmount { get; init; }
+    [JsonPropertyName("vATId")]
+    public string? VATId { get; init; }
+    [JsonPropertyName("expenseAccId")]
+    public string? ExpenseAccId { get; init; }
+    [JsonPropertyName("invoiceNo")]
+    public string? InvoiceNo { get; init; }
+    [JsonPropertyName("invoiceDate")]
+    public string? InvoiceDate { get; init; }
+    [JsonPropertyName("allocateKind")]
+    public string? AllocateKind { get; init; }
 }

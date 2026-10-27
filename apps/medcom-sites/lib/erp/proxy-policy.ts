@@ -24,6 +24,7 @@ export const erpScreenModules = [
   "inbound-tech",
   "inbound-pm",
   "inbound-bld",
+  "inbound-costs",
   "purchase-approvals",
   "sales-order-pm",
   "sales-order-sa",
@@ -70,7 +71,7 @@ const legacyDraftModules = [
 
 /** Screens whose photos the Web lists, and the ones whose form can add photos (backend still checks state/rights). */
 export const attachmentModules = ["sales-orders", "sales-order-pm", "sales-order-sa", "inbound-requests", "inbound-warehouse",
-  "inbound-sa", "inbound-tech", "inbound-pm", "inbound-bld"] as const;
+  "inbound-sa", "inbound-tech", "inbound-pm", "inbound-bld", "inbound-costs"] as const;
 export type AttachmentModule = typeof attachmentModules[number];
 const attachmentUploadModules: readonly AttachmentModule[] = ["sales-orders", "inbound-requests", "inbound-warehouse", "inbound-tech", "inbound-pm"];
 
@@ -89,6 +90,8 @@ const erpScreenPostRoutes = new Set([
     `api/erp/${m}/paste/validate`,
   ]),
   "api/erp/inbound-requests/sections/costs/save",
+  "api/erp/inbound-costs/sections/costs/save",
+  "api/erp/inbound-requests/actions/cancel-draft",
   "api/erp/internal-transfer-tech/sections/assets/save",
   "api/erp/purchase-orders/item-price",
   "api/erp/warehouse-qr/qr/add",

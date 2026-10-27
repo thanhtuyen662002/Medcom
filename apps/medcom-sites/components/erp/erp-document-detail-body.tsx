@@ -16,6 +16,7 @@ import { ErpLineEditor } from "./erp-line-editor";
 import { ErpFieldLineEditor } from "./erp-field-line-editor";
 import { SalesOrderActionDialog } from "./sales-order-action-dialog";
 import { InboundPhotoPanel } from "./inbound-photo-panel";
+import { InboundCostsPanel } from "./inbound-costs-panel";
 import { editableDetailConfig } from "@/lib/erp/document-detail/controllers/erp-detail-model";
 import type { DetailAction, DocumentDetailHandlers, DocumentDetailModel } from "@/lib/erp/document-detail/model";
 import { WRITE_GATED_MODULES, MENU_ACTION_IDS, DIALOG_ACTION_MODULES, SAVE_HEADER_BY_MODULE, editableHeaderKeys, requiredEditKeys, editLookupId, saveLineKeys, editValue, lockBadgeState, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
@@ -414,7 +415,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
         (a): a is ErpActionState =>
           a.visible && ((MENU_ACTION_IDS as readonly string[]).includes(a.id)
             // Inbound step screens: every ERP button of the form (Gửi TP SA, Gửi PM, Chọn bước gửi về…).
-            || (module === "inbound-warehouse" || DIALOG_ACTION_MODULES.has(module)) && a.id !== "create")
+            || (module === "inbound-warehouse" || DIALOG_ACTION_MODULES.has(module)) && a.id !== "create" && !a.id.startsWith("save-"))
       );
 
   const menuLabel = (act: ErpActionState): string => {
@@ -779,6 +780,9 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
                 patchEditLine={patchEditLine} columns={config.lines.columns} />
             : <ErpFieldLineEditor module={module} detail={detail} editLines={editLines}
                 patchEditLine={patchEditLine} columns={config.lines.columns} /> : undefined,
+        costs: detail && (module === "inbound-requests" || module === "inbound-costs") ? (
+          <InboundCostsPanel module={module} detail={detail} branchId={currentBranch} onSaved={() => handleOpenDetail(detail.documentId)} />
+        ) : undefined,
         attachments: detail && isInboundPhotoModule(module) ? (
           <InboundPhotoPanel module={module} branchId={currentBranch} documentId={detail.documentId}
             onUploaded={() => handleOpenDetail(detail.documentId)} />
@@ -985,7 +989,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
           busy={executingAction === dialogAction.id}
           title={dialogAction.caption || dialogAction.id}
           intro={`Xác nhận thực hiện "${dialogAction.caption || dialogAction.id}" trên đề nghị nhập hàng ${detail.documentId}.`}
-          notesRequired={dialogAction.id === "reject" || dialogAction.id === "return-step"}
+          notesRequired={["reject", "return-step", "cancel-draft"].includes(dialogAction.id)}
           message={actionFeedback && actionFeedback.type !== "success" ? actionFeedback.message : undefined}
           onClose={() => setDialogAction(null)}
           onConfirm={payload => void handleConfirmDialogAction(dialogAction, payload)}

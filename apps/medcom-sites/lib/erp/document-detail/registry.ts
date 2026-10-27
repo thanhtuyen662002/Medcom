@@ -5,7 +5,7 @@ import type { SalesOrderModule } from "../sales-order-workflow";
 import type { DocumentDetailConfig, ErpScreenModule } from "./types";
 import { salesOrderDetailConfig } from "./modules/sales";
 import { purchaseRequestDetailConfig, purchaseOrderDetailConfig } from "./modules/purchase";
-import { inboundRequestDetailConfig, inboundWarehouseDetailConfig, inboundSaDetailConfig, inboundTechDetailConfig, inboundPmDetailConfig, inboundBldDetailConfig } from "./modules/inbound";
+import { inboundRequestDetailConfig, inboundWarehouseDetailConfig, inboundSaDetailConfig, inboundTechDetailConfig, inboundPmDetailConfig, inboundBldDetailConfig, inboundCostsDetailConfig } from "./modules/inbound";
 import { transferRequestDetailConfig, transferPmDetailConfig, transferBatchDetailConfig, transferTechnicalDetailConfig, transferAccountingDetailConfig, transferWarehouseOutDetailConfig, transferWarehouseInDetailConfig } from "./modules/transfer";
 import { machineMovementDetailConfig, machineRepairDetailConfig } from "./modules/machine";
 import { warehouseQrDetailConfig, salesQrDetailConfig } from "./modules/qr";
@@ -35,7 +35,7 @@ const salesEntry: DocumentDetailEntry = {
 };
 
 const genericEntries: DocumentDetailEntry[] = [
-  purchaseRequestDetailConfig, purchaseOrderDetailConfig, inboundRequestDetailConfig, inboundWarehouseDetailConfig, inboundSaDetailConfig, inboundTechDetailConfig, inboundPmDetailConfig, inboundBldDetailConfig,
+  purchaseRequestDetailConfig, purchaseOrderDetailConfig, inboundRequestDetailConfig, inboundWarehouseDetailConfig, inboundSaDetailConfig, inboundTechDetailConfig, inboundPmDetailConfig, inboundBldDetailConfig, inboundCostsDetailConfig,
   transferRequestDetailConfig, transferPmDetailConfig, transferBatchDetailConfig,
   transferTechnicalDetailConfig, transferAccountingDetailConfig, transferWarehouseOutDetailConfig,
   transferWarehouseInDetailConfig, machineMovementDetailConfig, machineRepairDetailConfig,

@@ -6,7 +6,7 @@ export type FieldFormat =
   | "boolean" | "status" | "url" | "reference" | "enum";
 
 /** Fixed extension points available to document detail layouts. */
-export type DetailSlotId = "lines-editor" | "attachments" | "qr-scan" | "contract-info";
+export type DetailSlotId = "lines-editor" | "costs" | "attachments" | "qr-scan" | "contract-info";
 
 /** Module identities come from the existing ERP screen policy. */
 export type ErpScreenModule = import("../proxy-policy").ErpScreenModule;

@@ -54,6 +54,7 @@ export const ERP_LIST_COLUMNS: Record<ErpScreenModule, readonly ErpListColumn[]>
   "inbound-tech": inboundStep,
   "inbound-pm": inboundStep,
   "inbound-bld": inboundStep,
+  "inbound-costs": inboundStep,
   "sales-orders": sales,
   "sales-order-pm": sales,
   "sales-order-sa": sales,

@@ -195,6 +195,8 @@ export function NotificationsSheet({
         return "inbound-pm";
       case "inbound-bld":
         return "inbound-bld";
+      case "inbound-costs":
+        return "inbound-costs";
       case "sales-orders":
         return "sales-orders";
       case "internal-transfer-requests":

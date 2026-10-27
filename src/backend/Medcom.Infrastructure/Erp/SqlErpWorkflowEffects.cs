@@ -30,6 +30,8 @@ public sealed partial class SqlErpScreenCommands
         var observed=after.Header.GetValueOrDefault("statusId")as int?;
         Require(expected>=0?observed==expected:request.Operation=="receive"?observed is 120 or 130:
             request.Module=="inbound-pm"&&request.Operation=="reject"?observed is 5 or 9:
+            // Hủy đợt nháp cancels the PO shipment; the request keeps its status.
+            request.Operation=="cancel-draft"?observed==before.Header.GetValueOrDefault("statusId")as int?:
             request.Operation=="reject"?observed is 10 or 21 or 41 or 61:
             request.Operation=="sync-requests"&&observed==before.Header.GetValueOrDefault("statusId")as int?,
             ErpCommandOutcome.Unavailable,"native_action_postcondition_failed");
@@ -96,7 +98,7 @@ public sealed partial class SqlErpScreenCommands
         {Set("sourceAmount",Number(row,"quantity")*Number(row,"unitPrice"));Set("amount",Number(row,"sourceAmount")*Number(header,"rateExchange"));}
         if(plan.Module=="inbound-requests"&&section=="lines")
             Set("amount",Number(row,"setQuantityByDocument")*Number(row,"unitPrice")*Number(header,"rateExchange"));
-        if(plan.Module=="inbound-requests"&&section=="costs")
+        if(plan.Module is "inbound-requests" or "inbound-costs"&&section=="costs")
         {Set("cost",Number(row,"sourceAmount")*Number(row,"rateExchange"));Set("vATAmount",Number(row,"cost")*Number(row,"vATPercent")/100m);}
     }
     private static async Task<IReadOnlyList<ErpAllocatedLine>> WorkflowSectionWrite(DbTransaction transaction,AuthoritativeIdentity actor,
@@ -115,7 +117,7 @@ public sealed partial class SqlErpScreenCommands
             var values=Map(change.Values!.Value);
             RestoreHidden(plan,section,values,change.Kind==ErpLineChangeKind.Update?rows[line]:null);
             await References(transaction,actor,plan,section,values,header,request.BranchId,token);
-            if(plan.Module=="inbound-requests"&&section=="costs")
+            if(plan.Module is "inbound-requests" or "inbound-costs"&&section=="costs")
             {
                 var vatId=values.GetValueOrDefault("vATId");
                 object? rate=null;
@@ -148,6 +150,11 @@ public sealed partial class SqlErpScreenCommands
         ErpFrozenCommand request,string document,CancellationToken token)
     {
         var notes=Text(request.Payload,"notes");var operation=request.Operation;
+        if(plan.Module=="inbound-requests"&&operation=="cancel-draft")
+        {
+            Require(notes is {Length:>0 and <=500},ErpCommandOutcome.InvalidInput,"cancel_reason_invalid");
+            await InboundDraftCancel(transaction,actor,document,notes,token);return;
+        }
         if(plan.Module.StartsWith("inbound-",StringComparison.Ordinal))
         {
             int? target=null;string? sendTo=null;
@@ -197,6 +204,16 @@ public sealed partial class SqlErpScreenCommands
         =>Procedure(transaction,"IV_InboundRequest_ChangeWorkflowStatusStp",[("@DocumentID",DbType.AnsiString,document,50),
             ("@User",DbType.AnsiString,actor.PrincipalId,100),("@Action",DbType.AnsiString,InboundAction(module,operation),30),
             ("@TargetStatus",DbType.Int32,target,0),("@SendTo",DbType.String,sendTo,-1),("@Notes",DbType.String,notes,-1)],token);
+    // "Hủy đợt nháp" (IV_InboundRequestFrm LYS1 ExecSQLWithParaButtonCtl_PartialCancel C4): the procedure
+    // checks status 0/1, no stock receipt yet, and THROWs its own message; it returns no MsgType row.
+    internal static async Task InboundDraftCancel(DbTransaction transaction,AuthoritativeIdentity actor,string document,string? reason,CancellationToken token)
+    {
+        await using var command=ErpSqlPlan.Command(transaction,"EXEC dbo.[AP_POInboundPartial_CancelStp] @InboundRequestDocumentID,@Reason,@User;");
+        ErpSqlPlan.Parameter(command,"@InboundRequestDocumentID",DbType.AnsiString,document,50);
+        ErpSqlPlan.Parameter(command,"@Reason",DbType.String,reason,500);ErpSqlPlan.Parameter(command,"@User",DbType.AnsiString,actor.PrincipalId,50);
+        await using var reader=await command.ExecuteReaderAsync(token);
+        while(await reader.NextResultAsync(token)){}
+    }
     // @Action codes of IV_InboundRequest_ChangeWorkflowStatusStp per form button (SY_FrmCfg LYS1 C4).
     internal static string InboundAction(string module,string operation)=>(module,operation) switch
     {

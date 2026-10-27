@@ -68,8 +68,8 @@ async function openRow(tree) {
   await flush();
 }
 
-test('registry covers all 24 ERP modules with the approved configs and keeps the sales body', () => {
-  assert.equal(erpScreenModules.length, 24);
+test('registry covers all 25 ERP modules with the approved configs and keeps the sales body', () => {
+  assert.equal(erpScreenModules.length, 25);
   for (const screenModule of erpScreenModules) {
     const entry = getDocumentDetailEntry(screenModule);
     assert.ok(entry, screenModule);
@@ -83,7 +83,9 @@ for (const screenModule of ['inbound-requests', 'purchase-requests']) test(`${sc
     assert.deepEqual(calls, [{ scope: screenModule, branchId: 'QA', documentId: 'QA-DOC', page: 1, pageSize: 50 }]);
     assert.match(text(tree.toJSON()), /QA-DOC/);
     assert.match(text(tree.toJSON()), /Đối tượng kiểm thử/);
-    assert.doesNotMatch(text(tree.toJSON()), /Chi phí kiểm thử/);
+    // TM sees its cost documents ("Chứng từ chi phí"); other screens have none.
+    if (screenModule === 'inbound-requests') assert.match(text(tree.toJSON()), /Chứng từ chi phí \(1\).*Chi phí kiểm thử/);
+    else assert.doesNotMatch(text(tree.toJSON()), /Chi phí kiểm thử/);
     assert.match(text(tree.root.findByProps({ 'data-status': 'header' })), /Chưa khóa/);
     // Count native controls, not both the AppButton component and its host node.
     assert.equal(tree.root.findAllByType('button').filter(node => node.props['aria-label'] === 'Thao tác chứng từ').length, 1);
@@ -239,7 +241,7 @@ test('workflow prompt keeps notes and exact command payload', async () => {
     await flush();
     assert.equal(sent.length, 1);
     const [module, operation, command] = sent[0];
-    assert.equal(module, 'inbound-requests');
+    assert.equal(module, 'purchase-requests');
     assert.equal(operation, 'submit');
     assert.equal(command.branchId, 'QA');
     assert.equal(command.documentId, 'QA-DOC');
@@ -247,7 +249,7 @@ test('workflow prompt keeps notes and exact command payload', async () => {
     assert.deepEqual(command.payload, { notes: 'Ghi chú kiểm thử' });
     assert.match(command.idempotencyKey, /^act-/);
     assert.equal(changed.length, 1);
-  }, { props: { onChanged: () => changed.push(true) }, api: { workflow: async (...args) => { sent.push(args); return { outcome: 'Committed' }; } } });
+  }, { module: 'purchase-requests', props: { onChanged: () => changed.push(true) }, api: { workflow: async (...args) => { sent.push(args); return { outcome: 'Committed' }; } } });
 });
 
 // Exercise the production RecordDialog focus trap with the production portal

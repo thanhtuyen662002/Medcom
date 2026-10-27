@@ -23,7 +23,7 @@ public static class ErpAttachmentCatalog
     public const int MaximumFileBytes=10*1024*1024;
     public const int MaximumPreviewBytes=1024*1024;
     public const int MaximumMultipartBytes=MaximumFileBytes+MaximumPreviewBytes+262144;
-    public static IReadOnlyList<string> Modules{get;}=Array.AsReadOnly(new[]{"purchase-orders","sales-orders","sales-order-pm","sales-order-sa","inbound-requests","inbound-warehouse","inbound-sa","inbound-tech","inbound-pm","inbound-bld"});
+    public static IReadOnlyList<string> Modules{get;}=Array.AsReadOnly(new[]{"purchase-orders","sales-orders","sales-order-pm","sales-order-sa","inbound-requests","inbound-warehouse","inbound-sa","inbound-tech","inbound-pm","inbound-bld","inbound-costs"});
     public static bool Supports(string module)=>Modules.Contains(module,StringComparer.Ordinal);
     // Current SA form hides Edit (SY_FrmCfg HBE=1); expose its shared images as reads.
     public static bool Writable(string module)=>Supports(module)&&module!="sales-order-sa";

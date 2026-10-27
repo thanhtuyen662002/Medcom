@@ -77,8 +77,8 @@ async function mounted(module, verify, options = {}) {
   }
 }
 
-test('column configurations cover exactly 24 modules and use only existing list schema keys', async () => {
-  assert.equal(erpScreenModules.length, 24);
+test('column configurations cover exactly 25 modules and use only existing list schema keys', async () => {
+  assert.equal(erpScreenModules.length, 25);
   assert.deepEqual(Object.keys(ERP_LIST_COLUMNS).sort(), [...erpScreenModules].sort());
   const { components: { schemas } } = JSON.parse(await readFile(path.join(app, '../../docs/backend/medcom-openapi.json'), 'utf8'));
   for (const screenModule of erpScreenModules) {

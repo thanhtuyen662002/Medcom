@@ -399,6 +399,36 @@
   },
   {
    "category": "control",
+   "key": "IV_InboundRequestCTCPFrm|AttachWebcamImageControlCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_InboundRequestCTCPFrm|AttachWebcamImageControlCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_InboundRequestCTCPFrm|AttachWebcamImageControlCtl_2",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_InboundRequestCTCPFrm|AttachWebcamImageControlCtl_3",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_InboundRequestCTCPFrm|StatusButtonCtl_1",
+   "hash": null
+  },
+  {
+   "category": "control",
+   "key": "IV_InboundRequestCTCPFrm|WebLinkViewerCtl",
+   "hash": null
+  },
+  {
+   "category": "control",
    "key": "IV_InboundRequestFrm|AttachWebcamImageControlCtl",
    "hash": null
   },
