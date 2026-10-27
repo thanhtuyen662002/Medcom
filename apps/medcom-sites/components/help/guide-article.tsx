@@ -39,11 +39,17 @@ function GuideFigure({ pictures, title, onZoom }: { pictures: HelpPictures; titl
 function ImageDialog({ picture, onClose }: { picture: HelpPicture; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [enlarged, setEnlarged] = useState(false);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; });
   useEffect(() => {
     const dialog = dialogRef.current;
     const previous = document.activeElement as HTMLElement | null;
     dialog?.showModal();
-    return () => { dialog?.close(); previous?.focus(); };
+    // The help sheet (Radix) closes on Escape from a document capture listener; take Escape first so it
+    // closes only the enlarged image.
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onCloseRef.current(); } };
+    window.addEventListener("keydown", escape, true);
+    return () => { window.removeEventListener("keydown", escape, true); dialog?.close(); previous?.focus(); };
   }, []);
   const zoomWidth = Math.max(660, picture.width);
   return <dialog ref={dialogRef} className={styles.imageDialog} onCancel={event => { event.preventDefault(); onClose(); }} aria-label="Ảnh hướng dẫn phóng to" onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
