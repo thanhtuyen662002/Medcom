@@ -106,6 +106,7 @@ test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted"
  assert.ok(routeAllowed("api/erp/internal-transfer-pm/actions/reject","POST"));
  assert.ok(routeAllowed("api/erp/internal-transfer-batches/actions/sync-requests","POST"));
  assert.ok(routeAllowed("api/erp/internal-transfer-batches/actions/send-tech","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-batches/actions/send-sa","POST"));
  assert.ok(routeAllowed("api/erp/internal-transfer-tech/actions/send-sa","POST"));
  assert.ok(routeAllowed("api/erp/internal-transfer-tech/actions/send-sa/options","POST"));
  assert.ok(routeAllowed("api/erp/internal-transfer-tech/actions/reject","POST"));

@@ -322,6 +322,14 @@
       "matches": 1
     },
     {
+      "module": "internal-transfer-batches",
+      "actionId": "send-sa",
+      "control": "ExecSQLWithParaButtonCtl_2",
+      "caption": "Gửi TP SA",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferBatchFrm/LYS1/ExecSQLWithParaButtonCtl_2/BT",
+      "matches": 1
+    },
+    {
       "module": "internal-transfer-pm",
       "actionId": "create",
       "control": "native-toolbar",

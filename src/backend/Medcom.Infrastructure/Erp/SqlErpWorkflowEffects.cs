@@ -21,7 +21,7 @@ public sealed partial class SqlErpScreenCommands
             ("sales-order-pm","send-sa")=>14,("sales-order-pm","reject")=>11,
             ("sales-order-sa","send-accounting")=>18,("sales-order-sa","send-tech")=>16,("sales-order-sa","reject")=>13,
             ("internal-transfer-pm","pm-confirm")=>20,("internal-transfer-pm","reject")=>30,
-            ("internal-transfer-batches","send-tech")=>before.Header.GetValueOrDefault("hasEquipment")is true?20:40,
+            ("internal-transfer-batches","send-tech")=>20,("internal-transfer-batches","send-sa")=>40,
             ("internal-transfer-tech","send-sa")=>40,("internal-transfer-sa","send-accounting")=>60,
             ("internal-transfer-accounting","send-warehouse")=>70,("internal-transfer-warehouse-out","dispatch")=>100,
             (_,"return-step")=>request.Payload.GetProperty("statusId").GetInt32(),
@@ -187,6 +187,7 @@ public sealed partial class SqlErpScreenCommands
         var button=ErpScreenCatalog.Metadata(plan.Module).GetProperty("buttons").EnumerateArray().Single(b=>b.GetProperty("operation").GetString()==operation);
         var procedure=button.GetProperty("procedure").GetString()!;
         if(operation=="sync-requests"){await TransferSync(transaction,actor,document,token);return;}
+        if(plan.Module=="internal-transfer-batches")await TransferSubmitCheck(transaction,operation,document,token);
         var parameters=new List<(string Name,DbType Type,object? Value,int Size)>{(batch?"@BatchID":"@DocumentID",DbType.AnsiString,document,30),("@User",DbType.AnsiString,actor.PrincipalId,100)};
         if(operation=="return-step")
         {var status=request.Payload.GetProperty("statusId").GetInt32();await ReturnStepAllowed(transaction,plan.Module,status,token);parameters.Add(("@TargetStatusID",DbType.Int32,status,0));}
@@ -196,6 +197,20 @@ public sealed partial class SqlErpScreenCommands
         if(procedure=="IV_InternalTransfer_BatchReceiveStp")parameters.Add(("@InputDocumentID",DbType.AnsiString,null,30));
         if(operation!="sync-requests")parameters.Add((procedure=="IV_InternalTransfer_RequestPMReturnStp"?"@Reason":"@Notes",DbType.String,notes,-1));
         await Procedure(transaction,procedure,parameters.ToArray(),token);
+    }
+    // IV_InternalTransferBatchFrm: both buttons run IV_InternalTransfer_BatchSubmitStp; "Gửi kỹ thuật" (CS4) needs a
+    // batch with equipment, "Gửi TP SA" (C4 IF) one without equipment, flagged or on its lines. Messages are ERP's.
+    internal static async Task TransferSubmitCheck(DbTransaction transaction,string operation,string document,CancellationToken token)
+    {
+        var tech=operation=="send-tech";
+        await using var command=ErpSqlPlan.Command(transaction,tech
+            ?"SELECT CONVERT(bit,CASE WHEN EXISTS(SELECT 1 FROM dbo.IV_InternalTransferBatchTbl WITH(HOLDLOCK) WHERE BatchID=@batch AND StatusID IN(0,10,25,45) AND HasEquipment=1) THEN 1 ELSE 0 END);"
+            :"SELECT CONVERT(bit,CASE WHEN EXISTS(SELECT 1 FROM dbo.IV_InternalTransferBatchTbl B WITH(HOLDLOCK) WHERE B.BatchID=@batch AND B.StatusID IN(0,10,25,45) AND B.HasEquipment=0 AND NOT EXISTS(SELECT 1 FROM dbo.IV_InternalTransferBatchDetailTbl D WITH(HOLDLOCK) WHERE D.BatchID=B.BatchID AND D.IsEquipment=1)) THEN 1 ELSE 0 END);");
+        ErpSqlPlan.Parameter(command,"@batch",DbType.AnsiString,document,30);
+        await using(var reader=await command.ExecuteReaderAsync(token))if(await reader.ReadAsync(token)&&reader.GetBoolean(0))return;
+        throw new Stop(ErpCommandOutcome.Conflict,"native_action_rejected",tech
+            ?"Chỉ gửi Kỹ thuật khi đợt còn ở bước PM và có thiết bị."
+            :"Chỉ gửi TP SA khi đợt còn ở bước PM và không có thiết bị. Vui lòng đồng bộ đề nghị nếu loại hàng thay đổi.");
     }
     // Same procedure as ERP's buttons: TM role in the branch, lot/expiry/quantity > 0 before the
     // warehouse, concurrency lock, status move and history row.
