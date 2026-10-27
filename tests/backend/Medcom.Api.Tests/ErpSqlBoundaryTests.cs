@@ -70,8 +70,8 @@ public sealed class ErpSqlBoundaryTests
         var state=new ErpActionContext("sales-orders","actor",null,null,false,"actor",null,0,false,false,new(true,true,true,true),false);
         Assert.True(ErpActionRules.Evaluate(state).Single(a=>a.Id=="paste").Enabled);
         Assert.False(ErpActionRules.Evaluate(state with{DocumentId="synthetic",StatusId=12}).Single(a=>a.Id=="paste").Enabled);
-        var print=ErpActionRules.Evaluate(state with{Module="purchase-requests",DocumentId="synthetic",StatusId=1}).First(a=>a.Id.StartsWith("print",StringComparison.Ordinal));
-        Assert.False(print.Enabled);Assert.Null(print.Route);
+        // Printing stays in ERP: no screen advertises a print action.
+        Assert.DoesNotContain(ErpScreenCatalog.ModuleIds.SelectMany(m=>ErpScreenCatalog.Get(m)!.Actions),a=>a.Id.StartsWith("print",StringComparison.Ordinal));
     }
     [Fact]
     public async Task Full_row_conversion_preserves_nulls_and_decimal_strings()

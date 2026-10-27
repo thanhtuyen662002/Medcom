@@ -49,8 +49,6 @@ export function getActionReasonMessage(reason?: string | null): string {
       return "Chức năng cấp số chứng từ tự động đang được bảo vệ.";
     case "contract_read_unqualified":
       return "Chức năng đọc thông tin hợp đồng đang được bảo vệ.";
-    case "report_runtime_unqualified":
-      return "Chức năng in báo cáo đang được bảo vệ.";
     default:
       return reason;
   }
