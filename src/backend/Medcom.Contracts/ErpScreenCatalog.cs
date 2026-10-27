@@ -63,6 +63,8 @@ public static class ErpScreenCatalog
             foreach(var button in row.GetProperty("buttons").EnumerateArray())
             {
                 var control=Text(button,"control");
+                // ERP report printing stays in ERP (owner decision 2026-10-27); the Web lists no print actions.
+                if(control.StartsWith("PrintButtonCtl",StringComparison.Ordinal))continue;
                 var id=extension?Text(button,"operation"):(module,control) switch
                 {
                     ("purchase-requests","CommandButtonCtl")=>"submit",
@@ -73,7 +75,6 @@ public static class ErpScreenCatalog
                     ("internal-transfer-requests","CommandButtonCtl_1")=>"recall",
                     ("internal-transfer-requests","ExecSQLWithParaButtonCtl")=>"send-pm",
                     ("sales-qr","CommandButtonCtl_2")=>"contract-info",
-                    _ when control.StartsWith("PrintButtonCtl",StringComparison.Ordinal)=>"print"+control["PrintButtonCtl".Length..],
                     _=>throw new InvalidOperationException("Unmapped current ERP button.")
                 };
                 actions.Add(new(id,Text(button,"caption"),control,id,Optional(button,"lockExpression"),true,true,Text(button,"propertyEvidence")));
