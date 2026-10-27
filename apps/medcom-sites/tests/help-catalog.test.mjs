@@ -12,6 +12,21 @@ const output=path.join(app,'.test-runtime/help-catalog');
 await mkdir(output,{recursive:true});
 await build({entryPoints:[path.join(app,'lib/help/guides.ts')],outfile:path.join(output,'guides.cjs'),bundle:true,platform:'node',format:'cjs',logLevel:'warning'});
 const {helpGuides,helpGroups,groupGuideIds,searchGuides}=createRequire(import.meta.url)(path.join(output,'guides.cjs'));
+await build({entryPoints:[path.join(app,'lib/help/screen-guides.ts')],outfile:path.join(output,'screen-guides.cjs'),bundle:true,platform:'node',format:'cjs',logLevel:'warning'});
+const {screenGuideIds,screenGuideId}=createRequire(import.meta.url)(path.join(output,'screen-guides.cjs'));
+
+test('help is embedded per screen: every ready guide belongs to a screen and no global help link remains',async()=>{
+ const ready=helpGuides.filter(guide=>guide.available).map(guide=>guide.id).sort();
+ assert.deepEqual([...Object.values(screenGuideIds)].sort(),ready);
+ assert.equal(screenGuideId('purchase-requests'),'purchase-requests');
+ assert.equal(screenGuideId('inbound-requests'),undefined);assert.equal(screenGuideId('toString'),undefined);
+ const header=await readFile(path.join(app,'components/app/screen-header.tsx'),'utf8');
+ assert.match(header,/<ScreenHelp screen=\{helpScreen\}/);
+ assert.match(await readFile(path.join(app,'components/untitledui/tab-erp-screen.tsx'),'utf8'),/helpScreen=\{module\}/);
+ for(const file of ['components/untitledui/desktop-sidebar.tsx','components/untitledui/sidebar-drawer.tsx','components/untitledui/desktop-header.tsx','components/app/app-navigation.tsx'])
+  assert.doesNotMatch(await readFile(path.join(app,file),'utf8'),/href=["{`]\/help|SalesFeatureLinks/,file);
+ assert.match(await readFile(path.join(app,'app/help/page.tsx'),'utf8'),/redirect\("\/"\)/);
+});
 
 test('sales documentation covers supported screens and preserves unsupported Feature steps',()=>{
  const ids=helpGroups.flatMap(groupGuideIds);
@@ -48,7 +63,7 @@ test('every ready guide has current desktop/mobile evidence and obsolete images 
  assert.equal(expected.size,58);assert.equal(manifest.images.length,58);
  const files=(await readdir(path.join(app,'public/help/images'))).filter(name=>name!=='manifest.json').map(name=>'/help/images/'+name);
  assert.deepEqual([...files].sort(),[...expected].sort(),'No obsolete or unreferenced screenshots');
- for(const file of ['lib/help/guides.ts','lib/help/sales-guides.ts','components/help/help-center.tsx']){
+ for(const file of ['lib/help/guides.ts','lib/help/sales-guides.ts','components/help/guide-article.tsx','components/help/screen-help.tsx']){
   const source=await readFile(path.join(app,file),'utf8');assert.doesNotMatch(source,/\p{Extended_Pictographic}/u);
   assert.doesNotMatch(source,/Đọc ngay khi thao tác|Mở hướng dẫn ở một tab khác/);
  }

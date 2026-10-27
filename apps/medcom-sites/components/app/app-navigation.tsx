@@ -3,7 +3,6 @@
 import { useId, useState, type ComponentType } from "react";
 import { ArrowRightLeft, Boxes, CheckCircle2, ClipboardList, FileText, LayoutDashboard, Layers, PackageCheck, PackagePlus, QrCode, Search, Settings2, ShoppingBag, Truck, UserCheck, Wrench, X, ChevronDown } from "lucide-react";
 import type { NavTabId } from "@/components/untitledui/bottom-nav";
-import { SalesFeatureLinks } from "@/components/erp/sales-feature-links";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AppButton } from "./app-button";
 import { ListSkeleton } from "./loading-skeleton";
@@ -125,7 +124,6 @@ export function NavigationList({ activeTab, onSelect, tabAccess, onRetryTabs, ba
       {sections.map(section => <section key={section.title} aria-label={section.title} className="space-y-1">
         <h2 className="px-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{section.title}</h2>
         {section.items.map(item => renderItem(item))}
-        {section.title === "Bán hàng" && !term && <SalesFeatureLinks />}
       </section>)}
       {showSettings && <section aria-label="Hệ thống" className="border-t border-neutral-200 pt-3 dark:border-neutral-800">{renderItem(settingsItem)}</section>}
       {term && quick.length === 0 && sections.length === 0 && !showSettings && <p role="status" className="px-3 py-4 text-sm text-neutral-500 dark:text-neutral-400">Không tìm thấy phân hệ phù hợp.</p>}

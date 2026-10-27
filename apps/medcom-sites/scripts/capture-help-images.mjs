@@ -18,7 +18,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = (process.env.MEDCOM_BROWSER_TOOLCHAIN ? createRequire(path.join(path.resolve(process.env.MEDCOM_BROWSER_TOOLCHAIN), 'package.json')) : require)('playwright');
 const preview = process.env.MEDCOM_HELP_PREVIEW ?? 'http://localhost:3000';
 assert.ok(/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(preview), 'Only an explicit local preview is allowed');
-const response = await fetch(preview + '/help');
+const response = await fetch(preview + '/');
 assert.equal(response.status, 200, 'Start the local Next preview before capture');
 const html = await response.text();
 const styleUrls = [...html.matchAll(/<link[^>]+href="([^"]+\.css(?:\?[^\"]*)?)"[^>]*>/g)].map(match => match[1].replaceAll('&amp;', '&'));
@@ -29,7 +29,7 @@ const transport=await readFile(path.join(app,'scripts/fixtures/help-transport.mj
 const entry = `import React from 'react';import{createRoot}from'react-dom/client';import{TabErpScreen}from'./components/untitledui/tab-erp-screen';
 const module=new URLSearchParams(location.search).get('module')||'purchase-requests';
 createRoot(document.getElementById('root')).render(<TabErpScreen module={module} currentBranch="DEMO" isActive={true}/>);`;
-const bundle = await build({stdin:{contents:entry,loader:'tsx',resolveDir:app},bundle:true,write:false,platform:'browser',format:'iife',alias:{'@':app},jsx:'automatic',define:{'process.env.NODE_ENV':'"production"'},logLevel:'warning',plugins:[{name:'synthetic-help-transport',setup(builder){
+const bundle = await build({stdin:{contents:entry,loader:'tsx',resolveDir:app},bundle:true,write:false,platform:'browser',format:'iife',alias:{'@':app},jsx:'automatic',define:{'process.env.NODE_ENV':'"production"'},logLevel:'warning',loader:{'.css':'empty','.module.css':'empty'},plugins:[{name:'synthetic-help-transport',setup(builder){
   builder.onResolve({filter:/(?:^|\/)erp-client$/},()=>({path:'transport',namespace:'help-fixture'}));
   builder.onLoad({filter:/.*/,namespace:'help-fixture'},()=>({contents:transport,loader:'js'}));
   builder.onResolve({filter:/(?:^|\/)erp-screen-api$/},()=>({path:'api',namespace:'help-api'}));

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, BookOpen, ChevronDown, FileText, LayoutDashboard, LogOut, Moon, PackageCheck, PanelLeft, Settings2, Sun } from "lucide-react";
+import { Bell, ChevronDown, FileText, LayoutDashboard, LogOut, Moon, PackageCheck, PanelLeft, Settings2, Sun } from "lucide-react";
 import { MedcomLogo } from "@/components/brand/medcom-logo";
 import { AppButton } from "@/components/app/app-button";
 import { BranchSwitcher } from "@/components/app/branch-switcher";
@@ -48,7 +48,6 @@ export function DesktopHeader({ currentBranch, onBranchChange, branches, activeT
         <NavigationMenu activeTab={activeTab} onSelect={onTabChange} tabAccess={tabAccess} onRetryTabs={onRetryTabs} badges={queueBadges} />
       </nav>
       <div className="ml-auto flex shrink-0 items-center gap-1">
-        <a href="/help" target="_blank" rel="noopener noreferrer" aria-label="Hướng dẫn sử dụng (mở tab mới)" className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-neutral-600 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-brand-500 dark:text-neutral-300 dark:hover:bg-neutral-800"><BookOpen aria-hidden="true" className="size-5" /></a>
         {onToggleLayoutMode && <AppButton variant="ghost" size="icon" aria-label="Dùng thanh điều hướng dọc" onClick={onToggleLayoutMode}><PanelLeft aria-hidden="true" className="size-5" /></AppButton>}
         <AppButton variant="ghost" size="icon" aria-label="Thông báo" onClick={onNotificationsClick} className="relative"><Bell aria-hidden="true" className="size-5" />
           {unreadNotifications > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-brand-600 dark:bg-brand-400" />}

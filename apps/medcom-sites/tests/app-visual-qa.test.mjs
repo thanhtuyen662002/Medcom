@@ -120,6 +120,8 @@ test('375×812 and 1280×860: real tabs, portal bounds, themes, detail labels, o
           </main><div className="md:hidden"><UntitledBottomNav activeTab={screen} onTabChange={setScreen}/></div></>}
       createRoot(document.getElementById('root')).render(<Fixture/>);`, resolveDir: app, loader: 'tsx' },
     bundle: true, write: false, platform: 'browser', format: 'iife', alias: { '@': app }, jsx: 'automatic', logLevel: 'warning',
+    // The screen help sheet loads its guide (and CSS module) only when opened; QA never opens it.
+    loader: { '.css': 'empty', '.module.css': 'empty' },
     plugins: [{ name: 'synthetic-only-transport', setup(builder) {
       builder.onResolve({ filter: /\/(erp-client|purchase-order-create-sheet|purchase-request-create-sheet)$/ }, args => ({ path: args.path.split('/').at(-1), namespace: 'qa' }));
       builder.onLoad({ filter: /.*/, namespace: 'qa' }, args => ({ loader: 'tsx', resolveDir: app, contents:
