@@ -6,7 +6,7 @@ public sealed record ErpNativeRights(bool Read,bool Add,bool Update,bool Delete)
 public sealed record ErpActionContext(string Module,string Actor,string? DocumentId,int? StatusId,
     bool IsLocked,string? Owner,string? ContractId,int LineCount,bool LinkedToPurchaseOrder,
     bool LinkedToTransferBatch,ErpNativeRights Rights,bool WritesQualified,bool ContractReadQualified=false,
-    bool ReportsQualified=false,bool NumberingQualified=true,bool HasActivePartReferences=false,
+    bool NumberingQualified=true,bool HasActivePartReferences=false,
     IReadOnlyDictionary<string,object?>? WorkflowFields=null);
 
 public static class ErpActionRules
@@ -22,13 +22,13 @@ public static class ErpActionRules
 
     private static bool Grant(ErpNativeRights rights,string operation)=>operation switch
     {"create"=>rights.Add,"delete"=>rights.Delete,"paste"=>rights.Add||rights.Update,
-        "contract-info"=>rights.Read,_ when operation.StartsWith("print",StringComparison.Ordinal)=>rights.Read,
+        "contract-info"=>rights.Read,
         _=>rights.Update};
     public static ErpScreenPermission Permissions(ErpScreenDescription screen,ErpNativeRights rights)
     {
-        // Print/import/copy are outside the current web handoff. A hidden native CUD
+        // Import/copy are outside the current web handoff. A hidden native CUD
         // control must never advertise an endpoint that is not registered.
-        var actions=screen.Actions.Where(a=>a.Operation!="paste"&&!a.Operation.StartsWith("print",StringComparison.Ordinal))
+        var actions=screen.Actions.Where(a=>a.Operation!="paste")
             .Select(a=>new ErpActionPermission(a.Id,a.Caption,a.NativeVisible&&rights.Read&&Grant(rights,a.Operation),
                 a.RequiresSavedDocument,a.NativeVisible&&rights.Read&&Grant(rights,a.Operation)?Route(screen.Id,a.Operation):null)).ToArray();
         bool Has(string operation)=>screen.Actions.Any(a=>a.Operation==operation&&a.NativeVisible);
@@ -45,7 +45,7 @@ public static class ErpActionRules
     }
     private static ErpActionState Evaluate(ErpActionContext state,ErpActionDefinition action)
     {
-        var write=action.Operation is not ("contract-info" or "paste") && !action.Operation.StartsWith("print",StringComparison.Ordinal);
+        var write=action.Operation is not ("contract-info" or "paste");
         var grant=Grant(state.Rights,action.Operation);
         var visible=action.NativeVisible&&state.Rights.Read&&grant;
         string? reason=!visible?"native_permission_or_hidden":null;
@@ -55,10 +55,9 @@ public static class ErpActionRules
         if(reason is null&&write&&!state.WritesQualified)reason="erp_write_unqualified";
         if(reason is null&&action.Operation=="create"&&!state.NumberingQualified)reason="document_numbering_unqualified";
         if(reason is null&&action.Operation=="contract-info"&&!state.ContractReadQualified)reason="contract_read_unqualified";
-        if(reason is null&&action.Operation.StartsWith("print",StringComparison.Ordinal)&&!state.ReportsQualified)reason="report_runtime_unqualified";
         var operation=action.Operation;
         return new(action.Id,action.Caption,visible,reason is null,reason,action.RequiresSavedDocument,
-            visible&&!operation.StartsWith("print",StringComparison.Ordinal)?Route(state.Module,operation):null);
+            visible?Route(state.Module,operation):null);
     }
     private static string Route(string module,string operation)
     {
@@ -66,14 +65,13 @@ public static class ErpActionRules
         {"create"=>"create","save"=>"save","delete"=>"delete","paste"=>"paste/validate",
           "contract-info"=>"contract-info","scan-add"=>"qr/add","scan-delete"=>"qr/delete",
           _ when operation.StartsWith("save-",StringComparison.Ordinal)=>"sections/"+operation[5..]+"/save",
-          _ when operation.StartsWith("print",StringComparison.Ordinal)=>"reports/"+operation,
           _=>"actions/"+operation};
         return "/api/erp/"+module+"/"+suffix;
     }
     public static bool StateAllows(ErpActionContext state,string operation)
     {
         if(operation=="paste")return state.DocumentId is null||StateAllows(state,"save");
-        if(operation is "create" or "contract-info" || operation.StartsWith("print",StringComparison.Ordinal))return true;
+        if(operation is "create" or "contract-info")return true;
         if(state.DocumentId is null)return false;
         if(ErpScreenCatalog.IsWorkflow(state.Module))return ErpWorkflowRules.StateAllows(state,operation);
         var owner=state.Owner==state.Actor;
