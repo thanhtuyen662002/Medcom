@@ -13,4 +13,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <!-- Nearly every HTTP test builds a fresh ApiHost (~370 minimal-API endpoints).
+         With dynamic code on, each host re-emits and JITs its own request delegates,
+         DI resolvers and JSON accessors: ~2.5 CPU-seconds per host. On 4-vCPU CI
+         runners with test classes in parallel that became 20-50 s per test, timed
+         out InboundDraftEndpointTests' 20 s client and pushed backend-windows past
+         its 45-minute limit. The framework's interpreted/reflection paths have the
+         same behaviour and keep a host cold start near 0.2 s. Test process only. -->
+    <RuntimeHostConfigurationOption Include="System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported" Value="false" />
+  </ItemGroup>
 </Project>
