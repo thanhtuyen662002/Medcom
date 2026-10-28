@@ -140,6 +140,7 @@ const erpScreenPostRoutes = new Set([
   "api/erp/internal-transfer-pm/actions/reject",
   "api/erp/internal-transfer-batches/actions/sync-requests",
   "api/erp/internal-transfer-batches/actions/send-tech",
+  "api/erp/internal-transfer-batches/actions/send-sa",
   "api/erp/internal-transfer-tech/actions/send-sa",
   "api/erp/internal-transfer-tech/actions/send-sa/options",
   "api/erp/internal-transfer-tech/actions/reject",

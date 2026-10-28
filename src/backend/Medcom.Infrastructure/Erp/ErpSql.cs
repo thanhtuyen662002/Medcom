@@ -63,7 +63,9 @@ internal sealed class ErpSqlPlan
         // IV_InboundRequestCTCPFrm T0 FTR: every request past TM except the BLĐ-rejected/cancelled ones.
         "inbound-costs"=>"H.BranchID=@branch AND H.StatusID>=2 AND H.StatusID NOT IN(11,12)",
         "inbound-bld"=>"H.BranchID=@branch AND EXISTS(SELECT 1 FROM dbo.IV_InboundRequestLogTbl L WITH(HOLDLOCK) WHERE L.DocumentID=H.DocumentID AND L.StatusID IN(10))",
-        "inbound-pm"=>$"H.BranchID=@branch AND (EXISTS(SELECT 1 FROM dbo.SY_String2TableFnc(COALESCE(H.SendTo,N'')) U WHERE {Exact("LTRIM(RTRIM(CONVERT(nvarchar(4000),U.Value)))","@actor")}) OR EXISTS(SELECT 1 FROM dbo.IV_InboundRequestLogTbl L WITH(HOLDLOCK) CROSS APPLY dbo.SY_String2TableFnc(COALESCE(L.SendTo,N'')) U WHERE L.DocumentID=H.DocumentID AND L.StatusID IN(6,7) AND {Exact("LTRIM(RTRIM(CONVERT(nvarchar(4000),U.Value)))","@actor")}))",
+        // IV_GoodsQualityControlConfirmFrm T0 TN3 + FTR: requests that reached PM (history 6/7) and are sent to this
+        // PM now (header SendTo), so a request handed to another PM leaves the earlier PM's list.
+        "inbound-pm"=>$"H.BranchID=@branch AND EXISTS(SELECT 1 FROM dbo.IV_InboundRequestLogTbl L WITH(HOLDLOCK) WHERE L.DocumentID=H.DocumentID AND L.StatusID IN(6,7)) AND EXISTS(SELECT 1 FROM dbo.SY_String2TableFnc(COALESCE(H.SendTo,N'')) U WHERE {Exact("LTRIM(RTRIM(CONVERT(nvarchar(4000),U.Value)))","@actor")})",
         "internal-transfer-pm"=>$"H.BranchID=@branch AND ( {Exact("H.AssignedPM","@actor")} OR EXISTS(SELECT 1 FROM dbo.SY_String2TableFnc(COALESCE(H.SendTo,N'')) U WHERE {Exact("LTRIM(RTRIM(CONVERT(nvarchar(4000),U.Value)))","@actor")}))",
         _ when HeaderKey=="BatchID"=>Module=="internal-transfer-warehouse-in"?"H.ToBranchID=@branch":"H.FromBranchID=@branch",
         "machine-movements" or "machine-repairs"=>$"""

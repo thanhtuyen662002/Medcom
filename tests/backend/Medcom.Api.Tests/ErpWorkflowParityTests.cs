@@ -183,6 +183,48 @@ public sealed class ErpWorkflowParityTests
     }
 
     [Fact]
+    public void Inbound_PM_list_shows_only_requests_sent_to_the_PM_now()
+    {
+        // IV_GoodsQualityControlConfirmFrm T0 FTR: C.StatusID = 6 AND IV_InboundRequestTbl.SendTo = '{User}'.
+        var predicate=ErpSqlPlan.Get("inbound-pm")!.ScopePredicate;
+        Assert.Contains("L.StatusID IN(6,7))",predicate);
+        Assert.Contains("COALESCE(H.SendTo,N'')",predicate);
+        Assert.DoesNotContain("L.SendTo",predicate);
+        Assert.DoesNotContain(" OR ",predicate);
+    }
+
+    [Theory]
+    [InlineData(true,"send-tech",true)][InlineData(true,"send-sa",false)]
+    [InlineData(false,"send-tech",false)][InlineData(false,"send-sa",true)]
+    public void Transfer_batch_sends_to_tech_with_equipment_and_to_SA_without(bool equipment,string operation,bool allowed)
+    {
+        // IV_InternalTransferBatchFrm LYS1: "Gửi kỹ thuật" LBEX ... OR HasEquipment=0, "Gửi TP SA" LBEX ... OR HasEquipment=1.
+        var screen=ErpScreenCatalog.Get("internal-transfer-batches")!;
+        Assert.Equal(new[]{"sync-requests","send-tech","send-sa"},screen.Actions.Where(a=>a.Control.StartsWith("ExecSQL",StringComparison.Ordinal)).Select(a=>a.Id).ToArray());
+        Assert.Contains(screen.Actions,a=>a.Id=="send-sa"&&a.Caption=="Gửi TP SA"&&a.Control=="ExecSQLWithParaButtonCtl_2");
+        var fields=new Dictionary<string,object?>{["assignedPM"]=Actor.PrincipalId,["hasEquipment"]=equipment};
+        var state=new ErpActionContext("internal-transfer-batches",Actor.PrincipalId,"DCT1",10,false,null,null,1,false,false,new(true,false,true,false),true,WorkflowFields:fields);
+        Assert.Equal(allowed,ErpWorkflowRules.StateAllows(state,operation));
+        Assert.False(ErpWorkflowRules.StateAllows(state with{StatusId=20},operation));
+    }
+
+    [Theory]
+    [InlineData("send-tech","HasEquipment=1","Chỉ gửi Kỹ thuật khi đợt còn ở bước PM và có thiết bị.")]
+    [InlineData("send-sa","D.IsEquipment=1","Chỉ gửi TP SA khi đợt còn ở bước PM và không có thiết bị. Vui lòng đồng bộ đề nghị nếu loại hàng thay đổi.")]
+    public async Task Transfer_batch_send_rechecks_equipment_like_the_ERP_button(string operation,string condition,string message)
+    {
+        DataTable Bit(bool value){var table=new DataTable();table.Columns.Add("V",typeof(bool));table.Rows.Add(value);return table;}
+        var (transaction,commands)=Connection(_=>Bit(true));
+        await SqlErpScreenCommands.TransferSubmitCheck(transaction,operation,"DCT1",default);
+        Assert.Contains(condition,Assert.Single(commands).CommandText);
+        Assert.Equal("DCT1",commands[0].Parameters["@batch"].Value);
+        (transaction,_)=Connection(_=>Bit(false));
+        var refusal=Refusal(await Assert.ThrowsAnyAsync<Exception>(()=>SqlErpScreenCommands.TransferSubmitCheck(transaction,operation,"DCT1",default)));
+        Assert.Equal(ErpCommandOutcome.Conflict,refusal.Outcome);
+        Assert.Equal(message,refusal.Message);
+    }
+
+    [Fact]
     public async Task Cancel_draft_runs_the_ERP_partial_inbound_cancel_procedure()
     {
         // IV_InboundRequestFrm LYS1 ExecSQLWithParaButtonCtl_PartialCancel C4: '{0}',N'{1}','{User}'.

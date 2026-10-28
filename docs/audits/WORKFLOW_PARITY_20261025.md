@@ -32,3 +32,11 @@ Dữ liệu: 8/10 PO tạo từ đề nghị mua có dòng thiếu thành tiền
 - Thử trên tempdb: `@@ROWCOUNT` ngay sau câu lệnh luôn là số dòng của chính câu lệnh, kể cả khi trigger INSTEAD OF ghi thêm nhiều dòng.
 - Sửa: kiểm số dòng ghi/xóa bằng `SET @affected=@@ROWCOUNT` (tham số đầu ra).
 - Đã kiểm 26/10 (PR #200, có sự đồng ý của chủ dự án): "Gửi đặt mua hàng" PO1026/0006 tạo PO đủ `SourceAmount`/`Amount`/`BaseTotal` (100.000 VND).
+
+## Đối chiếu lại 27/10 — sau các màn nhập hàng #204–#213
+- Báo cáo lệch cấu hình trên production (10:55Z): `healthy`, 730 mục, không mục nào khác mốc 26/10.
+- 15 nút quy trình nhập hàng (TM, Thủ kho, TP SA, Kỹ thuật, PM, BLĐ) và "Hủy đợt nháp": cùng thủ tục, mã `@Action`, trạng thái trước/sau và danh sách "Chọn bước gửi về" như ERP. Nút in bỏ theo quyết định chủ dự án (#210).
+- Đã sửa 2 chỗ lệch:
+  - Danh sách PM nhập hàng: trước đây Web hiện cả chứng từ từng giao cho PM (theo `SendTo` trong lịch sử). Nay theo T0 TN3 + FTR của `IV_GoodsQualityControlConfirmFrm`: đã qua bước PM (lịch sử 6/7) và `SendTo` hiện tại là người dùng.
+  - Đợt điều chuyển: thêm nút "Gửi TP SA" (`ExecSQLWithParaButtonCtl_2`, `send-sa`). "Gửi kỹ thuật" chỉ bật khi đợt có thiết bị, "Gửi TP SA" chỉ bật khi không có (LBEX), và kiểm lại như CS4/C4 của ERP trước khi chạy `IV_InternalTransfer_BatchSubmitStp`.
+- Còn chưa có trên Web: đơn bán sau SA, trả hàng, thu chi, `AR_ObjectNewRequireFrm`, `AP_Purchase2Frm`, `AP_PurchaseNKFrm`, `AP_ServiceFrm`, `PeriodLockDataFrm`, quét QR Viettel Post.

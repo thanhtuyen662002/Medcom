@@ -19,6 +19,9 @@ public static class ErpWorkflowRules
         if(state.Module is "internal-transfer-pm" or "internal-transfer-tech" or "internal-transfer-sa")
         {if(assigned!=state.Actor)return false;}
         else if(state.Module=="internal-transfer-batches"&&assigned is not null&&assigned!=state.Actor)return false;
+        // IV_InternalTransferBatchFrm LBEX: "Gửi kỹ thuật" only with equipment, "Gửi TP SA" only without.
+        if(state.Module=="internal-transfer-batches"&&operation is "send-tech" or "send-sa"
+            &&(state.WorkflowFields?.GetValueOrDefault("hasEquipment")is true)!=(operation=="send-tech"))return false;
         if(state.Module is "sales-order-pm" or "inbound-pm"&&!(Field("sendTo")??"").Split(';').Any(v=>v.Trim()==state.Actor))return false;
         if(operation=="delete")return state.Module=="inbound-requests"&&!state.IsLocked
             ||state.Module=="internal-transfer-batches"&&state.StatusId==0&&state.LineCount==0;

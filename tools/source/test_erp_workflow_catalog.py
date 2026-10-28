@@ -15,7 +15,7 @@ class WorkflowCatalogTests(unittest.TestCase):
         self.assertFalse(c['productionAccepted'])
         self.assertFalse(c['businessWritesPerformed'])
         self.assertEqual(18, len(c['screens']))  # + inbound-warehouse, inbound-sa/tech/pm, inbound-bld (2026-10-26), inbound-costs (2026-10-27)
-        self.assertEqual(43, sum(len(s['buttons']) for s in c['screens']))
+        self.assertEqual(44, sum(len(s['buttons']) for s in c['screens']))
         self.assertEqual(1565, sum(len(fs) for s in c['screens'] for fs in s['fields'].values()))
         self.assertEqual(206, sum(len(s['lookups']) for s in c['screens']))
         self.assertEqual(45, len(c['modules']))

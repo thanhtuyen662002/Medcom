@@ -13234,7 +13234,7 @@
           "caption": "G\u1eedi k\u1ef9 thu\u1eadt",
           "operation": "send-tech",
           "payloadType": "notes",
-          "lockExpression": "StatusID NOT IN (0,10,25,45)",
+          "lockExpression": "StatusID NOT IN (0,10,25,45) OR HasEquipment=0",
           "allowedStatuses": [
             0,
             10,
@@ -13245,6 +13245,23 @@
           "commandSha256Utf16LE": "1ee022b2009088d24e3cbababd8a420b4417eec41206d0aa03c1e227e4ef2fd7",
           "checkSha256Utf16LE": "3c17334d072fc64a848bfb86a046383b10819b80bc230a3c2cd51428788e1012",
           "propertyEvidence": "dbo.SY_FrmCfg/IV_InternalTransferBatchFrm/LYS1/ExecSQLWithParaButtonCtl_1/C4"
+        },
+        {
+          "control": "ExecSQLWithParaButtonCtl_2",
+          "caption": "Gửi TP SA",
+          "operation": "send-sa",
+          "payloadType": "notes",
+          "lockExpression": "StatusID NOT IN (0,10,25,45) OR HasEquipment=1",
+          "allowedStatuses": [
+            0,
+            10,
+            25,
+            45
+          ],
+          "procedure": "IV_InternalTransfer_BatchSubmitStp",
+          "commandSha256Utf16LE": null,
+          "checkSha256Utf16LE": null,
+          "propertyEvidence": "dbo.SY_FrmCfg/IV_InternalTransferBatchFrm/LYS1/ExecSQLWithParaButtonCtl_2/BT"
         }
       ],
       "toolbar": {

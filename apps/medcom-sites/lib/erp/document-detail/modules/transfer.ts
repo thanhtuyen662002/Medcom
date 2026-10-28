@@ -298,7 +298,7 @@ export const transferBatchDetailConfig = {
   notice: {
     "internal-transfer-batches": {
       title: "Đợt điều chuyển",
-      body: "Đồng bộ đề nghị · Gửi kỹ thuật.",
+      body: "Đồng bộ đề nghị · Gửi kỹ thuật · Gửi TP SA.",
     },
   },
 } as const satisfies DocumentDetailConfig;

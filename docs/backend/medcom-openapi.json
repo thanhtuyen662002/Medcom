@@ -11501,6 +11501,87 @@
         "x-medcom-response-contract": 3
       }
     },
+    "/api/erp/internal-transfer-batches/actions/send-sa": {
+      "post": {
+        "operationId": "internal_transfer_batches_send_sa",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpCommandResultCanonicalV3_batchId"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": [],
+            "CsrfCookie": []
+          }
+        ],
+        "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
+        "x-medcom-capability": "internal-transfer-batches.read",
+        "parameters": [
+          {
+            "name": "X-Medcom-Read-Scope",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Erp_internal_transfer_batches_send_sa_request"
+              }
+            }
+          }
+        },
+        "x-medcom-typed-payload": {
+          "$ref": "#/components/schemas/ErpActionNotes"
+        },
+        "x-medcom-response-contract": 3
+      }
+    },
     "/api/erp/internal-transfer-pm/screen": {
       "get": {
         "operationId": "internal_transfer_pm_screen",
@@ -55621,6 +55702,35 @@
         ]
       },
       "Erp_internal_transfer_batches_send_tech_request": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "idempotencyKey": {
+            "type": "string"
+          },
+          "branchId": {
+            "type": "string"
+          },
+          "documentId": {
+            "type": "string"
+          },
+          "expectedStateToken": {
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ErpActionNotes"
+          }
+        },
+        "x-medcom-exact-input": true,
+        "required": [
+          "idempotencyKey",
+          "branchId",
+          "documentId",
+          "expectedStateToken",
+          "payload"
+        ]
+      },
+      "Erp_internal_transfer_batches_send_sa_request": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
