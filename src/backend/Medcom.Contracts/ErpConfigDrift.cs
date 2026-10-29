@@ -7,3 +7,9 @@ public sealed record ErpConfigDriftItem(string Category, string Key, string Chan
 // Status: "healthy" (matches the baseline), "drifted" or "unavailable" (not checked yet / read failed).
 public sealed record ErpConfigDriftReport(string Status, DateTimeOffset? CheckedAt, string Baseline,
     int Watched, int Unverifiable, IReadOnlyList<ErpConfigDriftItem> Changes);
+
+// One ERP dropdown (SY_FrmDrdwTbl) whose metadata no longer matches what the Web lookup was qualified
+// against; the Web refuses such a lookup (erp_lookup_binding_or_capacity_changed). Metadata only, never Source SQL.
+public sealed record ErpLookupMismatch(string Field, string? Expected, string? Live);
+public sealed record ErpLookupCheckItem(string Module, string LookupId, string Status, IReadOnlyList<ErpLookupMismatch> Mismatches);
+public sealed record ErpLookupCheckReport(DateTimeOffset CheckedAt, int Checked, IReadOnlyList<ErpLookupCheckItem> Changed);

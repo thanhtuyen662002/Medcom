@@ -495,6 +495,50 @@
         "x-medcom-response-contract": 3
       }
     },
+    "/api/platform/erp-lookup-check": {
+      "get": {
+        "operationId": "platformErpLookupCheck",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpLookupCheckReportCanonicalV3_documentId"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-medcom-admission": "erp-configuration-observation",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-capability": "platform.status",
+        "x-medcom-response-contract": 3
+      }
+    },
     "/api/auth/csrf": {
       "get": {
         "operationId": "authCsrf",
@@ -33280,6 +33324,92 @@
           "category",
           "key",
           "change"
+        ]
+      },
+      "ErpLookupCheckReport": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "checked": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "changed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpLookupCheckItem"
+            }
+          }
+        },
+        "required": [
+          "checkedAt",
+          "checked",
+          "changed"
+        ]
+      },
+      "ErpLookupCheckItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "module": {
+            "type": "string"
+          },
+          "lookupId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "mismatches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpLookupMismatch"
+            }
+          }
+        },
+        "required": [
+          "module",
+          "lookupId",
+          "status",
+          "mismatches"
+        ]
+      },
+      "ErpLookupMismatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "live": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "field",
+          "expected",
+          "live"
         ]
       },
       "SessionView": {
@@ -147023,6 +147153,95 @@
           "category",
           "key",
           "change"
+        ],
+        "x-medcom-response-contract": 3
+      },
+      "ErpLookupCheckReportCanonicalV3_documentId": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "checked": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "changed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpLookupCheckItemCanonicalV3_documentId"
+            }
+          }
+        },
+        "required": [
+          "checkedAt",
+          "checked",
+          "changed"
+        ],
+        "x-medcom-response-contract": 3
+      },
+      "ErpLookupCheckItemCanonicalV3_documentId": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "module": {
+            "type": "string"
+          },
+          "lookupId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "mismatches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpLookupMismatchCanonicalV3_documentId"
+            }
+          }
+        },
+        "required": [
+          "module",
+          "lookupId",
+          "status",
+          "mismatches"
+        ],
+        "x-medcom-response-contract": 3
+      },
+      "ErpLookupMismatchCanonicalV3_documentId": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "live": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "field",
+          "expected",
+          "live"
         ],
         "x-medcom-response-contract": 3
       },
