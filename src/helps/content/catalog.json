@@ -1,7 +1,7 @@
 {
   "title": "MEDCOM · Tài liệu ERP",
-  "version": "2026.10.23",
-  "reviewed": "2026-10-23",
+  "version": "2026.10.29",
+  "reviewed": "2026-10-29",
   "defaultArticle": "inbound",
   "articles": [
     {
@@ -33,7 +33,7 @@
     {
       "id": "purchasing",
       "title": "Mua hàng từ đề nghị đến PO",
-      "subtitle": "Lập đề nghị, duyệt và tạo đơn đặt hàng làm nguồn cho các đợt nhập.",
+      "subtitle": "Lập đề nghị khi chưa có giá, duyệt, tạo PO và xóa phiếu nháp đúng điều kiện.",
       "group": "Mua hàng & nhập kho",
       "roles": [
         "Người đề nghị",
@@ -41,7 +41,7 @@
         "Thương mại"
       ],
       "source": "HDSD Quy Trình BPTM.docx",
-      "flow": "flowchart LR\nA[Lập đề nghị mua hàng] --> B[Chờ duyệt]\nB --> C{Quyết định}\nC -->|Duyệt| D[Đề nghị đã duyệt]\nC -->|Không duyệt + lý do| E[Không duyệt]\nD --> F[Tạo đơn đặt hàng]\nF --> G[PO và các dòng hàng]\nG --> H[Nhiều đợt đề nghị nhập]\nH --> I[Nhập kho và theo dõi lô hàng]",
+      "flow": "flowchart TD\nA[Lập đề nghị mua hàng, chọn loại tiền] --> S[Lưu Nháp: đơn giá được để trống, không nhập tỷ giá]\nS -->|Gửi đề nghị| B[Chờ duyệt]\nB --> C{Quyết định}\nC -->|Duyệt| D[Đề nghị đã duyệt]\nC -->|Không duyệt + lý do| E[Không duyệt]\nD -->|Gửi đặt mua hàng| F[Tạo PO, giữ đơn giá trống nếu chưa biết]\nF --> R[Tỷ giá theo ngày; thiếu thì bổ sung trên PO]\nR --> G[Hoàn thiện đơn giá và thông tin PO]\nG --> H[Nhiều đợt đề nghị nhập]\nH --> I[Nhập kho và theo dõi lô hàng]\nS -->|Xóa| Q{Còn Nháp, chưa khóa và chưa có PO?}\nQ -->|Có| X[Xóa đầu phiếu và chi tiết trong cùng giao dịch]\nQ -->|Không| K[Chặn xóa, xử lý theo quy trình hiện hữu]\nX --> J{Có lỗi khi xóa?}\nJ -->|Có| U[Hoàn tác toàn bộ, giữ nguyên phiếu]\nJ -->|Không| V[Hoàn tất xóa]",
       "guide": "guides/purchasing.md",
       "technical": "technical/purchasing.md",
       "forms": [
@@ -53,7 +53,11 @@
         "AP_PurchaseRequest_ApproveOrRejectStp",
         "AP_PurchaseRequest_CreatePOStp",
         "SY_GetUserPermissionFnc",
-        "AP_PurchaseOrderWorkflowStatusView"
+        "AP_PurchaseOrderWorkflowStatusView",
+        "AP_PurchaseRequest_OptionalPriceValidationFnc",
+        "CF_Currency_GetRateOnDateFnc",
+        "CF_Document_ExchangeRateValidationFnc",
+        "AP_PurchaseRequest_DeleteDraftTrg"
       ],
       "errors": [
         [
@@ -67,9 +71,29 @@
         [
           "Không duyệt nhưng thiếu lý do",
           "Nhập nội dung cần điều chỉnh trước khi xác nhận Không duyệt."
+        ],
+        [
+          "Chưa có đơn giá để lập đề nghị",
+          "Để trống đơn giá, nhập đủ thông tin hàng và số lượng rồi Lưu/Gửi đề nghị theo quyền hiện có. Không cần nhập 0 thay cho giá chưa biết; không nhập giá âm."
+        ],
+        [
+          "Không thấy ô tỷ giá trên đề nghị",
+          "Phiếu đề nghị đã bỏ ô tỷ giá; vẫn chọn loại tiền. Kiểm tra và bổ sung tỷ giá ở PO/chứng từ tài chính khi cần."
+        ],
+        [
+          "PO nháp chưa có tỷ giá hoặc đơn giá",
+          "Bổ sung đơn giá theo báo giá và tỷ giá hợp lệ khi xử lý PO. Không coi tổng tiền khi còn thiếu giá/tỷ giá là số tiền hoàn chỉnh."
+        ],
+        [
+          "Không xóa được đề nghị mua hàng",
+          "Chỉ xóa phiếu còn Nháp, chưa khóa, chưa có PO và theo quyền hiện hữu. Phiếu đã chuyển xử lý phải theo quy trình; không gỡ liên kết để xóa."
+        ],
+        [
+          "Xóa báo Thiếu dữ liệu liên kết (AP_PurchaseRequestDetailTbl)",
+          "Bản sửa đã xử lý xóa đầu phiếu và dòng hàng cùng giao dịch. Nếu vẫn gặp trên phiếu đủ điều kiện, giữ nguyên phiếu và báo quản trị kiểm tra bản sửa; không xóa thủ công dữ liệu liên kết."
         ]
       ],
-      "reviewed": "2026-10-22"
+      "reviewed": "2026-10-29"
     },
     {
       "id": "inbound",
