@@ -13,12 +13,13 @@ public sealed class ErpLookupDiagnosticsTests
     [Fact]
     public void A_dropped_link_is_named_with_expected_and_live_values()
     {
-        // ERP 29/10: the request's currency picker no longer fills RateExchange.
+        // ERP 29/10 emptied the request's currency link (it no longer fills RateExchange); the catalog follows.
         var screen = ErpScreenCatalog.Get("purchase-requests")!;
         var currency = screen.Lookups.Single(lookup => lookup.Id == "header.CurrencyID");
-        var item = ErpLookupDiagnostics.Compare(screen, currency, [Live(screen, currency, null)]);
+        Assert.Equal("", currency.LinkedFields);
+        var item = ErpLookupDiagnostics.Compare(screen, currency, [Live(screen, currency, "RateExchange")]);
         Assert.Equal("changed", item.Status);
-        Assert.Equal(new ErpLookupMismatch("LinkColumn", "RateExchange", null), Assert.Single(item.Mismatches));
+        Assert.Equal(new ErpLookupMismatch("LinkColumn", "", "RateExchange"), Assert.Single(item.Mismatches));
         Assert.Equal("ok", ErpLookupDiagnostics.Compare(screen, currency, [Live(screen, currency, currency.LinkedFields)]).Status);
     }
 
