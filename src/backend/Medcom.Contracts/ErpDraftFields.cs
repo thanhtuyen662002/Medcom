@@ -25,7 +25,7 @@ public sealed record ErpPurchaseRequestHeaderInput
     [JsonPropertyName("objectId")]
     public string? ObjectId { get; init; }
     [JsonPropertyName("rateExchange")]
-    public required double RateExchange { get; init; }
+    public double? RateExchange { get; init; }
 }
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
@@ -40,7 +40,7 @@ public sealed record ErpPurchaseRequestLineInput
     [JsonPropertyName("quantity")]
     public required string Quantity { get; init; }
     [JsonPropertyName("unitPrice")]
-    public required string UnitPrice { get; init; }
+    public string? UnitPrice { get; init; }
     [JsonPropertyName("model")]
     public string? Model { get; init; }
 }

@@ -8,8 +8,8 @@ const id=z.string().min(1).max(100), text=z.string().max(65536), decimal=z.strin
 const wallClock=z.string().regex(/^\d{4}-\d{2}-\d{2}(?:[T\s]\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?)?$/).nullable();
 const scope=z.string().regex(/^[a-f0-9]{64}$/);
 const header=z.object({purchaseDate:wallClock,purposeId:z.number().int().nullable(),personSuggest:text,department:text,
- purposeDescOrClient:text.nullable(),price:decimal.nullable(),notes:text.nullable(),currencyId:id,objectId:id,rateExchange:z.number().finite()}).passthrough();
-const values=z.object({itemId:id,budget:decimal.nullable(),timeRequired:text.nullable(),quantity:decimal,unitPrice:decimal,totalPrice:decimal.nullable(),model:text.nullable()}).passthrough();
+ purposeDescOrClient:text.nullable(),price:decimal.nullable(),notes:text.nullable(),currencyId:id,objectId:id,rateExchange:z.number().finite().nullable()}).passthrough();
+const values=z.object({itemId:id,budget:decimal.nullable(),timeRequired:text.nullable(),quantity:decimal,unitPrice:decimal.nullable(),totalPrice:decimal.nullable(),model:text.nullable()}).passthrough();
 const document=z.object({purchaseRequestId:id.optional(),documentId:id.optional(),branchId:id.optional(),header,statusId:z.number().int().optional(),isLocked:z.boolean().nullable().optional(),
  lines:z.array(z.object({lineId:id,values:values.optional()}).passthrough()).max(500)}).passthrough().transform(doc => {
   const h = (doc.header || {}) as Record<string, unknown>;
@@ -24,7 +24,7 @@ const document=z.object({purchaseRequestId:id.optional(),documentId:id.optional(
       budget: typeof lRecord.budget === "string" ? lRecord.budget : null,
       timeRequired: typeof lRecord.timeRequired === "string" ? lRecord.timeRequired : null,
       quantity: typeof lRecord.quantity === "string" ? lRecord.quantity : "0",
-      unitPrice: typeof lRecord.unitPrice === "string" ? lRecord.unitPrice : "0",
+      unitPrice: typeof lRecord.unitPrice === "string" ? lRecord.unitPrice : null,
       totalPrice: typeof lRecord.totalPrice === "string" ? lRecord.totalPrice : null,
       model: typeof lRecord.model === "string" ? lRecord.model : null
     };
@@ -45,7 +45,7 @@ export const purchaseRequestHeaderFieldsSchema = z.object({
   isLock: z.boolean().nullable(),
   currencyId: id,
   objectId: id,
-  rateExchange: z.number().finite(),
+  rateExchange: z.number().finite().nullable(),
   branchId: id,
 }).passthrough();
 
@@ -55,7 +55,7 @@ export const purchaseRequestLineFieldsSchema = z.object({
   budget: decimal.nullable(),
   timeRequired: text.nullable(),
   quantity: decimal,
-  unitPrice: decimal,
+  unitPrice: decimal.nullable(),
   totalPrice: decimal.nullable(),
   model: text.nullable(),
   purchaseRequestId: text.nullable(),
@@ -173,7 +173,7 @@ export function mobilePurchaseSnapshot(readback:PurchaseReadback):PurchaseReques
   status:{id:String(source.statusId),label:`Trạng thái ERP: ${source.statusId}`},values:{purchaseDate:h.purchaseDate.slice(0,10),personSuggest:h.personSuggest,
    department:h.department,purposeId:h.purposeId===null?"":String(h.purposeId),purposeDescOrClient:h.purposeDescOrClient??"",notes:h.notes??"",branchId:source.branchId,
    currencyId:h.currencyId,objectId:h.objectId,lines:source.lines.map(line=>({localKey:line.lineId,lineId:line.lineId,itemId:line.values.itemId,
-    quantity:line.values.quantity,unitPrice:line.values.unitPrice,budget:line.values.budget??"",timeRequired:line.values.timeRequired??"",model:line.values.model??""}))}};
+    quantity:line.values.quantity,unitPrice:line.values.unitPrice??"",budget:line.values.budget??"",timeRequired:line.values.timeRequired??"",model:line.values.model??""}))}};
 }
 
 /** The body is frozen once by the adapter. Never rebuild it for reconciliation. */

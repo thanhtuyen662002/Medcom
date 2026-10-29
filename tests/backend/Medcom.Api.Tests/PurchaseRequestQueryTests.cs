@@ -779,7 +779,7 @@ internal sealed class PurchaseQuerySource
                             ? Documents.Count(a=>Fold(a.PurchaseRequestId)==Fold(d.PurchaseRequestId))>1
                             : Documents.Any(a=>Fold(a.PurchaseRequestId)==Fold(d.PurchaseRequestId)&&a.PurchaseRequestId!=d.PurchaseRequestId))?1:0,StatusName??(object)DBNull.Value,StatusRows,
                     d.Header.PurposeId??(object)DBNull.Value,d.Header.PurposeDescOrClient??(object)DBNull.Value,Number(d.Header.Price),
-                    d.Header.Notes??(object)DBNull.Value,d.Header.CurrencyId,d.Header.ObjectId??(object)DBNull.Value,d.Header.RateExchange});
+                    d.Header.Notes??(object)DBNull.Value,d.Header.CurrencyId,d.Header.ObjectId??(object)DBNull.Value,d.Header.RateExchange??(object)DBNull.Value});
             var reader=Rows(17,result);AfterData?.Invoke();return reader;
         }
         if(command.CommandText.Contains("FROM dbo.AP_PurchaseRequestTbl",StringComparison.Ordinal))
@@ -787,7 +787,7 @@ internal sealed class PurchaseQuerySource
             var native=command.CommandText.Contains("WHERE D.PurchaseRequestID=@document",StringComparison.Ordinal);
             result=Documents.Where(d=>native?Fold(d.PurchaseRequestId)==Fold(id!):d.PurchaseRequestId==id).Take(2).Select(d=>new object[]{d.PurchaseRequestId,Date(d.Header.PurchaseDate),d.Header.PurposeId??(object)DBNull.Value,
                 d.Header.PersonSuggest,d.Header.Department,d.Header.PurposeDescOrClient??(object)DBNull.Value,Number(d.Header.Price),d.Header.Notes??(object)DBNull.Value,d.StatusId,d.IsLocked??(object)DBNull.Value,
-                d.Header.CurrencyId,d.Header.ObjectId??(object)DBNull.Value,d.Header.RateExchange,d.BranchId,StatusName??(object)DBNull.Value,StatusRows});return Rows(16,result);
+                d.Header.CurrencyId,d.Header.ObjectId??(object)DBNull.Value,d.Header.RateExchange??(object)DBNull.Value,d.BranchId,StatusName??(object)DBNull.Value,StatusRows});return Rows(16,result);
         }
         if(command.CommandText.Contains("FROM dbo.AP_PurchaseRequestDetailTbl C",StringComparison.Ordinal))
         {

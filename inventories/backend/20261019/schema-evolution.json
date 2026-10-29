@@ -4,6 +4,8 @@
   "changes": [
     { "table": "AP_PurchaseRequestTbl", "column": "ObjectID", "previousNullable": false, "nullable": true },
     { "table": "AP_OrderTbl", "column": "ObjectID", "previousNullable": false, "nullable": true },
-    { "table": "AR_OrderTbl", "column": "ObjectID", "previousNullable": false, "nullable": true }
+    { "table": "AR_OrderTbl", "column": "ObjectID", "previousNullable": false, "nullable": true },
+    { "table": "AP_PurchaseRequestTbl", "column": "RateExchange", "previousNullable": false, "nullable": true, "evidence": "src/helps/content/technical/purchasing.md" },
+    { "table": "AP_PurchaseRequestDetailTbl", "column": "UnitPrice", "previousNullable": false, "nullable": true, "evidence": "src/helps/content/technical/purchasing.md" }
   ]
 }

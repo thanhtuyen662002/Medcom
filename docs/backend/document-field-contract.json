@@ -1011,7 +1011,7 @@
             "jsonPath": "data.document.header.rateExchange",
             "sqlType": "float",
             "listJsonPath": "data.rows[].rateExchange",
-            "nullable": false,
+            "nullable": true,
             "jsonType": "number",
             "format": null
           },
@@ -1082,7 +1082,7 @@
             "jsonPath": "data.document.lines[].unitPrice",
             "sqlType": "decimal(18, 0)",
             "listJsonPath": null,
-            "nullable": false,
+            "nullable": true,
             "jsonType": "string",
             "format": "decimal-string"
           },

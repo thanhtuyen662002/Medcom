@@ -75,14 +75,14 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
             ('AP_PurchaseRequestTbl','isLock','bit',1,1,1,0),
             ('AP_PurchaseRequestTbl','CurrencyID','varchar',3,0,0,0),
             ('AP_PurchaseRequestTbl','ObjectID','varchar',100,1,0,0),
-            ('AP_PurchaseRequestTbl','RateExchange','float',8,0,53,0),
+            ('AP_PurchaseRequestTbl','RateExchange','float',8,1,53,0),
             ('AP_PurchaseRequestTbl','BranchID','varchar',50,0,0,0),
             ('AP_PurchaseRequestDetailTbl','UserAutoID','varchar',50,0,0,0),
             ('AP_PurchaseRequestDetailTbl','ItemID','varchar',50,0,0,0),
             ('AP_PurchaseRequestDetailTbl','Budget','decimal',9,1,18,0),
             ('AP_PurchaseRequestDetailTbl','TimeRequired','nvarchar',400,1,0,0),
             ('AP_PurchaseRequestDetailTbl','Quantity','decimal',9,0,18,0),
-            ('AP_PurchaseRequestDetailTbl','UnitPrice','decimal',9,0,18,0),
+            ('AP_PurchaseRequestDetailTbl','UnitPrice','decimal',9,1,18,0),
             ('AP_PurchaseRequestDetailTbl','TotalPrice','decimal',9,1,18,0),
             ('AP_PurchaseRequestDetailTbl','Model','varchar',50,1,0,0),
             ('AP_PurchaseRequestDetailTbl','PurchaseRequestID','nvarchar',100,1,0,0)
@@ -194,16 +194,16 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                 PurchaseRequestSql.Document(command, documentId);
                 await using var reader = await command.ExecuteReaderAsync(ct);
                 if (!await reader.ReadAsync(ct)) throw new QueryNotFound();
-                if (new[] { 0, 3, 4, 8, 10, 12, 13 }.Any(reader.IsDBNull)
+                if (new[] { 0, 3, 4, 8, 10, 13 }.Any(reader.IsDBNull)
                     || reader.GetString(0) != documentId || !branches.Contains(reader.GetString(13), StringComparer.Ordinal)) throw new QueryNotFound();
                 var header = new PurchaseRequestHeaderInput(Date(reader, 1), reader.IsDBNull(2) ? null : reader.GetInt32(2),
                     reader.GetString(3), reader.GetString(4), Text(reader, 5), Decimal(reader, 6, "0.00"), Text(reader, 7),
-                    reader.GetString(10), Text(reader,11), reader.GetDouble(12));
+                    reader.GetString(10), Text(reader,11), reader.IsDBNull(12) ? null : reader.GetDouble(12));
                 statusName = DocumentStatusSql.ReadName(reader, 14, 50);
                 head = new(documentId, reader.GetString(13), header, reader.GetInt32(8), reader.IsDBNull(9) ? null : reader.GetBoolean(9), []);
                 sourceHeader=new(head.PurchaseRequestId,header.PurchaseDate,header.PurposeId,header.PersonSuggest,
                     header.Department,header.PurposeDescOrClient,header.Price,header.Notes,head.StatusId,head.IsLocked,
-                    header.CurrencyId,header.ObjectId,Finite(header.RateExchange),head.BranchId);
+                    header.CurrencyId,header.ObjectId,header.RateExchange is {} rate ? Finite(rate) : null,head.BranchId);
                 if (await reader.ReadAsync(ct)) throw new QueryNotFound();
             }
             var lines = new List<PurchaseRequestPersistedLine>();
@@ -215,10 +215,10 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                 await using var reader = await command.ExecuteReaderAsync(ct);
                 while (await reader.ReadAsync(ct))
                 {
-                    if (lines.Count == PurchaseRequestCommandRules.MaxLines || new[] { 0, 1, 4, 5, 8, 9 }.Any(reader.IsDBNull)
+                    if (lines.Count == PurchaseRequestCommandRules.MaxLines || new[] { 0, 1, 4, 8, 9 }.Any(reader.IsDBNull)
                         || reader.GetString(8) != documentId || reader.GetInt32(9) != 0) throw new InvalidOperationException("Invalid source relation.");
                     lines.Add(new(reader.GetString(0), new(reader.GetString(1), Decimal(reader, 2, "0"), Text(reader, 3),
-                        Decimal(reader, 4, "0")!, Decimal(reader, 5, "0")!, Decimal(reader, 6, "0"), Text(reader, 7))));
+                        Decimal(reader, 4, "0")!, Decimal(reader, 5, "0"), Decimal(reader, 6, "0"), Text(reader, 7))));
                     var line=lines[^1];var values=line.Values;
                     sourceLines.Add(new(line.LineId,values.ItemId,values.Budget,values.TimeRequired,values.Quantity,
                         values.UnitPrice,values.TotalPrice,values.Model,reader.GetString(8)));

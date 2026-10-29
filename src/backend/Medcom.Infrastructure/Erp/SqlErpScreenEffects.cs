@@ -196,7 +196,12 @@ public sealed partial class SqlErpScreenCommands
             var field=plan.Screen.Fields["lines"].Single(c=>c.Name==name);var json=Element(value?.ToString(CultureInfo.InvariantCulture));
             Require(ErpInputRules.Value(field,json),ErpCommandOutcome.InvalidInput,"calculated_value_requires_rounding");row[name]=json;
         }
-        if(plan.Module=="purchase-requests")Decimal("totalPrice",Number("quantity")*Number("unitPrice"));
+        if(plan.Module=="purchase-requests")
+        {
+            // AP_PurchaseRequest_OptionalPriceValidationFnc (29/10): blank price stays NULL (and so does the total); negative is rejected.
+            Require(Number("unitPrice")is not <0m,ErpCommandOutcome.InvalidInput,"unit_price_negative");
+            Decimal("totalPrice",Number("quantity")*Number("unitPrice"));
+        }
         if(plan.Module.StartsWith("inbound-",StringComparison.Ordinal))foreach(var native in new[]{"ItemCode","HangSX","UnitFactor"})
         {
             var name=NativeJsonName(native);

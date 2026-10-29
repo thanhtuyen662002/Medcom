@@ -222,12 +222,12 @@ public sealed class SqlPurchaseRequestCommandAuthorityReader
                 if (await r.NextResultAsync(token)) throw new InvalidOperationException("Unexpected result.");
                 return false;
             }
-            Required(r, 0, 3, 4, 8, 10, 12, 13);
+            Required(r, 0, 3, 4, 8, 10, 13);
             if (r.GetString(0) != document || r.GetString(13) != branch) return false;
             var header = new PurchaseRequestHeaderInput(r.IsDBNull(1) ? null : r.GetDateTime(1).ToString("yyyy-MM-dd'T'HH:mm:ss.fff", CultureInfo.InvariantCulture),
                 r.IsDBNull(2) ? null : r.GetInt32(2), r.GetString(3), r.GetString(4), r.IsDBNull(5) ? null : r.GetString(5),
                 r.IsDBNull(6) ? null : r.GetDecimal(6).ToString("0.00", CultureInfo.InvariantCulture), r.IsDBNull(7) ? null : r.GetString(7),
-                r.GetString(10), r.IsDBNull(11)?null:r.GetString(11), r.GetDouble(12));
+                r.GetString(10), r.IsDBNull(11)?null:r.GetString(11), r.IsDBNull(12)?null:r.GetDouble(12));
             // DO NOT gate on StatusId/IsLocked here. Submit changes these itself;
             // post-dispatch receipt access and historical lookup must remain possible.
             head = new(document, branch, header, r.GetInt32(8), r.IsDBNull(9) ? null : r.GetBoolean(9), []);
@@ -242,13 +242,13 @@ public sealed class SqlPurchaseRequestCommandAuthorityReader
             while (await r.ReadAsync(token))
             {
                 if (lines.Count == PurchaseRequestCommandRules.MaxLines) throw new InvalidOperationException("Detail bound.");
-                Required(r, 0, 1, 4, 5, 8);
+                Required(r, 0, 1, 4, 8);
                 // Reuse the full native FK relation, then reject physical aliases.
                 // Do not filter away a case/accent/space-owned child before checking it.
                 if (r.GetString(8) != document) return false;
                 string? D(int i) => r.IsDBNull(i) ? null : r.GetDecimal(i).ToString("0", CultureInfo.InvariantCulture);
                 lines.Add(new(r.GetString(0), new(r.GetString(1), D(2), r.IsDBNull(3) ? null : r.GetString(3),
-                    D(4)!, D(5)!, D(6), r.IsDBNull(7) ? null : r.GetString(7))));
+                    D(4)!, D(5), D(6), r.IsDBNull(7) ? null : r.GetString(7))));
             }
             if (await r.NextResultAsync(token)) throw new InvalidOperationException("Unexpected result.");
         }
