@@ -39,7 +39,10 @@ public static class ErpWorkflowRules
     {
         var button=ErpScreenCatalog.Metadata(module).GetProperty("buttons").EnumerateArray().Single(b=>b.GetProperty("operation").GetString()==operation);
         if(button.GetProperty("procedure").GetString()is not {} procedure)return module=="purchase-approvals"?2000:4000;
-        var metadata=ErpScreenCatalog.WorkflowMetadata.GetProperty("modules").EnumerateArray().Single(m=>m.GetProperty("name").GetString()==procedure);
+        // The inbound buttons share IV_InboundRequest_ChangeWorkflowStatusStp, whose definition is not in the
+        // observed module closure; without its @Notes size the generic 4000 limit applies (as for no @Notes).
+        var metadata=ErpScreenCatalog.WorkflowMetadata.GetProperty("modules").EnumerateArray().SingleOrDefault(m=>m.GetProperty("name").GetString()==procedure);
+        if(metadata.ValueKind==System.Text.Json.JsonValueKind.Undefined)return 4000;
         var parameter=metadata.GetProperty("parameters").EnumerateArray().FirstOrDefault(p=>p.GetProperty("ParameterName").GetString()is "@Notes" or "@Reason");
         if(parameter.ValueKind==System.Text.Json.JsonValueKind.Undefined)return 4000;
         var size=parameter.GetProperty("max_length").GetInt32();
