@@ -71,6 +71,8 @@ INSERT @modules VALUES
   (N'AP_POInboundPartial_CancelStp'),
   (N'AP_PurchaseRequest_ApproveOrRejectStp'),
   (N'AP_PurchaseRequest_CreatePOStp'),
+  -- ERP 29/10: called only through the forms' EBS/EBC text, so no SQL dependency reaches them.
+  (N'AP_PurchaseRequest_OptionalPriceValidationFnc'),
   (N'AP_PurposeRequestListReportStp'),
   (N'AR_ContractInfoStp'),
   (N'AR_GoodsHandoverMinutesReportStp'),
@@ -83,6 +85,7 @@ INSERT @modules VALUES
   (N'AR_Order_SalesRecallFromPMStp'),
   (N'AR_Order_UpdateBBBGStp'),
   (N'AR_PurchaseQRCodeReportStp'),
+  (N'CF_Document_ExchangeRateValidationFnc'),
   (N'CF_QRcodeStp'),
   (N'IV_InboundRequest_ChangeWorkflowStatusStp'),
   (N'IV_InboundRequest_PrepareDetailSaveStp'),

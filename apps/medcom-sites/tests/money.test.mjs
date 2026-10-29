@@ -8,9 +8,13 @@ import {fileURLToPath} from 'node:url';
 
 const app=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),output=path.join(app,'.test-runtime/money');
 await mkdir(output,{recursive:true});
-await build({stdin:{contents:'export * from "./lib/erp/money";export {MoneyInput} from "./components/erp/money-input";export {salesOrderLineDisplay,emptySalesOrderLine,salesOrderLineInput} from "./lib/erp/sales-order-lines";',resolveDir:app,loader:'tsx'},outfile:path.join(output,'fixture.cjs'),bundle:true,platform:'node',format:'cjs',packages:'external',alias:{'@':app},jsx:'automatic',logLevel:'warning'});
-const require=createRequire(import.meta.url),{formatMoney,moneyInputToRaw,moneyPasteToRaw,isMoneyField,multiplyMoney,sumMoney,MoneyInput,salesOrderLineDisplay,emptySalesOrderLine,salesOrderLineInput}=require(path.join(output,'fixture.cjs'));
+await build({stdin:{contents:'export * from "./lib/erp/money";export {MoneyInput} from "./components/erp/money-input";export {salesOrderLineDisplay,emptySalesOrderLine,salesOrderLineInput} from "./lib/erp/sales-order-lines";export {validDocumentRate} from "./lib/erp/document-rate";',resolveDir:app,loader:'tsx'},outfile:path.join(output,'fixture.cjs'),bundle:true,platform:'node',format:'cjs',packages:'external',alias:{'@':app},jsx:'automatic',logLevel:'warning'});
+const require=createRequire(import.meta.url),{formatMoney,moneyInputToRaw,moneyPasteToRaw,isMoneyField,multiplyMoney,sumMoney,MoneyInput,salesOrderLineDisplay,emptySalesOrderLine,salesOrderLineInput,validDocumentRate}=require(path.join(output,'fixture.cjs'));
 
+test('PO rate follows ERP 29/10: positive, and exactly 1 for VND',()=>{
+ for(const [currency,rate] of [['USD',25000],['USD','24.5'],['VND',1],['vnd','1'],[null,3]])assert.equal(validDocumentRate(currency,rate),true);
+ for(const [currency,rate] of [['USD',0],['USD',-1],['USD',''],['USD',null],['USD','abc'],['VND',2],['VND',0]])assert.equal(validDocumentRate(currency,rate),false);
+});
 test('Vietnamese money formatting preserves exact decimal strings and nulls',()=>{
  assert.equal(formatMoney('123456789012345678.9012'),'123.456.789.012.345.678,9012');
  assert.equal(formatMoney('-1000000.50'),'-1.000.000,5');

@@ -18,6 +18,7 @@ import { SalesOrderActionDialog } from "./sales-order-action-dialog";
 import { InboundPhotoPanel } from "./inbound-photo-panel";
 import { InboundCostsPanel } from "./inbound-costs-panel";
 import { editableDetailConfig } from "@/lib/erp/document-detail/controllers/erp-detail-model";
+import { validDocumentRate } from "@/lib/erp/document-rate";
 import type { DetailAction, DocumentDetailHandlers, DocumentDetailModel } from "@/lib/erp/document-detail/model";
 import { WRITE_GATED_MODULES, MENU_ACTION_IDS, DIALOG_ACTION_MODULES, SAVE_HEADER_BY_MODULE, editableHeaderKeys, requiredEditKeys, editLookupId, saveLineKeys, editValue, lockBadgeState, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
 
@@ -316,6 +317,12 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
           }
           if (changed) lineChanges.push({ kind: "Update", lineId: row.lineId, values });
         }
+      }
+      if (module === "purchase-orders" && !validDocumentRate(header.currencyId, header.rateExchange)) {
+        // A PO made from a request without a dated rate carries 0 until a rate is chosen.
+        setActionFeedback({ type: "warning", message: "Tỷ giá phải lớn hơn 0 (VND là 1). Chọn lại Loại tiền để lấy tỷ giá." });
+        setExecutingAction(null);
+        return;
       }
       const res = await erpClient.saveDocument(module, {
         idempotencyKey,
