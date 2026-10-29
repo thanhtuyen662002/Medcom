@@ -25,7 +25,7 @@ function ChoiceList({ module, operation, branchId, documentId, role, label, grou
     const timer = setTimeout(async () => {
       try {
         const query = { branchId, role, page, pageSize: 20, search: search.trim() || null };
-        const data = operation === "send-pm" && module === "sales-orders" ? await erpClient.getPmOptions("sales-orders", query)
+        const data = operation === "send-pm" && (module === "sales-orders" || module === "internal-transfer-requests") ? await erpClient.getPmOptions(module, query)
           : await erpClient.getActionOptions(module, operation, module.startsWith("inbound-") ? { ...query, documentId } : query);
         if (!cancelled) setResult({ key, data });
       } catch { if (!cancelled) setResult({ key, error: true }); }
@@ -64,7 +64,10 @@ export function SalesOrderActionDialog({ module, operation, branchId, documentId
   function confirm() {
     if (!canConfirm) return;
     onConfirm(noPayload ? {} : {
-      ...(needsSaPair ? { primarySaId: selection!.id, supportingSaId: supporting!.id } : operation === "send-pm" ? { pmId: selection!.id } : operation === "return-step" ? { statusId: Number(selection!.id) } : {}), notes: notes.trim() || null,
+      // IV_InternalTransferRequestFrm "Gửi PM" takes a primary PM; the supporting PM stays optional (empty).
+      ...(needsSaPair ? { primarySaId: selection!.id, supportingSaId: supporting!.id }
+        : operation === "send-pm" && module === "internal-transfer-requests" ? { primaryPmId: selection!.id, supportingPmId: "" }
+        : operation === "send-pm" ? { pmId: selection!.id } : operation === "return-step" ? { statusId: Number(selection!.id) } : {}), notes: notes.trim() || null,
     });
   }
   return <UntitledBottomSheet open onClose={() => { if (!busy) onClose(); }} title={title || salesActionLabels[operation] || operation} subtitle={documentId}

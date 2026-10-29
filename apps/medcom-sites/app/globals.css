@@ -830,6 +830,8 @@ body {font-family:var(--font-sans);line-height:1.5;letter-spacing:-.015em}
 .request-select[aria-invalid=true] {border-color:var(--destructive)}
 .request-list-branch .request-select {appearance:none;padding-inline:36px 32px}
 .request-select:focus-visible {outline:2px solid var(--ring);outline-offset:2px}
+/* Lookup search sits in its own soft field whose ring shows focus; the global outline drew a second box. */
+.lookup-search:focus-visible {outline:none}
 .request-list-refresh {margin-left:auto}
 .request-list-table {width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;text-align:left;font-size:14px}
 .request-list-table th {padding:12px 16px;white-space:normal;font-size:12px;font-weight:550;background:var(--secondary);color:var(--muted-foreground);border-bottom:1px solid var(--border)}
