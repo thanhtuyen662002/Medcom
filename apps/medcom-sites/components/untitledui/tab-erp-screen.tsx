@@ -285,6 +285,18 @@ export function TabErpScreen({
   const [createItemId, setCreateItemId] = useState("");
   const [createQuantity, setCreateQuantity] = useState("1");
   const [createUnitPrice, setCreateUnitPrice] = useState("100000");
+  // Real header fields of the generic create forms (transfer, inbound) instead of placeholder values.
+  const [createToBranch, setCreateToBranch] = useState<ErpChoice | null>(null);
+  const [createInvoiceNo, setCreateInvoiceNo] = useState("");
+  const [createDeparture, setCreateDeparture] = useState("");
+  const [createDestination, setCreateDestination] = useState<ErpChoice | null>(null);
+  const [createOrderType, setCreateOrderType] = useState<ErpChoice | null>(null);
+  const [createSupplier, setCreateSupplier] = useState<ErpChoice | null>(null);
+  const resetGenericCreate = () => {
+    setCreateItemId(""); setCreateQuantity("1"); setCreateNotes("");
+    setCreateToBranch(null); setCreateInvoiceNo(""); setCreateDeparture("");
+    setCreateDestination(null); setCreateOrderType(null); setCreateSupplier(null);
+  };
   const [creatingDocument, setCreatingDocument] = useState(false);
 
   const clearSoLines = () => {
@@ -503,7 +515,7 @@ export function TabErpScreen({
     createGeneration.current++;
     createAttachments.reset(); setCreatedOrderId(null); setPendingOrderCreate(false); orderCreateIntent.current = null;
     setCreatingDocument(false);
-    setCreateObject(""); setCreateObjectChoice(null);
+    setCreateObject(""); setCreateObjectChoice(null); resetGenericCreate();
     setCreateContract(""); setCreateContractChoice(null);
     setCreateEmployee(""); setCreateEmployeeChoice(null); setCreateManager(null);
     setCreateSoLines([emptySalesOrderLine("so-init")]);
@@ -631,6 +643,19 @@ export function TabErpScreen({
       }
       const header: Record<string, unknown> = {};
       const lines: Array<{ clientLineKey: string; values: Record<string, unknown> }> = [];
+      const missing =
+        (module === "internal-transfer-requests" || module === "internal-transfer-batches") && !createToBranch ? "Chọn chi nhánh nhận."
+        : (module === "internal-transfer-requests" || module === "internal-transfer-batches") && createToBranch?.id === currentBranch ? "Chi nhánh nhận phải khác chi nhánh gửi."
+        : module === "inbound-requests" && (!createObject.trim() || !createInvoiceNo.trim() || !createDeparture.trim() || !createDestination || !createOrderType)
+          ? "Nhập Số đơn hàng, Số hóa đơn, Nơi đi và chọn Nơi đến, Loại đơn hàng."
+        : (module === "machine-movements" || module === "machine-repairs") && !createObject ? "Chọn loại phiếu từ danh mục."
+        : (module === "internal-transfer-requests" || module === "inbound-requests" || module === "machine-movements" || module === "machine-repairs") && !createItemId.trim()
+          ? (module === "machine-movements" || module === "machine-repairs" ? "Chọn thiết bị / máy." : "Chọn mặt hàng.")
+        : null;
+      if (missing) {
+        setCreateFeedback({ type: "warning", message: missing });
+        return;
+      }
 
       if (module === "purchase-requests") {
         header.purchaseDate = `${createDate}T00:00:00.000`;
@@ -697,8 +722,8 @@ export function TabErpScreen({
       } else if (module === "internal-transfer-requests") {
         header.documentDate = `${createDate}T00:00:00.000`;
         header.fromBranchId = currentBranch;
-        header.toBranchId = currentBranch;
-        header.transferReason = createNotes || "Đề nghị điều chuyển nội bộ";
+        header.toBranchId = createToBranch!.id;
+        header.transferReason = createObject.trim() || null;
         header.notes = createNotes || null;
         if (createItemId.trim()) {
           lines.push({
@@ -713,7 +738,7 @@ export function TabErpScreen({
         }
       } else if (module === "machine-movements") {
         header.documentDate = `${createDate}T00:00:00.000`;
-        header.moveTypeId = "MOVE01";
+        header.moveTypeId = createObject;
         header.memo = createNotes || "Phiếu di chuyển máy";
         header.notes = createNotes || null;
         if (createItemId.trim()) {
@@ -728,7 +753,7 @@ export function TabErpScreen({
         }
       } else if (module === "machine-repairs") {
         header.documentDate = `${createDate}T00:00:00.000`;
-        header.serviceTypeId = "SRV01";
+        header.serviceTypeId = createObject;
         header.memo = createNotes || "Phiếu sửa chữa bảo trì";
         header.notes = createNotes || null;
         if (createItemId.trim()) {
@@ -760,13 +785,12 @@ export function TabErpScreen({
         }
       } else if (module === "inbound-requests") {
         header.documentDate = `${createDate}T00:00:00.000`;
-        header.orderNumber = "ORD-" + Date.now().toString(36);
-        header.invoiceNo = "HD-" + Date.now().toString(36);
-        header.departurePoint = "Kho đi";
-        header.destinationPoint = "Kho đến";
-        header.orderTypeId = "IN01";
-        header.qrPrintType = "QR01";
-        header.objectId = createObject || "NCC01";
+        header.orderNumber = createObject.trim();
+        header.invoiceNo = createInvoiceNo.trim();
+        header.departurePoint = createDeparture.trim();
+        header.destinationPoint = createDestination!.id;
+        header.orderTypeId = createOrderType!.id;
+        header.objectId = createSupplier?.id || null;
         header.notes = createNotes || null;
         if (createItemId.trim()) {
           lines.push({
@@ -782,7 +806,7 @@ export function TabErpScreen({
       } else if (module === "internal-transfer-batches") {
         header.batchDate = `${createDate}T00:00:00.000`;
         header.fromBranchId = currentBranch;
-        header.toBranchId = currentBranch;
+        header.toBranchId = createToBranch!.id;
         header.notes = createNotes || null;
         if (createItemId.trim()) {
           lines.push({
@@ -821,6 +845,7 @@ export function TabErpScreen({
 
       if (res.outcome === "Committed" || res.outcome === "Replayed") {
         setCreateModalOpen(false);
+        setCreateObject(""); resetGenericCreate();
       }
       handleCreateCommandOutcome(res);
       loadList(1);
@@ -1141,10 +1166,29 @@ export function TabErpScreen({
                     required module={module} branchId={currentBranch}
                     lookupId={module === "machine-movements" ? "header.MoveTypeID" : module === "machine-repairs" ? "header.ServiceTypeID" : module === "purchase-orders" ? "header.ObjectID" : "header.PersonSuggest"}
                     value={createObject} choice={null} onSelect={choice => setCreateObject(choice?.id || "")} placeholder="Tìm và chọn từ danh mục..." />
-                : <FormField label={module === "inbound-requests" ? "Số hóa đơn / Số đơn hàng" : module === "internal-transfer-requests" ? "Lý do điều chuyển" : "Đối tượng / Người liên quan"}
+                : <FormField label={module === "inbound-requests" ? "Số đơn hàng" : module === "internal-transfer-requests" ? "Lý do điều chuyển" : "Đối tượng / Người liên quan"}
                     required={module !== "internal-transfer-requests"} value={createObject} onChange={event => setCreateObject(event.target.value)}
-                    placeholder={module === "inbound-requests" ? "Ví dụ: HD00123 / PO001" : "Nhập thông tin chứng từ"}
-                    hint={module === "inbound-requests" ? "Nhập số hóa đơn hoặc số đơn hàng liên quan." : "Nhập lý do để người xử lý nắm rõ nội dung điều chuyển."} />
+                    placeholder={module === "inbound-requests" ? "Ví dụ: PO001" : "Nhập thông tin chứng từ"}
+                    hint={module === "inbound-requests" ? "Số đơn đặt hàng / PO của lô hàng." : "Nhập lý do để người xử lý nắm rõ nội dung điều chuyển."} />
+            )}
+
+            {(module === "internal-transfer-requests" || module === "internal-transfer-batches") && (
+              <LookupField label="Chi nhánh nhận" required module={module} branchId={currentBranch} lookupId="header.ToBranchID"
+                value={createToBranch?.id || ""} choice={createToBranch} onSelect={choice => { setCreateToBranch(choice); setCreateItemId(""); }}
+                placeholder="Chọn chi nhánh nhận..." error={createToBranch?.id === currentBranch ? "Chi nhánh nhận phải khác chi nhánh gửi." : undefined} />
+            )}
+
+            {module === "inbound-requests" && (
+              <>
+                <FormField label="Số hóa đơn" required value={createInvoiceNo} onChange={event => setCreateInvoiceNo(event.target.value)} placeholder="Ví dụ: HD00123" />
+                <LookupField label="Nhà cung cấp" module={module} branchId={currentBranch} lookupId="header.ObjectID"
+                  value={createSupplier?.id || ""} choice={createSupplier} onSelect={setCreateSupplier} secondaryFields={["ObjectName"]} placeholder="Chọn nhà cung cấp..." />
+                <LookupField label="Loại đơn hàng" required module={module} branchId={currentBranch} lookupId="header.OrderTypeID"
+                  value={createOrderType?.id || ""} choice={createOrderType} onSelect={setCreateOrderType} placeholder="Chọn loại đơn hàng..." />
+                <FormField label="Nơi đi" required value={createDeparture} onChange={event => setCreateDeparture(event.target.value)} placeholder="Ví dụ: Cảng Hải Phòng" />
+                <LookupField label="Nơi đến" required module={module} branchId={currentBranch} lookupId="header.DestinationPoint"
+                  value={createDestination?.id || ""} choice={createDestination} onSelect={setCreateDestination} placeholder="Chọn nơi đến..." />
+              </>
             )}
 
             {module === "sales-orders" && (
@@ -1187,8 +1231,12 @@ export function TabErpScreen({
             {module !== "sales-orders" && (
               <FormSection title="Chi tiết chứng từ">
                 {module === "internal-transfer-batches"
-                  ? <FormField label="Mã đề nghị điều chuyển" required value={createItemId} onChange={event => setCreateItemId(event.target.value)}
-                      placeholder="Ví dụ: DNDC001" hint="Nhập mã đề nghị đã có. Danh mục chọn cần chi nhánh nguồn và đích chưa có trong form này." />
+                  ? (createToBranch
+                      ? <LookupField label="Đề nghị điều chuyển" module={module} branchId={currentBranch} lookupId="lines.RequestID"
+                          context={{ "Master.FromBranchID": currentBranch, "Master.ToBranchID": createToBranch.id }}
+                          value={createItemId} choice={null} onSelect={choice => setCreateItemId(choice?.id || "")}
+                          secondaryFields={["SalesName", "ToBranchName"]} placeholder="Chọn đề nghị (có thể thêm sau bằng Đồng bộ đề nghị)..." />
+                      : <p className="text-sm text-neutral-600 dark:text-neutral-300">Chọn chi nhánh nhận để chọn đề nghị điều chuyển, hoặc tạo đợt trống rồi dùng Đồng bộ đề nghị.</p>)
                   : <LookupField label={module === "machine-movements" || module === "machine-repairs" ? "Thiết bị / máy" : "Mặt hàng"}
                       required module={module} branchId={currentBranch}
                       lookupId={module === "machine-movements" || module === "machine-repairs" ? "lines.AssetID" : "lines.ItemID"}
