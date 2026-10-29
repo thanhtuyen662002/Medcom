@@ -260,6 +260,8 @@ export function TabErpScreen({
   const [poCreateOpen, setPoCreateOpen] = useState(false);
   // Redesigned purchase-request create sheet (matches the desktop PR form).
   const [prCreateOpen, setPrCreateOpen] = useState(false);
+  // Remounts the create sheet after a successful create so the next request starts empty.
+  const [prCreateKey, setPrCreateKey] = useState(0);
   const [prEditId, setPrEditId] = useState<string | null>(null);
   const [createDate, setCreateDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [createObject, setCreateObject] = useState("");
@@ -293,10 +295,13 @@ export function TabErpScreen({
   const [createDestination, setCreateDestination] = useState<ErpChoice | null>(null);
   const [createOrderType, setCreateOrderType] = useState<ErpChoice | null>(null);
   const [createSupplier, setCreateSupplier] = useState<ErpChoice | null>(null);
+  const [createLot, setCreateLot] = useState("");
+  const [createExpiry, setCreateExpiry] = useState("");
   const resetGenericCreate = () => {
     setCreateItemId(""); setCreateQuantity("1"); setCreateNotes("");
     setCreateToBranch(null); setCreateInvoiceNo(""); setCreateDeparture("");
     setCreateDestination(null); setCreateOrderType(null); setCreateSupplier(null);
+    setCreateLot(""); setCreateExpiry("");
   };
   const [creatingDocument, setCreatingDocument] = useState(false);
 
@@ -803,6 +808,9 @@ export function TabErpScreen({
               setQuantityByDocument: createQuantity || "1",
               barrelQuantityByDocument: createQuantity || "1",
               unitPrice: createUnitPrice || "0",
+              // ERP refuses "Gửi Thủ kho / BLĐ" until each line has a lot and an expiry date.
+              lotNumberByDocument: createLot.trim() || null,
+              expireDateByDocument: createExpiry ? `${createExpiry}T00:00:00.000` : null,
             },
           });
         }
@@ -1116,11 +1124,13 @@ export function TabErpScreen({
 
       {module === "purchase-requests" && (
         <PurchaseRequestCreateSheet
+          key={prCreateKey}
           open={prCreateOpen}
           onClose={() => setPrCreateOpen(false)}
           currentBranch={currentBranch}
           onCreated={(docId) => {
             setPrCreateOpen(false);
+            setPrCreateKey(value => value + 1);
             loadList(1);
             handleOpenDetail(docId);
           }}
@@ -1251,6 +1261,13 @@ export function TabErpScreen({
                 {module !== "machine-movements" && module !== "machine-repairs" && module !== "internal-transfer-batches" && (
                   <FormField label={module === "internal-transfer-requests" ? "Số lượng yêu cầu" : module === "inbound-requests" ? "Số lượng kiện/hộp" : "Số lượng"}
                     required type="number" value={createQuantity} onChange={event => setCreateQuantity(event.target.value)} />
+                )}
+                {module === "inbound-requests" && (
+                  <>
+                    <FormField label="Số lô" value={createLot} onChange={event => setCreateLot(event.target.value)}
+                      placeholder="Ví dụ: LOT2026A" hint="Cần có lô và hạn dùng trước khi Gửi Thủ kho hoặc Gửi BLĐ." />
+                    <FormField label="Hạn dùng" type="date" value={createExpiry} onChange={event => setCreateExpiry(event.target.value)} />
+                  </>
                 )}
                 {module !== "machine-movements" && module !== "machine-repairs" && module !== "internal-transfer-batches" && module !== "internal-transfer-requests" && module !== "inbound-requests" && (
                   <FormField label="Đơn giá dự kiến">{control => <MoneyInput {...control} value={createUnitPrice} onValueChange={setCreateUnitPrice} />}</FormField>
