@@ -58,6 +58,23 @@ public static class ErpInputRules
         "internal-transfer-requests"=>typeof(ErpInternalTransferRequestLineInput),
         "machine-movements"=>typeof(ErpMachineMovementLineInput),"machine-repairs"=>typeof(ErpMachineRepairLineInput),_=>ErpWorkflowInputs.Type(module,"lines")
     };
+    // A save may omit hidden ERP fields (the detail never shows them; the effect restores the saved value).
+    // Required ones (e.g. transfer From/To branch) still have to bind, so they get a placeholder that the
+    // omission filter below drops again before any value check.
+    private static JsonElement WithHiddenPlaceholders(string module,string section,Type type,JsonElement raw)
+    {
+        var missing=type.GetProperties().Where(p=>p.GetCustomAttributes(typeof(System.Runtime.CompilerServices.RequiredMemberAttribute),true).Length>0)
+            .Select(p=>(Property:p,Name:p.GetCustomAttributes(typeof(JsonPropertyNameAttribute),true).OfType<JsonPropertyNameAttribute>().FirstOrDefault()?.Name))
+            .Where(p=>p.Name is not null&&!raw.TryGetProperty(p.Name,out _)&&ErpVisibleFields.IsHidden(module,section,p.Name)).ToArray();
+        if(missing.Length==0)return raw;
+        var values=raw.EnumerateObject().ToDictionary(p=>p.Name,p=>(object?)p.Value.Clone(),StringComparer.Ordinal);
+        foreach(var (property,name) in missing)
+        {
+            var clr=Nullable.GetUnderlyingType(property.PropertyType)??property.PropertyType;
+            values[name!]=clr==typeof(string)?"":clr==typeof(bool)?false:clr.IsPrimitive||clr==typeof(decimal)?0:null;
+        }
+        return Serialize(values);
+    }
     public static bool Normalize(string module,string section,JsonElement raw,out JsonElement normalized,bool preserveHiddenOmissions=false)
     {
         normalized=default;
@@ -66,7 +83,7 @@ public static class ErpInputRules
             || raw.ValueKind!=JsonValueKind.Object || !UniqueJson(raw))return false;
         try
         {
-            var typed=JsonSerializer.Deserialize(raw,type,Json);
+            var typed=JsonSerializer.Deserialize(preserveHiddenOmissions?WithHiddenPlaceholders(module,section,type,raw):raw,type,Json);
             if(typed is null)return false;
             var result=JsonSerializer.SerializeToElement(typed,type,Json);
             if(preserveHiddenOmissions)
