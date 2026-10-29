@@ -195,7 +195,8 @@ export const SAVE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
   // The type is chosen at creation and kept on save; read-only detail fields are never sent.
   "machine-movements": ["documentDate", "nguoiGiao", "nguoiNhan", "memo", "notes", "contractId", "effectiveFrom", "effectiveTo", "referenceNo", "referenceDate", "documentLink", "moveTypeId"],
   "machine-repairs": ["documentDate", "nguoiGiao", "nguoiNhan", "memo", "notes", "objectId", "serviceLocation", "contractId", "startDate", "endDate", "technician", "serviceStatus", "referenceNo", "referenceDate", "documentLink", "serviceTypeId"],
-  "internal-transfer-requests": ["fromBranchId", "toBranchId", "documentDate", "requestedTransferDate", "transferReason", "transportMethod", "notes"],
+  // From/To branch are hidden on the ERP form, so the detail omits them; omitted hidden fields keep their saved value.
+  "internal-transfer-requests": ["documentDate", "requestedTransferDate", "transferReason", "transportMethod", "notes"],
   "inbound-warehouse": INBOUND_WAREHOUSE_HEADER,
   "inbound-tech": INBOUND_TECH_HEADER,
   "inbound-pm": INBOUND_PM_HEADER,

@@ -121,7 +121,8 @@ test('inline editing projects the inherited keys, required flags, lookup branch 
     assert.equal(command.documentId, 'QA-DOC');
     assert.match(command.idempotencyKey, /^save-/);
     assert.deepEqual(command.lineChanges, []);
-    assert.deepEqual(command.header, { fromBranchId: 'QA', toBranchId: 'QB', documentDate: '2026-10-23T00:00:00.000',
+    // From/To are hidden ERP fields: omitted so the backend keeps the saved branches.
+    assert.deepEqual(command.header, { documentDate: '2026-10-23T00:00:00.000',
       requestedTransferDate: null, transferReason: 'Lý do giữ nguyên', transportMethod: null, notes: 'Ghi chú mới' });
   }, { module: 'internal-transfer-requests', detail: data(header), api: { save: async (...args) => { commands.push(args); return { outcome: 'Denied' }; } } });
 });
