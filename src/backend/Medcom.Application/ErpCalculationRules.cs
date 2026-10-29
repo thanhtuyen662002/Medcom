@@ -29,4 +29,17 @@ public static class ErpCalculationRules
         catch(Exception error)when(error is OverflowException or FormatException or InvalidOperationException or ArgumentException)
         {amount=null;return false;}
     }
+    // CF_Document_ExchangeRateValidationFnc (ERP 29/10, AP_OrderFrm EBS/EBC): the saved rate must be positive and VND must be 1.
+    // AP_PurchaseRequest_CreatePOStp leaves 0 when no dated rate exists, so such a PO cannot be saved until a rate is chosen.
+    public static bool DocumentRate(JsonElement currency,JsonElement rate)
+    {
+        decimal? value=rate.ValueKind switch
+        {
+            JsonValueKind.Number when rate.TryGetDecimal(out var number)=>number,
+            JsonValueKind.String when decimal.TryParse(rate.GetString(),NumberStyles.Float,CultureInfo.InvariantCulture,out var text)=>text,
+            _=>null
+        };
+        if(value is not >0m)return false;
+        return currency.ValueKind!=JsonValueKind.String||!string.Equals(currency.GetString()?.Trim(),"VND",StringComparison.OrdinalIgnoreCase)||value==1m;
+    }
 }

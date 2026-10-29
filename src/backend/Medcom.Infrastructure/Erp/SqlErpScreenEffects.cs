@@ -37,6 +37,9 @@ public sealed partial class SqlErpScreenCommands
             await References(transaction,identity,plan,"header",header,header,request.BranchId,token);
             if(plan.Module=="internal-transfer-requests")
                 Require(header["fromBranchId"].GetString()!=header["toBranchId"].GetString(),ErpCommandOutcome.InvalidInput,"transfer_branches_equal");
+            if(plan.Module=="purchase-orders")
+                Require(header.TryGetValue("currencyId",out var currency)&&header.TryGetValue("rateExchange",out var rate)
+                    &&ErpCalculationRules.DocumentRate(currency,rate),ErpCommandOutcome.InvalidInput,"document_rate_invalid");
             await HeaderWrite(transaction,identity,plan,header,document,request.BranchId,request.Operation=="create",token);
             var remaining=before?.Lines.ToDictionary(line=>line.LineId,line=>line.Fields,StringComparer.Ordinal)
                 ??new Dictionary<string,IReadOnlyDictionary<string,object?>>(StringComparer.Ordinal);
@@ -465,8 +468,8 @@ public sealed partial class SqlErpScreenCommands
         ErpSqlPlan.Parameter(command,"@status",DbType.Int32,2);ErpSqlPlan.Parameter(command,"@locked",DbType.Boolean,true);ErpSqlPlan.Parameter(command,"@document",DbType.String,document,50);await One(command,token);
     }
     // ERP's "Gửi đặt mua hàng" button runs AP_PurchaseRequest_CreatePOStp: it validates the request
-    // (approved, has lines, rate > 0, quantity > 0) and writes the PO with SourceAmount, Amount and
-    // BaseTotal. The former Web-side INSERT left those amounts empty.
+    // (approved, has lines, quantity > 0, price blank or not negative) and writes the PO. Since 29/10 the
+    // rate comes from CF_Currency_GetRateOnDateFnc; without one the PO is a draft with rate 0 and no Amount.
     internal static Task PurchaseOrder(DbTransaction transaction,AuthoritativeIdentity actor,string document,CancellationToken token)
         =>Procedure(transaction,"AP_PurchaseRequest_CreatePOStp",[("@PurchaseRequestID",DbType.String,document,50),
             ("@User",DbType.AnsiString,actor.PrincipalId,50)],token);

@@ -69,6 +69,9 @@ public sealed class ErpConfigDriftTests
         var report = await new ErpConfigDriftCheck(() => connection, new ManualClock()).RunAsync(default);
         Assert.Contains("SY_FrmCfg", text);
         Assert.Contains("sys.triggers", text);
+        // ERP 29/10 save checks are reached only through form EBS/EBC text, so they are listed by name.
+        Assert.Contains("N'AP_PurchaseRequest_OptionalPriceValidationFnc'", text);
+        Assert.Contains("N'CF_Document_ExchangeRateValidationFnc'", text);
         foreach (var write in new[] { "INSERT dbo.", "UPDATE ", "DELETE ", "EXEC ", "MERGE ", "ALTER ", "DROP " })
             Assert.DoesNotContain(write, text!.Replace("INSERT @", "", StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase);
         Assert.Contains(report.Changes, c => c.Key == "SOME_NEW_Stp" && c.Change == "added");

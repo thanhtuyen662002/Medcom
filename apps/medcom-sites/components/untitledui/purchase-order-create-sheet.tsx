@@ -11,6 +11,7 @@ import { useIsMobile } from "@/components/app/use-is-mobile";
 import { LookupField, choiceLabel, fieldText } from "./lookup-field";
 import {MoneyInput} from "@/components/erp/money-input";
 import {formatMoney as formatVND, multiplyMoney, sumMoney} from "@/lib/erp/money";
+import {validDocumentRate} from "@/lib/erp/document-rate";
 
 interface PurchaseOrderCreateSheetProps {
   open: boolean;
@@ -121,6 +122,7 @@ export function PurchaseOrderCreateSheet({
     if (!objectId.trim()) next["header.objectId"] = "Chọn nhà cung cấp / đối tượng.";
     if (!currencyId.trim()) next["header.currencyId"] = "Chọn loại tiền.";
     if (!DECIMAL_RE.test(rateExchange.trim())) next["header.rateExchange"] = "Tỷ giá phải là số.";
+    else if (!validDocumentRate(currencyId, rateExchange)) next["header.rateExchange"] = "Tỷ giá phải lớn hơn 0; VND là 1.";
     if (lines.length === 0) next["lines"] = "Cần ít nhất 1 chi tiết.";
     for (const line of lines) {
       if (!line.itemId.trim()) next[`line.${line.key}.itemId`] = "Chọn mã hàng.";
@@ -134,7 +136,8 @@ export function PurchaseOrderCreateSheet({
     documentDate !== "" &&
     objectId.trim() !== "" &&
     currencyId.trim() !== "" &&
-    DECIMAL_RE.test(rateExchange.trim());
+    DECIMAL_RE.test(rateExchange.trim()) &&
+    validDocumentRate(currencyId, rateExchange);
   const linesValid =
     lines.length > 0 &&
     lines.every(
