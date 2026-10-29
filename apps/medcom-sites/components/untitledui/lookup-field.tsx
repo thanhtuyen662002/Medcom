@@ -210,7 +210,7 @@ export function LookupField({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Tìm kiếm..."
-                  className="min-h-10 w-full bg-transparent outline-none focus-visible:outline-none text-base leading-6 text-black dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-400"
+                  className="lookup-search min-h-10 w-full bg-transparent outline-none text-base leading-6 text-black dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-400"
                 />
               </div>
             </div>

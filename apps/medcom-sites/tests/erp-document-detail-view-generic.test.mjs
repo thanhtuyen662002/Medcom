@@ -20,7 +20,7 @@ const leaves = {
   'qr-camera': `export class QrCamera{start(){}stop(){}}`,
 };
 await build({
-  stdin: { contents: `export {ErpDocumentDetailBody} from './components/erp/erp-document-detail-body';export {ErpLineEditor} from './components/erp/erp-line-editor';export {DocumentDetailView} from './components/erp/document-detail/document-detail-view';export {getDocumentDetailEntry} from './lib/erp/document-detail/registry';export {editableHeaderKeys,requiredEditKeys,saveLineKeys} from './lib/erp/document-detail/controllers/erp-detail-rules';export {editableDetailConfig} from './lib/erp/document-detail/controllers/erp-detail-model';export {erpScreenModules} from './lib/erp/proxy-policy';`, resolveDir: app, loader: 'tsx' },
+  stdin: { contents: `export {ErpDocumentDetailBody} from './components/erp/erp-document-detail-body';export {ErpLineEditor} from './components/erp/erp-line-editor';export {DocumentDetailView} from './components/erp/document-detail/document-detail-view';export {getDocumentDetailEntry} from './lib/erp/document-detail/registry';export {editableHeaderKeys,requiredEditKeys,saveLineKeys,SAVE_HEADER_BY_MODULE} from './lib/erp/document-detail/controllers/erp-detail-rules';export {editableDetailConfig} from './lib/erp/document-detail/controllers/erp-detail-model';export {erpScreenModules} from './lib/erp/proxy-policy';`, resolveDir: app, loader: 'tsx' },
   outfile: path.join(output, 'fixture.cjs'), bundle: true, platform: 'node', format: 'cjs', packages: 'external', alias: { '@': app }, jsx: 'automatic', logLevel: 'warning',
   plugins: [{ name: 'generic-view-leaves', setup(builder) {
     builder.onResolve({ filter: /.*/ }, args => {
@@ -34,7 +34,7 @@ await build({
 const require = createRequire(import.meta.url);
 const React = require('react'), { create, act } = require('react-test-renderer');
 const { ErpDocumentDetailBody, ErpLineEditor, DocumentDetailView, getDocumentDetailEntry, editableDetailConfig,
-  editableHeaderKeys, requiredEditKeys, saveLineKeys, erpScreenModules } = require(path.join(output, 'fixture.cjs'));
+  editableHeaderKeys, requiredEditKeys, saveLineKeys, SAVE_HEADER_BY_MODULE, erpScreenModules } = require(path.join(output, 'fixture.cjs'));
 const fixtures = Object.assign({}, ...await Promise.all(['document-detail-header-keys.json', 'document-detail-header-keys-ops.json']
   .map(async name => JSON.parse(await readFile(path.join(app, 'tests/fixtures', name), 'utf8')))));
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -94,8 +94,7 @@ test('generic writable modules have one document menu while purchase orders rema
 });
 
 test('inline editing projects the inherited keys, required flags, lookup branch and exact save payload', async () => {
-  const header = { documentDate: '2026-10-23T00:00:00', objectId: 'QA-CUSTOMER', objectName: 'Đối tượng kiểm thử',
-    deliverDate: '2026-10-24T00:00:00', contractId: 'QA-CONTRACT', memo: 'Nội dung kiểm thử', notes: 'Ghi chú cũ',
+  const header = { documentDate: '2026-10-23T00:00:00', fromBranchId: 'QA', toBranchId: 'QB', notes: 'Ghi chú cũ',
     transferReason: 'Lý do giữ nguyên' };
   const commands = [];
   await mounted(async tree => {
@@ -105,14 +104,11 @@ test('inline editing projects the inherited keys, required flags, lookup branch 
     const definitions = fields(view.props.config);
     assert.deepEqual(definitions.filter(field => field.edit).map(field => field.key).sort(), [...editableHeaderKeys('internal-transfer-requests')].sort());
     for (const field of definitions.filter(field => field.edit)) assert.equal(field.edit.required, requiredEditKeys('internal-transfer-requests').includes(field.key));
-    assert.equal(definitions.find(field => field.key === 'transferReason').edit, undefined);
-    const lookup = tree.root.findByProps({ 'data-lookup': 'header.ObjectID' });
-    assert.equal(lookup.props.branchId, 'QA');
-    assert.equal(lookup.props.choice, null);
-    assert.equal(lookup.props.displayValue, 'Đối tượng kiểm thử');
-    const inputs = tree.root.findAllByType('input');
-    assert.equal(inputs.filter(node => node.props.type === 'date').length, 2);
-    assert.equal(inputs.some(node => node.props.value === 'Lý do giữ nguyên'), false);
+    // Its own catalog fields: the reason is editable and there is no sales-order customer.
+    assert.ok(definitions.find(field => field.key === 'transferReason').edit);
+    assert.equal(tree.root.findAllByProps({ 'data-lookup': 'header.ObjectID' }).length, 0);
+    assert.doesNotMatch(text(tree.toJSON()), /Trường sửa kế thừa/);
+    const inputs = [...tree.root.findAllByType('input'), ...tree.root.findAllByType('textarea')];
     const notes = inputs.find(node => node.props.value === 'Ghi chú cũ');
     assert.ok(notes);
     await act(async () => notes.props.onChange({ target: { value: 'Ghi chú mới' } }));
@@ -125,7 +121,8 @@ test('inline editing projects the inherited keys, required flags, lookup branch 
     assert.equal(command.documentId, 'QA-DOC');
     assert.match(command.idempotencyKey, /^save-/);
     assert.deepEqual(command.lineChanges, []);
-    assert.deepEqual(command.header, { ...header, documentDate: '2026-10-23T00:00:00.000', deliverDate: '2026-10-24T00:00:00.000', notes: 'Ghi chú mới' });
+    assert.deepEqual(command.header, { fromBranchId: 'QA', toBranchId: 'QB', documentDate: '2026-10-23T00:00:00.000',
+      requestedTransferDate: null, transferReason: 'Lý do giữ nguyên', transportMethod: null, notes: 'Ghi chú mới' });
   }, { module: 'internal-transfer-requests', detail: data(header), api: { save: async (...args) => { commands.push(args); return { outcome: 'Denied' }; } } });
 });
 
@@ -158,7 +155,8 @@ test('legacy edit groups use fixed labels while fixtures and static groups conta
 });
 
 test('default editors show missing keys only in the legacy edit group, and hide it again on discard', async () => {
-  for (const moduleId of ['machine-movements', 'internal-transfer-batches']) {
+  // Machine screens now edit their own catalog fields (no sales-order customer); see the test below.
+  for (const moduleId of ['internal-transfer-batches']) {
     const config = getDocumentDetailEntry(moduleId).config;
     const before = structuredClone(config);
     await mounted(async tree => {
@@ -194,7 +192,7 @@ test('default editors show missing keys only in the legacy edit group, and hide 
 test('default editor saveDocument headers match the ui-sync/main baseline, including required and null fields', async () => {
   // Golden headers: ui-sync/main@57618a7, ErpDocumentDetailBody.startEditing/handleSaveHeader.
   // Both old and new bodies were executed with these synthetic inputs; see FIELD_EVIDENCE_GENERIC_EDITOR.md.
-  for (const moduleId of ['machine-movements', 'internal-transfer-batches']) {
+  for (const moduleId of ['internal-transfer-batches']) {
     const header = { documentId: 'QA-DOC', branchId: 'QA', notes: ' Ghi chú cũ ', isLocked: false,
       ...(moduleId === 'machine-movements' ? { documentDate: '2026-10-23T00:00:00' } : { batchDate: '2026-10-23T00:00:00' }) };
     const commands = [];
@@ -297,3 +295,21 @@ for (const moduleId of erpScreenModules.filter(id => !['sales-orders', 'sales-or
     }, { module: moduleId, detail: data(header) });
   });
 }
+
+test('machine movement edits its own fields: no customer, only the date required, catalog save payload', async () => {
+  const header = { documentId: 'QA-DOC', branchId: 'QA', documentDate: '2026-10-23T00:00:00', moveTypeId: 'DEMO', notes: 'Ghi chú cũ', isLocked: false };
+  const commands = [];
+  await mounted(async tree => {
+    await edit(tree);
+    assert.equal(tree.root.findAllByProps({ 'data-lookup': 'header.ObjectID' }).length, 0);
+    assert.doesNotMatch(text(tree.toJSON()), /Khách hàng/);
+    assert.deepEqual(requiredEditKeys('machine-movements'), ['documentDate']);
+    await act(async () => button(tree, 'Lưu thay đổi').props.onClick());
+    assert.equal(commands.length, 1);
+    const sent = commands[0][1].header;
+    assert.deepEqual(Object.keys(sent).sort(), [...SAVE_HEADER_BY_MODULE['machine-movements']].sort());
+    assert.equal(sent.moveTypeId, 'DEMO');
+    assert.equal(sent.documentDate, '2026-10-23T00:00:00.000');
+    assert.equal('objectId' in sent || 'deliverDate' in sent || 'isLocked' in sent, false);
+  }, { module: 'machine-movements', detail: data(header), api: { save: async (...args) => { commands.push(args); return { outcome: 'Denied' }; } } });
+});

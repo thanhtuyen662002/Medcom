@@ -409,7 +409,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
         (a): a is ErpActionState =>
           a.visible && ((MENU_ACTION_IDS as readonly string[]).includes(a.id)
             // Inbound and transfer step screens: every ERP button of the form (Gửi TP SA, Gửi PM, Chọn bước gửi về…).
-            || (module === "inbound-warehouse" || DIALOG_ACTION_MODULES.has(module)) && a.id !== "create" && !a.id.startsWith("save-"))
+            || (module === "inbound-warehouse" || DIALOG_ACTION_MODULES.has(module)) && a.id !== "create" && a.id !== "paste" && !a.id.startsWith("save-"))
       );
 
   const menuLabel = (act: ErpActionState): string => {
