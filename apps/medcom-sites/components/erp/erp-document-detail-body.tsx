@@ -1,5 +1,6 @@
 "use client";
 
+import { ApiError } from "@/lib/erp/api";
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useEffectEvent } from "react";
 import { Trash2, Send, QrCode, CheckCircle2, Camera, X, Pencil, Loader2 } from "lucide-react";
 import { ListSkeleton } from "@/components/app/loading-skeleton";
@@ -29,6 +30,11 @@ function editCommandKey(prefix: "save" | "del" | "act") {
 
 const isInboundPhotoModule = (module: string): module is AttachmentModule =>
   (attachmentModules as readonly string[]).includes(module) && module.startsWith("inbound-");
+
+// A 4xx refusal (e.g. invalid_erp_intent) wrote nothing and is not a connection problem.
+const actionFailure = (error: unknown) => error instanceof ApiError && error.status >= 400 && error.status < 500
+  ? `Hệ thống từ chối thao tác (${error.code}). Chưa có gì thay đổi; kiểm tra lại rồi thử lại.`
+  : "Lỗi kết nối khi gửi thao tác tới máy chủ.";
 
 export function ErpDocumentDetailBody({ module, branchId: currentBranch, documentId: selectedDocId,
   onClose, onChanged, onCloseGuardChange, onOpenGuardChange, onEditPurchaseRequest, onDeleted, reloadVersion,
@@ -396,8 +402,8 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
       });
       if (res.outcome === "Committed" || res.outcome === "Replayed") setDialogAction(null);
       handleCommandOutcome(res);
-    } catch {
-      setActionFeedback({ type: "error", message: "Lỗi kết nối khi gửi thao tác tới máy chủ." });
+    } catch (error) {
+      setActionFeedback({ type: "error", message: actionFailure(error) });
     } finally {
       setExecutingAction(null);
     }
@@ -563,10 +569,10 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
         payload: notesValue ? { notes: notesValue } : {},
       });
       handleCommandOutcome(res);
-    } catch {
+    } catch (error) {
       setActionFeedback({
         type: "error",
-        message: "Lỗi kết nối khi gửi thao tác tới máy chủ.",
+        message: actionFailure(error),
       });
     } finally {
       setExecutingAction(null);
