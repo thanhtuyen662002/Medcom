@@ -73,6 +73,16 @@ Căn cứ là định nghĩa STP/helper đọc lại sau triển khai, cấu hì
 
 TLKT giải thích giữ mã trạng thái cũ, tập đích trả lại tường minh, loại hàng TB, điều kiện Kỹ thuật gửi PM trước khi PM gửi Kế toán cho thiết bị, và cách xử lý phiếu cũ đang ở PM. Các quy trình khác và phân quyền không bị thay đổi bởi lượt cập nhật tài liệu này.
 
+## Đề nghị mua hàng: giá tùy chọn, bỏ tỷ giá và xóa phiếu — 29/10/2026
+
+Chỉ cập nhật bài Mua hàng ở HDSD/TLKT, sơ đồ và xử lý lỗi của bài. Người lập có thể để trống đơn giá khi chưa có báo giá; giá âm vẫn bị chặn. Phiếu đề nghị giữ loại tiền nhưng bỏ ô tỷ giá. PO giữ giá trống, lấy tỷ giá theo ngày từ danh mục tỷ giá; khi thiếu tỷ giá thì PO nháp dùng dấu chưa có tỷ giá và cần bổ sung trước xử lý tài chính. Không hướng dẫn lấy tỷ giá cố định hoặc coi tổng tiền thiếu giá là tổng hoàn chỉnh.
+
+TLKT ghi rõ `AP_PurchaseRequest_OptionalPriceValidationFnc`, `CF_Currency_GetRateOnDateFnc`, `CF_Document_ExchangeRateValidationFnc` và `AP_PurchaseRequest_DeleteDraftTrg`, cùng các khóa và điều kiện giao dịch. Trigger xóa detail trước master trong giao dịch DELETE, chỉ cho phiếu Nháp chưa khóa/chưa có PO; giữ khóa ngoại NO_ACTION. Luồng duyệt, từ chối và phân quyền hiện hữu giữ nguyên.
+
+Căn cứ là bản sửa đã triển khai và kết quả đọc lại ngày 29/10: 23 ca hợp lệ + 6 ca chặn lỗi cho giá/tỷ giá; 13 ca trước triển khai cho xóa (có hoàn tác khi lỗi chi tiết), 12 ca hợp lệ/chặn lỗi sau triển khai và thử hoàn tác bản sửa. Phiên Admin đã lưu một phiếu minh họa với USD, đơn giá trống và không có ô tỷ giá, chọn lại để xác nhận dữ liệu; sau xác nhận của chủ hệ thống, xóa thành công chính phiếu đó từ ERP. Đối chiếu DB xác nhận không còn master/detail thử, không có dòng mồ côi, các phiếu khác và quyền giữ nguyên.
+
+Chỉ công khai tên/hash đối tượng và mô tả kiểm chứng đã loại dữ liệu giao dịch trong `content/evidence.json`. Không đưa SQL body, ảnh chứng từ, mã phiếu thử hay thông tin kết nối vào repo. Không nâng kết quả Admin này thành kiểm chứng gửi/duyệt/chốt tài chính trên mọi vai trò. Nội dung các quy trình khác không đổi; lượt cập nhật tài liệu không sửa DB hoặc triển khai IIS.
+
 ## Quy tắc cập nhật tiếp
 
 Khi DB hoặc ERP đổi, đối chiếu module/form liên quan, cập nhật bài nguồn và sơ đồ cùng lượt. Đổi hash định nghĩa là dấu hiệu cần rà lại, không tự chứng minh nghiệp vụ đã đổi. Giữ các trạng thái UNKNOWN cho đến khi có quan sát hoặc kiểm thử đúng phạm vi, không nâng thành PASS bằng suy luận.

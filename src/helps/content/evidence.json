@@ -122,15 +122,48 @@
           "schema": "dbo",
           "name": "AP_PurchaseRequest_CreatePOStp",
           "type": "SQL_STORED_PROCEDURE",
-          "definitionSha256": "191d4335cd299dee97cd849b7d978e2883443fa3739880e8bee4e1e12de56a0f"
+          "definitionSha256": "6073f0e59e0a325ee19322599bf73fd62315330fe66656a90d33f5f9aa412548"
         },
         {
           "schema": "dbo",
           "name": "SY_GetUserPermissionFnc",
           "type": "SQL_INLINE_TABLE_VALUED_FUNCTION",
           "definitionSha256": "a3062aeabd2e01d24dea5447ebfd93f90f63d80b0324138f867518cefb0018d7"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseRequest_OptionalPriceValidationFnc",
+          "type": "SQL_SCALAR_FUNCTION",
+          "definitionSha256": "e0756c3deeb981637a45e607b920f9e18ee550ac0b4ce7d5d630d0643296f2d6"
+        },
+        {
+          "schema": "dbo",
+          "name": "CF_Currency_GetRateOnDateFnc",
+          "type": "SQL_SCALAR_FUNCTION",
+          "definitionSha256": "d40c51b6017fc977842c08641f994357be72885636c17fd08160cd267a214bdc"
+        },
+        {
+          "schema": "dbo",
+          "name": "CF_Document_ExchangeRateValidationFnc",
+          "type": "SQL_SCALAR_FUNCTION",
+          "definitionSha256": "f62747cb21049480495cf65ae715a77ecc8a0cb0b71b9611b47883fd44bb3dc9"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseRequest_DeleteDraftTrg",
+          "type": "SQL_TRIGGER",
+          "definitionSha256": "0a5460520bbecca9b03246a6404fbd89c391c65a0668b5f3795ba939b6e13796"
         }
-      ]
+      ],
+      "reviewDate": "2026-10-29",
+      "verification": {
+        "date": "2026-10-29",
+        "source": "Owner-authorized price/rate and draft-deletion repairs; metadata and module fingerprints read back after deployment. Full SQL and test records remain outside the public repository.",
+        "database": "Optional UnitPrice and hidden nullable request RateExchange verified; PO preserves unknown prices and resolves dated rates. Price/rate checks: 23 positive and 6 negative post-deployment cases. Draft-delete checks: 13 pre-deployment cases including child-failure rollback; 12 post-deployment positive/blocking cases and rollback dry run passed.",
+        "nativeUI": "Admin created and saved a synthetic USD request once with quantity present, UnitPrice blank and no exchange-rate input; reloaded values persisted. After owner confirmation, deletion through the ERP UI succeeded; DB confirmed master/detail removed without orphans. Fixtures removed.",
+        "preserved": "Approval procedure, existing role/branch permissions, trusted NO_ACTION master/detail foreign key and unrelated request data were verified unchanged by the deletion repair.",
+        "limits": "No claim of end-to-end acceptance for other role logins, approval, financial posting or other workflows in this documentation update."
+      }
     },
     {
       "id": "inbound",
@@ -1029,7 +1062,13 @@
       "form": "IV_InboundRequestFrm",
       "status": "PASS",
       "scope": "Owner performed native copy, edited only detail quantities and saved once on a dedicated synthetic draft. Independently read back three lines totaling 3680 and a second item of 480, preserved PO references, same shipment and matching applied save token. Temporary test records removed. Permissions unchanged."
+    },
+    {
+      "date": "2026-10-29",
+      "screen": "AP_PurposeRequestListFrm",
+      "status": "PASS",
+      "scope": "Native Admin save/reload with blank unit price and no rate input, followed by confirmed native deletion of that synthetic draft. Independent DB readback verified removal of master/detail, no orphan lines and unchanged other requests/permissions. No approval or PO action submitted in this native UI test."
     }
   ],
-  "lastUpdated": "2026-10-23"
+  "lastUpdated": "2026-10-29"
 }
