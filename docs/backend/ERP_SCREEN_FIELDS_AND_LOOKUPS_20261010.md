@@ -50,13 +50,13 @@ Evidence: catalog `screens[id=purchase-requests]`; menu `05011`, form `AP_Purpos
 | lookupId | Value | Label | Context parameters | Required context | Linked columns | Multi | Disabled |
 |---|---|---|---|---|---|---|---|
 | header.BranchID | BranchID | BranchID | — | — | — | false | false |
-| header.CurrencyID | CurrencyID | CurrencyID | — | — | RateExchange | false | false |
+| header.CurrencyID | CurrencyID | CurrencyID | — | — | — | false | false |
 | header.Department | Department | Department | — | — | Department | false | false |
 | header.ObjectID | ObjectID | ObjectName | — | — | ObjectID;ObjectName;Address | false | false |
 | header.PersonSuggest | PersonSuggest | PersonSuggest | — | — | PersonSuggest | false | false |
 | header.PurposeID | PurposeID | PurposeName | — | — | PurposeID;PurposeName | false | false |
 | header.StatusID | StatusID | StatusName | — | — | StatusID;StatusName | false | false |
-| lines.ItemID | ItemID | ItemID | — | — | ItemID;ItemName;Unit;HangSX | false | false |
+| lines.ItemID | ItemID | ItemID | — | — | ItemID;ItemCode;ItemName;Unit;HangSX | false | false |
 | list.PurposeID | PurposeID | PurposeName | — | — | PurposeID | false | false |
 | list.StatusID | StatusID | StatusName | — | — | StatusID;StatusName | true | false |
 
@@ -171,7 +171,7 @@ Evidence: catalog `screens[id=sales-orders]`; menu `0600201`, form `AR_OrderByCo
 
 | lookupId | Value | Label | Context parameters | Required context | Linked columns | Multi | Disabled |
 |---|---|---|---|---|---|---|---|
-| header.ContractID | ContractID | ContractID | ObjectID | — | ObjectID;ObjectName;EmployeeID | false | false |
+| header.ContractID | ContractID | ContractID | ObjectID;BranchID | BranchID | ObjectID;ObjectName;EmployeeID | false | false |
 | header.EmployeeID | EmployeeID | EmployeeID | — | — | — | false | false |
 | header.ManagerID | ManagerID | ManagerID | — | — | — | false | false |
 | header.ObjectID | ObjectID | ObjectID | ContractID | — | ObjectName;Address | false | false |

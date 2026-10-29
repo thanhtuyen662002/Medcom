@@ -63,7 +63,9 @@ public sealed partial class SqlErpScreenService
             ||query.Page>1000||query.Search is {Length:>100}||!ErpInputRules.Text(query.Search,false))return false;
         arguments=(definition.Parameters??"").Split(';',StringSplitOptions.RemoveEmptyEntries);
         required=(definition.RequiredParameters??"").Split(';',StringSplitOptions.RemoveEmptyEntries);
-        var context=query.Context??new Dictionary<string,string?>();var names=arguments;
+        var context=new Dictionary<string,string?>(query.Context??new Dictionary<string,string?>(),StringComparer.Ordinal);var names=arguments;
+        // ERP 29/10 made the sales contract picker take BranchID; the branch is the request's own scope.
+        if(names.Contains("BranchID",StringComparer.Ordinal)&&!context.ContainsKey("BranchID"))context["BranchID"]=query.BranchId;
         if(context.Count>16||context.Keys.Any(key=>!names.Contains(key,StringComparer.Ordinal))
             ||context.Values.Any(value=>value is not null&&(value.Length>250||!ErpInputRules.Text(value,false)))
             ||required.Any(argument=>string.IsNullOrEmpty(context.GetValueOrDefault(argument))))return false;

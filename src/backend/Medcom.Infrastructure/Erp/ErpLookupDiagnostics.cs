@@ -50,6 +50,8 @@ public sealed class ErpLookupDiagnostics
     internal static ErpLookupCheckItem Compare(ErpScreenDescription screen, ErpLookupDefinition lookup, IReadOnlyList<LiveRow> live)
     {
         var rows = live.Where(row => row.Form == screen.FormId && row.Column == lookup.Field && row.Grid == lookup.Grid).ToArray();
+        // The Web never runs a lookup it has disabled, so ERP's row for it cannot break anything.
+        if (lookup.Disabled) return new(screen.Id, lookup.Id, "ok", []);
         if (rows.Length != 1) return new(screen.Id, lookup.Id, rows.Length == 0 ? "missing" : "duplicate", []);
         var row = rows[0]; var mismatches = new List<ErpLookupMismatch>();
         void Check(string field, string? expected, string? actual) { if (expected != actual) mismatches.Add(new(field, expected, actual)); }
@@ -57,7 +59,7 @@ public sealed class ErpLookupDiagnostics
         Check("DisplayColumn", lookup.DisplayField, row.Display);
         Check("ParaArr", lookup.Parameters, row.Parameters);
         Check("ParaRequireArr", lookup.RequiredParameters, row.Required);
-        Check("IsDisable", "False", row.Disabled.ToString());
+        Check("IsDisable", lookup.Disabled.ToString(), row.Disabled.ToString());
         Check("IsMultiSelect", lookup.MultiSelect.ToString(), row.MultiSelect.ToString());
         Check("LinkColumn", lookup.LinkedFields, row.Linked);
         if (ErpScreenCatalog.IsWorkflow(screen.Id)) Check("IsNotInList", lookup.AllowUnlisted.ToString(), row.NotInList.ToString());
