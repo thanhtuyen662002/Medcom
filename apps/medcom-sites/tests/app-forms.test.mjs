@@ -174,7 +174,7 @@ for (const mobile of [true, false]) for (const [name, component, props, label] o
 // strings. Generated identities are checked independently, never normalized away.
 const expectedPR = {
   purchaseDate: '2026-10-24T00:00:00.000', purposeId: null, personSuggest: 'QA-EMP', department: 'QA-DEPT',
-  purposeDescOrClient: 'Mục đích tổng hợp', price: '123.45', notes: 'Ghi chú tổng hợp', currencyId: 'USD', objectId: '', rateExchange: null,
+  purposeDescOrClient: 'Mục đích tổng hợp', price: '123.45', notes: 'Ghi chú tổng hợp', currencyId: 'USD', objectId: null, rateExchange: null,
 };
 const expectedPO = {
   documentDate: '2026-10-24T00:00:00.000', objectId: 'QA-SUPPLIER', memo: 'Nội dung tổng hợp', notes: 'Ghi chú tổng hợp',

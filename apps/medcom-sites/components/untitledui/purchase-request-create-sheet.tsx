@@ -1,5 +1,6 @@
 "use client";
 
+import { ApiError } from "@/lib/erp/api";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, X, AlertCircle, Loader2 } from "lucide-react";
 import { erpClient } from "@/lib/erp/erp-client";
@@ -232,7 +233,8 @@ export function PurchaseRequestCreateSheet({
           price: price.trim() ? price.trim() : null,
           notes: notes.trim() ? notes.trim() : null,
           currencyId: currencyId.trim(),
-          objectId: objectId.trim(),
+          // No supplier picker on the request: an empty ID is refused (invalid_erp_intent), NULL is the ERP value.
+          objectId: objectId.trim() || null,
           rateExchange: rateExchange.trim() ? Number(rateExchange) : null,
       };
       if (isEditing && baseline && !saveIntent.current) {
@@ -310,6 +312,9 @@ export function PurchaseRequestCreateSheet({
       if (isEditing && saveIntent.current) {
         setUncertain(true);
         setSubmitError("Chưa xác nhận được kết quả lưu. Bấm Thử lại lưu để gửi lại đúng yêu cầu gốc.");
+      } else if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+        // A 4xx refusal wrote nothing; it is not a connection problem.
+        setSubmitError(`Hệ thống từ chối dữ liệu của phiếu (${error.code}). Chưa có gì được lưu; kiểm tra lại các trường rồi thử lại.`);
       } else setSubmitError(isEditing ? (error instanceof Error ? error.message : "Không thể lưu chứng từ ERP.") : "Lỗi kết nối khi tạo mới chứng từ ERP.");
     } finally {
       setCreating(false);
