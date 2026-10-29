@@ -130,6 +130,8 @@ public sealed partial class SqlErpScreenCommands
             {("purchase-requests","submit")=>2,("purchase-requests","send-purchase-order")=>5,
                 ("sales-orders","send-pm")=>12,("sales-orders","recall")=>11,
                 ("internal-transfer-requests","send-pm")=>10,("internal-transfer-requests","recall")=>0,_=>int.MinValue};
+            // Workflow screens (inbound TP SA / Kỹ thuật "Gửi PM") are checked by WorkflowPostcondition instead.
+            if(expected==int.MinValue&&ErpScreenCatalog.IsWorkflow(plan.Module))return allocated.AsReadOnly();
             await using var status=ErpSqlPlan.Command(transaction,$"SELECT StatusID FROM dbo.[{plan.HeaderTable}] WITH(HOLDLOCK) WHERE [{plan.HeaderKey}]=@document;");
             ErpSqlPlan.Parameter(status,"@document",DbType.String,document,50);
             Require(await status.ExecuteScalarAsync(token)is int value&&value==expected,ErpCommandOutcome.Unavailable,"native_action_postcondition");
