@@ -10,8 +10,8 @@ const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(app, '.test-runtime/erp-document-detail-body');
 await mkdir(output, { recursive: true });
 const leaves = {
-  'erp-client': `export const erpClient={getErpModuleDetail:(...args)=>globalThis.qaGenericDetail.read(...args),getScreenMetadata:async()=>({caption:'Kiểm thử'}),getErpModuleActions:async()=>[],getErpModuleList:async()=>({rows:[{documentId:'QA-DOC',header:{objectName:'Đối tượng kiểm thử'}}],page:1,hasMore:false}),scanQr:(...args)=>globalThis.qaGenericDetail.scan(...args),lookupCommand:(...args)=>globalThis.qaGenericDetail.lookup(...args),executeWorkflowAction:(...args)=>globalThis.qaGenericDetail.workflow(...args),saveDocument:(...args)=>globalThis.qaGenericDetail.save(...args),deleteDocument:(...args)=>globalThis.qaGenericDetail.delete(...args)};`,
-  'bottom-sheet': `export const UntitledBottomSheet=({open,children,title,onClose})=>open?<section role="dialog" data-sheet={title}><button aria-label="Đóng modal" onClick={onClose}/>{children}</section>:null;`,
+  'erp-client': `export const erpClient={getErpModuleDetail:(...args)=>globalThis.qaGenericDetail.read(...args),getScreenMetadata:async()=>({caption:'Kiểm thử'}),getErpModuleActions:async()=>[],getErpModuleList:async()=>({rows:[{documentId:'QA-DOC',header:{objectName:'Đối tượng kiểm thử'}}],page:1,hasMore:false}),scanQr:(...args)=>globalThis.qaGenericDetail.scan(...args),lookupCommand:(...args)=>globalThis.qaGenericDetail.lookup(...args),executeWorkflowAction:(...args)=>globalThis.qaGenericDetail.workflow(...args),saveDocument:(...args)=>globalThis.qaGenericDetail.save(...args),deleteDocument:(...args)=>globalThis.qaGenericDetail.delete(...args),getActionOptions:(...args)=>globalThis.qaGenericDetail.options(...args)};`,
+  'bottom-sheet': `export const UntitledBottomSheet=({open,children,footer,title,onClose})=>open?<section role="dialog" data-sheet={title}><button aria-label="Đóng modal" onClick={onClose}/>{children}{footer}</section>:null;`,
   'button': `export const UntitledButton=({children,iconLeading,iconTrailing,variant,size,...props})=><button {...props}>{children}</button>;`,
   'lookup-field': `export const LookupField=props=><div data-lookup={props.lookupId} {...props}/>;export const fieldText=v=>v==null?'':String(v);export const choiceLabel=(c,f)=>c?.label||f;`,
   'record-dialog': `export const RecordDetailStatus=({children})=><div data-status="header">{children}</div>;export const RecordDetailHeading=({children,title,documentNumber})=><header>{title}{documentNumber}{children}</header>;export const RecordActionBar=({children,presentationAllowed=true})=>presentationAllowed?<footer>{children}</footer>:null;`,
@@ -27,7 +27,7 @@ await build({
   outfile: path.join(output, 'fixture.cjs'), bundle: true, platform: 'node', format: 'cjs', packages: 'external', alias: { '@': app }, jsx: 'automatic', logLevel: 'warning',
   plugins: [{ name: 'generic-detail-leaves', setup(builder) {
     builder.onResolve({ filter: /.*/ }, args => {
-      if (!/(?:tab-erp-screen\.tsx|erp-document-detail-body\.tsx|erp-line-editor\.tsx|document-detail\/[^/]+\.tsx|document-detail\/registry\.ts)$/.test(args.importer.replaceAll('\\', '/'))) return;
+      if (!/(?:tab-erp-screen\.tsx|erp-document-detail-body\.tsx|erp-line-editor\.tsx|sales-order-action-dialog\.tsx|document-detail\/[^/]+\.tsx|document-detail\/registry\.ts)$/.test(args.importer.replaceAll('\\', '/'))) return;
       // Match the whole leaf name: "button" must not intercept P2 AppButton.
       for (const key of Object.keys(leaves)) if (args.path.endsWith(`/${key}`)) return { path: key, namespace: 'generic-detail-qa' };
     });
@@ -250,6 +250,73 @@ test('workflow prompt keeps notes and exact command payload', async () => {
     assert.match(command.idempotencyKey, /^act-/);
     assert.equal(changed.length, 1);
   }, { module: 'purchase-requests', props: { onChanged: () => changed.push(true) }, api: { workflow: async (...args) => { sent.push(args); return { outcome: 'Committed' }; } } });
+});
+
+const transferDetail = (actions) => async (scope, query) => ({ ...data(query.documentId), actions: actions.map(([id, caption]) => ({ id, caption, visible: true, enabled: true })) });
+const waitOptions = () => act(async () => { await new Promise(resolve => setTimeout(resolve, 300)); });
+
+test('transfer batch menu lists every ERP button and Đồng bộ đề nghị sends an empty payload', async () => {
+  const sent = [];
+  await mounted(async tree => {
+    await menu(tree);
+    for (const caption of ['Đồng bộ đề nghị', 'Gửi kỹ thuật', 'Gửi TP SA']) assert.ok(button(tree, caption), caption);
+    await act(async () => button(tree, 'Đồng bộ đề nghị').props.onClick());
+    assert.equal(tree.root.findAllByType('textarea').length, 0);
+    assert.match(text(tree.toJSON()), /chứng từ điều chuyển QA-DOC/);
+    await act(async () => button(tree, 'Xác nhận').props.onClick());
+    await flush();
+    assert.equal(sent.length, 1);
+    const [module, operation, command] = sent[0];
+    assert.equal(module, 'internal-transfer-batches');
+    assert.equal(operation, 'sync-requests');
+    assert.deepEqual(command.payload, {});
+  }, { module: 'internal-transfer-batches', api: { read: transferDetail([['sync-requests', 'Đồng bộ đề nghị'], ['send-tech', 'Gửi kỹ thuật'], ['send-sa', 'Gửi TP SA']]), workflow: async (...args) => { sent.push(args); return { outcome: 'Committed' }; } } });
+});
+
+test('transfer tech Gửi TP SA picks a main and a supporting TP SA', async () => {
+  const sent = [], roles = [];
+  await mounted(async tree => {
+    await menu(tree);
+    await act(async () => button(tree, 'Gửi TP SA').props.onClick());
+    await waitOptions();
+    const confirm = () => button(tree, 'Xác nhận');
+    assert.equal(confirm().props.disabled, true);
+    const [main, supporting] = tree.root.findAllByProps({ role: 'radiogroup' });
+    assert.equal(main.props['aria-label'], 'TP SA chính');
+    assert.equal(supporting.props['aria-label'], 'TP SA phối hợp');
+    await act(async () => main.findAllByProps({ role: 'radio' })[0].props.onClick());
+    assert.equal(confirm().props.disabled, true);
+    await act(async () => supporting.findAllByProps({ role: 'radio' })[0].props.onClick());
+    await act(async () => confirm().props.onClick());
+    await flush();
+    assert.deepEqual(roles.sort(), ['primary', 'supporting']);
+    const [module, operation, command] = sent[0];
+    assert.equal(module, 'internal-transfer-tech');
+    assert.equal(operation, 'send-sa');
+    assert.deepEqual(command.payload, { primarySaId: 'SA-primary', supportingSaId: 'SA-supporting', notes: null });
+  }, { module: 'internal-transfer-tech', api: {
+    read: transferDetail([['send-sa', 'Gửi TP SA'], ['reject', 'Trả lại']]),
+    options: async (module, operation, query) => { roles.push(query.role); return { items: [{ id: `SA-${query.role}`, label: `TP SA ${query.role}` }], page: 1, pageSize: 20, hasMore: false }; },
+    workflow: async (...args) => { sent.push(args); return { outcome: 'Committed' }; } } });
+});
+
+test('transfer return step sends the chosen status and required notes', async () => {
+  const sent = [];
+  await mounted(async tree => {
+    await menu(tree);
+    await act(async () => button(tree, 'Chọn bước gửi về').props.onClick());
+    await waitOptions();
+    await act(async () => tree.root.findAllByProps({ role: 'radio' })[0].props.onClick());
+    assert.equal(button(tree, 'Xác nhận').props.disabled, true, 'notes are required');
+    await act(async () => tree.root.findByType('textarea').props.onChange({ target: { value: ' Thiếu chứng từ ' } }));
+    await act(async () => button(tree, 'Xác nhận').props.onClick());
+    await flush();
+    assert.deepEqual(sent[0].slice(0, 2), ['internal-transfer-sa', 'return-step']);
+    assert.deepEqual(sent[0][2].payload, { statusId: 21, notes: 'Thiếu chứng từ' });
+  }, { module: 'internal-transfer-sa', api: {
+    read: transferDetail([['send-accounting', 'Gửi Kế toán'], ['return-step', 'Chọn bước gửi về']]),
+    options: async () => ({ items: [{ id: '21', label: 'Kỹ thuật trả lại' }], page: 1, pageSize: 20, hasMore: false }),
+    workflow: async (...args) => { sent.push(args); return { outcome: 'Committed' }; } } });
 });
 
 // Exercise the production RecordDialog focus trap with the production portal
