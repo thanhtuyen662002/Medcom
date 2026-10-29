@@ -115,6 +115,7 @@ public static class ApiHost
             builder.Services.AddSingleton<IPlatformReadiness>(provider=>provider.GetRequiredService<LegacyReadiness>());
             builder.Services.AddHostedService<LegacyHealthMonitor>();
             builder.Services.AddSingleton<Medcom.Infrastructure.Erp.ErpConfigDriftCheck>();
+            builder.Services.AddSingleton<Medcom.Infrastructure.Erp.ErpLookupDiagnostics>();
             builder.Services.AddHostedService<ErpConfigDriftMonitor>();
             builder.Services.AddSingleton<IIdentityAuthority, LegacyIdentityAuthority>();
             if (erpWrites is not null)
@@ -384,6 +385,17 @@ public static class ApiHost
                 ? Results.Problem(statusCode: 403, title: "Access denied.")
                 : Results.Ok(context.RequestServices.GetService<Medcom.Infrastructure.Erp.ErpConfigDriftCheck>()?.Latest
                     ?? new Medcom.Contracts.ErpConfigDriftReport("unavailable", null, Medcom.Infrastructure.Erp.ErpConfigDriftCheck.Baseline, 0, 0, [])));
+        // Which ERP dropdowns no longer match the Web lookups (metadata only, never SQL text).
+        app.MapGet("/api/platform/erp-lookup-check", async (HttpContext context) =>
+        {
+            if (!AuthEndpoints.Current(context).Identity.Capabilities.Contains("platform.status", StringComparer.Ordinal))
+                return Results.Problem(statusCode: 403, title: "Access denied.");
+            if (context.RequestServices.GetService<Medcom.Infrastructure.Erp.ErpLookupDiagnostics>() is not { } check)
+                return Results.Problem(statusCode: 503, title: "ERP lookup check unavailable.");
+            try { return Results.Ok(await check.RunAsync(context.RequestAborted)); }
+            catch (Exception error) when (error is System.Data.Common.DbException or InvalidOperationException or TimeoutException)
+            { return Results.Problem(statusCode: 503, title: "ERP lookup check unavailable."); }
+        });
         AuthEndpoints.Map(app);
         var data=app.MapGroup("").AddEndpointFilter<CanonicalResponseFilter>().AddEndpointFilter<FeDisplayFilter>();
         DocumentEndpoints.Map(data);
