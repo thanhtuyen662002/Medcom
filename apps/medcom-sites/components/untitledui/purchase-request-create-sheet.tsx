@@ -52,7 +52,7 @@ const choice = (id: unknown, label?: unknown, fields: Record<string, unknown> = 
   text(id) ? { id: text(id), name: text(label) || text(id), label: text(label) || text(id), fields } : null;
 const multiChoices = (value: unknown): ErpChoice[] => text(value).split(",").map(id => id.trim()).filter(Boolean).map(id => choice(id)!);
 const lineValues = (line: DraftLine): Record<string, unknown> => ({
-  itemId: line.itemId.trim(), quantity: line.quantity.trim(), unitPrice: line.unitPrice.trim(),
+  itemId: line.itemId.trim(), quantity: line.quantity.trim(), unitPrice: line.unitPrice.trim() || null,
   budget: line.budget.trim() || null, timeRequired: line.timeRequired.trim() || null, model: line.model.trim() || null,
 });
 
@@ -120,7 +120,8 @@ export function PurchaseRequestCreateSheet({
   const [currencyId, setCurrencyId] = useState("VND");
   const [currencyChoice, setCurrencyChoice] = useState<ErpChoice | null>(null);
   const [objectId, setObjectId] = useState("");
-  const [rateExchange, setRateExchange] = useState("1");
+  // ERP 29/10 hides the request rate; an edited request keeps whatever rate it already has.
+  const [rateExchange, setRateExchange] = useState("");
 
   const [lines, setLines] = useState<DraftLine[]>([emptyLine()]);
   const [step, setStep] = useState(0);
@@ -186,7 +187,8 @@ export function PurchaseRequestCreateSheet({
   const patchLine = (key: string, patch: Partial<DraftLine>) =>
     setLines((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
 
-  const grandTotal = sumMoney(lines.map(lineTotal)) || "0";
+  // ERP leaves the total blank while any line still has no price, never a partial sum.
+  const grandTotal = lines.some(line => !line.unitPrice.trim()) ? null : sumMoney(lines.map(lineTotal)) || "0";
 
   function validate(): Record<string, string> {
     const next: Record<string, string> = {};
@@ -194,14 +196,13 @@ export function PurchaseRequestCreateSheet({
     if (!personSuggest.trim()) next["header.personSuggest"] = "Chọn người đề nghị.";
     if (!department.trim()) next["header.department"] = "Chọn bộ phận.";
     if (!currencyId.trim()) next["header.currencyId"] = "Chọn loại tiền.";
-    if (!DECIMAL_RE.test(rateExchange.trim()) || Number(rateExchange) <= 0) next["header.rateExchange"] = "Tỷ giá phải lớn hơn 0.";
     if (price.trim() && !DECIMAL_RE.test(price.trim())) next["header.price"] = "Giá bán phải là số.";
     if (lines.length === 0) next["lines"] = "Cần ít nhất 1 chi tiết.";
     if (lines.length > 500) next["lines"] = "Tối đa 500 dòng chi tiết.";
     for (const line of lines) {
       if (!line.itemId.trim()) next[`line.${line.key}.itemId`] = "Chọn mã hàng.";
       if (!DECIMAL_RE.test(line.quantity.trim())) next[`line.${line.key}.quantity`] = "Số lượng phải là số.";
-      if (!DECIMAL_RE.test(line.unitPrice.trim())) next[`line.${line.key}.unitPrice`] = "Đơn giá phải là số.";
+      if (line.unitPrice.trim() && !DECIMAL_RE.test(line.unitPrice.trim())) next[`line.${line.key}.unitPrice`] = "Đơn giá phải là số không âm, hoặc để trống khi chưa có báo giá.";
       if (line.budget.trim() && !DECIMAL_RE.test(line.budget.trim()))
         next[`line.${line.key}.budget`] = "Ngân sách phải là số.";
     }
@@ -232,7 +233,7 @@ export function PurchaseRequestCreateSheet({
           notes: notes.trim() ? notes.trim() : null,
           currencyId: currencyId.trim(),
           objectId: objectId.trim(),
-          rateExchange: Number(rateExchange),
+          rateExchange: rateExchange.trim() ? Number(rateExchange) : null,
       };
       if (isEditing && baseline && !saveIntent.current) {
         const originalHeader = baseline.header || {};
@@ -405,21 +406,8 @@ export function PurchaseRequestCreateSheet({
             setCurrencyChoice(c);
             if (c) {
               setCurrencyId(c.id);
-              const rate = c.fields?.["RateExchange"];
-              if (typeof rate === "number" && Number.isFinite(rate) && rate > 0)
-                setRateExchange(String(rate));
             } else setCurrencyId("");
           }}
-        />
-        {/* Chủ dự án cho phép sửa tay tỷ giá (19/10/2026) — chọn loại tiền chỉ gợi ý giá trị. */}
-        <TextField
-          label="Tỷ giá"
-          required
-          value={rateExchange}
-          onChange={setRateExchange}
-          inputMode="decimal"
-          error={errors["header.rateExchange"]}
-          placeholder="1"
         />
         <TextField
           label="Giá bán"
@@ -522,7 +510,7 @@ export function PurchaseRequestCreateSheet({
                 <TextField
                   label="Đơn giá"
                   money
-                  required
+                  placeholder="Để trống nếu chưa có báo giá"
                   value={line.unitPrice}
                   onChange={(v) => patchLine(line.key, { unitPrice: v })}
                   inputMode="decimal"
@@ -543,7 +531,7 @@ export function PurchaseRequestCreateSheet({
         <span>
           Tổng: {lines.length} dòng
         </span>
-        <span className="text-brand-700 dark:text-brand-300">Tổng tiền: {formatVND(grandTotal)}</span>
+        <span className="text-brand-700 dark:text-brand-300">Tổng tiền: {grandTotal == null ? "Chưa đủ đơn giá" : formatVND(grandTotal)}</span>
       </div>
     </FormSection>
   );
@@ -609,7 +597,7 @@ export function PurchaseRequestCreateSheet({
             </div>
             <div className="space-y-6 p-4 sm:p-6">
               <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
-                {[["Chi nhánh", currentBranch], ["Ngày đề xuất", purchaseDate], ["Loại tiền", currencyId], ["Tỷ giá", rateExchange]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-sm text-neutral-900 dark:text-white">{label}</dt><dd className="mt-1 break-words text-base font-semibold tabular-nums">{value || "—"}</dd></div>)}
+                {[["Chi nhánh", currentBranch], ["Ngày đề xuất", purchaseDate], ["Loại tiền", currencyId]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-sm text-neutral-900 dark:text-white">{label}</dt><dd className="mt-1 break-words text-base font-semibold tabular-nums">{value || "—"}</dd></div>)}
               </dl>
               <dl className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
                 {[["Người đề nghị", personSuggest], ["Bộ phận", department], ["Giá bán", formatVND(price)], ["Mục đích / Khách hàng", purposeDescOrClient], ["Ghi chú", notes]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-sm text-neutral-900 dark:text-white">{label}</dt><dd className="mt-1.5 whitespace-pre-wrap break-words text-base font-medium leading-7">{value || "—"}</dd></div>)}
@@ -633,7 +621,7 @@ export function PurchaseRequestCreateSheet({
                 </>}
               </div>
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-100 bg-brand-50 px-4 py-5 sm:px-6 dark:border-brand-900 dark:bg-brand-950/40"><div><p className="text-base font-semibold">Tổng thanh toán</p><p className="mt-1 text-sm">{reviewLines.length} mặt hàng · {currencyId || "—"}</p></div><strong className="min-w-0 break-words text-2xl font-semibold tabular-nums text-brand-800 dark:text-brand-200">{formatVND(grandTotal)} {currencyId}</strong></div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-100 bg-brand-50 px-4 py-5 sm:px-6 dark:border-brand-900 dark:bg-brand-950/40"><div><p className="text-base font-semibold">Tổng thanh toán</p><p className="mt-1 text-sm">{reviewLines.length} mặt hàng · {currencyId || "—"}</p></div><strong className="min-w-0 break-words text-2xl font-semibold tabular-nums text-brand-800 dark:text-brand-200">{grandTotal == null ? "Chưa đủ đơn giá" : `${formatVND(grandTotal)} ${currencyId}`}</strong></div>
           </section>
         )}
 

@@ -119,7 +119,7 @@ public sealed record PurchaseRequestHeaderFields(
     bool? IsLock,
     string CurrencyId,
     string? ObjectId,
-    double RateExchange,
+    double? RateExchange,
     string BranchId);
 
 public sealed record PurchaseRequestLineFields(
@@ -128,7 +128,7 @@ public sealed record PurchaseRequestLineFields(
     string? Budget,
     string? TimeRequired,
     string Quantity,
-    string UnitPrice,
+    string? UnitPrice,
     string? TotalPrice,
     string? Model,
     string? PurchaseRequestId);

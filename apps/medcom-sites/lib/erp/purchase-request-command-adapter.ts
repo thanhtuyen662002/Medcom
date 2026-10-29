@@ -47,7 +47,7 @@ export function commandPurchaseSnapshot(readback:PurchaseReadback):PurchaseReque
   status:{id:String(d.statusId),label:`Trạng thái ERP: ${d.statusId}`},values:{purchaseDate:h.purchaseDate?.slice(0,10)??"",
    personSuggest:h.personSuggest,department:h.department,purposeId:h.purposeId===null?"":String(h.purposeId),purposeDescOrClient:h.purposeDescOrClient??"",
    notes:h.notes??"",branchId:d.branchId,currencyId:h.currencyId,objectId:h.objectId,
-   lines:d.lines.map(l=>({localKey:l.lineId,lineId:l.lineId,itemId:l.values.itemId,quantity:l.values.quantity,unitPrice:l.values.unitPrice,
+   lines:d.lines.map(l=>({localKey:l.lineId,lineId:l.lineId,itemId:l.values.itemId,quantity:l.values.quantity,unitPrice:l.values.unitPrice??"",
     budget:l.values.budget??"",timeRequired:l.values.timeRequired??"",model:l.values.model??""}))}};
 }
 
@@ -76,7 +76,9 @@ export function freezePurchaseCommand(raw:PurchaseReadback,intent:PurchaseReques
    const original=line.lineId?remaining.get(line.lineId):undefined;
    if(!original||line.localKey!==line.lineId||line.itemId!==original.values.itemId)throw new Error("Add, duplicate or item substitution unavailable");
    remaining.delete(original.lineId);const values=copy(original.values);
-   for(const name of ["quantity","unitPrice"] as const)if(line[name]!==original.values[name])values[name]=integer(line[name]);
+   if(line.quantity!==original.values.quantity)values.quantity=integer(line.quantity);
+   // ERP 29/10: a blank price stays NULL until quoted.
+   if(line.unitPrice!==(original.values.unitPrice??""))values.unitPrice=line.unitPrice===""?null:integer(line.unitPrice);
    if(line.budget!==(original.values.budget??""))values.budget=integer(line.budget);
    values.timeRequired=nullableText(values.timeRequired,line.timeRequired,200);values.model=nullableText(values.model,line.model,50);
    // totalPrice, header price/rateExchange and SQL wall-clock are NEVER recomputed.

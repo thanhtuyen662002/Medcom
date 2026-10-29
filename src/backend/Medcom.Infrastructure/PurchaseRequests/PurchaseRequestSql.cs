@@ -45,14 +45,14 @@ public static class PurchaseRequestSql
                 ('AP_PurchaseRequestTbl','isLock','bit',1,1,1,0),
                 ('AP_PurchaseRequestTbl','CurrencyID','varchar',3,0,0,0),
                 ('AP_PurchaseRequestTbl','ObjectID','varchar',100,1,0,0),
-                ('AP_PurchaseRequestTbl','RateExchange','float',8,0,53,0),
+                ('AP_PurchaseRequestTbl','RateExchange','float',8,1,53,0),
                 ('AP_PurchaseRequestTbl','BranchID','varchar',50,0,0,0),
                 ('AP_PurchaseRequestDetailTbl','UserAutoID','varchar',50,0,0,0),
                 ('AP_PurchaseRequestDetailTbl','ItemID','varchar',50,0,0,0),
                 ('AP_PurchaseRequestDetailTbl','Budget','decimal',9,1,18,0),
                 ('AP_PurchaseRequestDetailTbl','TimeRequired','nvarchar',400,1,0,0),
                 ('AP_PurchaseRequestDetailTbl','Quantity','decimal',9,0,18,0),
-                ('AP_PurchaseRequestDetailTbl','UnitPrice','decimal',9,0,18,0),
+                ('AP_PurchaseRequestDetailTbl','UnitPrice','decimal',9,1,18,0),
                 ('AP_PurchaseRequestDetailTbl','TotalPrice','decimal',9,1,18,0),
                 ('AP_PurchaseRequestDetailTbl','Model','varchar',50,1,0,0),
                 ('AP_PurchaseRequestDetailTbl','PurchaseRequestID','nvarchar',100,1,0,0)
@@ -91,9 +91,14 @@ public static class PurchaseRequestSql
                 AND F.referenced_object_id=OBJECT_ID('dbo.AP_PurchaseRequestTbl','U')
                 AND F.is_disabled=0 AND F.is_not_trusted=0 AND C.name='PurchaseRequestID' AND R.name='PurchaseRequestID'
                 AND (SELECT COUNT(*) FROM sys.foreign_key_columns Y WHERE Y.constraint_object_id=F.object_id)=1)
-            AND NOT EXISTS(SELECT 1 FROM sys.triggers WHERE parent_id IN
+            AND NOT EXISTS(SELECT 1 FROM sys.triggers TR WHERE TR.parent_id IN
               (OBJECT_ID('dbo.MedcomPurchaseRequestCommandJournal'),OBJECT_ID('dbo.MedcomPurchaseRequestCommandSchema'),
-               OBJECT_ID('dbo.AP_PurchaseRequestTbl'),OBJECT_ID('dbo.AP_PurchaseRequestDetailTbl')) AND is_disabled=0)
+               OBJECT_ID('dbo.AP_PurchaseRequestTbl'),OBJECT_ID('dbo.AP_PurchaseRequestDetailTbl')) AND TR.is_disabled=0
+              -- ERP 29/10 draft delete (master+detail together). Commands never delete the master, so only
+              -- this exact INSTEAD OF DELETE-only trigger on the master is tolerated.
+              AND NOT(TR.name='AP_PurchaseRequest_DeleteDraftTrg' AND TR.parent_id=OBJECT_ID('dbo.AP_PurchaseRequestTbl')
+                AND TR.is_instead_of_trigger=1
+                AND NOT EXISTS(SELECT 1 FROM sys.trigger_events E WHERE E.object_id=TR.object_id AND E.type_desc<>'DELETE')))
             THEN 1 ELSE 0 END) AS ShapeOk
         FROM dbo.MedcomPurchaseRequestCommandSchema M WITH (UPDLOCK,HOLDLOCK)
         JOIN sys.databases D ON D.database_id=DB_ID() WHERE M.SingletonId=1;

@@ -174,7 +174,7 @@ for (const mobile of [true, false]) for (const [name, component, props, label] o
 // strings. Generated identities are checked independently, never normalized away.
 const expectedPR = {
   purchaseDate: '2026-10-24T00:00:00.000', purposeId: null, personSuggest: 'QA-EMP', department: 'QA-DEPT',
-  purposeDescOrClient: 'Mục đích tổng hợp', price: '123.45', notes: 'Ghi chú tổng hợp', currencyId: 'USD', objectId: '', rateExchange: 2.5,
+  purposeDescOrClient: 'Mục đích tổng hợp', price: '123.45', notes: 'Ghi chú tổng hợp', currencyId: 'USD', objectId: '', rateExchange: null,
 };
 const expectedPO = {
   documentDate: '2026-10-24T00:00:00.000', objectId: 'QA-SUPPLIER', memo: 'Nội dung tổng hợp', notes: 'Ghi chú tổng hợp',
@@ -189,7 +189,8 @@ async function fillPurchase(tree, kind) {
     await pick(tree, 'header.ObjectID', choice('QA-SUPPLIER')); await set(tree, 'Ngày giao hàng', '2026-10-25');
     await set(tree, 'Mã hợp đồng', ' QA-CONTRACT '); await set(tree, 'Nội dung (Memo)', ' Nội dung tổng hợp ');
   }
-  await pick(tree, 'header.CurrencyID', choice('USD', { RateExchange: 3 })); await set(tree, 'Tỷ giá', '2.5');
+  // ERP 29/10: the purchase request keeps the currency but has no rate field; the PO still has one.
+  await pick(tree, 'header.CurrencyID', choice('USD', { RateExchange: 3 })); if (kind === 'PO') await set(tree, 'Tỷ giá', '2.5');
   await set(tree, 'Ghi chú', ' Ghi chú tổng hợp ');
 }
 for (const [kind, component, expected] of [['PR', PR, expectedPR], ['PO', PO, expectedPO]]) {

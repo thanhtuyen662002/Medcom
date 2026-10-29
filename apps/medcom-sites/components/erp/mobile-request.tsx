@@ -124,8 +124,10 @@ export function validatePurchaseRequest(values: PurchaseRequestDraft, access: Mo
     keys.add(line.localKey);
     if (!line.itemId.trim() || line.itemId.length > 50) errors[prefix + "itemId"] = "Chọn mã hàng hợp lệ, tối đa 50 ký tự.";
     for (const field of ["quantity", "unitPrice", "budget"] as const) {
-      if ((field !== "budget" || line[field] !== "") && !isRequestInteger(line[field])) errors[prefix + field] = "Nhập số nguyên chính xác, tối đa 18 chữ số.";
+      if ((field === "quantity" || line[field] !== "") && !isRequestInteger(line[field])) errors[prefix + field] = "Nhập số nguyên chính xác, tối đa 18 chữ số.";
     }
+    // ERP 29/10: price may stay blank until quoted, but never negative.
+    if (line.unitPrice.trim().startsWith("-")) errors[prefix + "unitPrice"] = "Đơn giá không được âm.";
     if (line.timeRequired.length > 200) errors[prefix + "timeRequired"] = "Tối đa 200 ký tự.";
     if (line.model.length > 50) errors[prefix + "model"] = "Tối đa 50 ký tự.";
   }

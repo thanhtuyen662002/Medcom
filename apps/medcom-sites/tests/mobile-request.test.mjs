@@ -352,7 +352,7 @@ test('I58 actual purchase editor restricts structural changes to the generic pro
     await t.test('existingOnly pending and unknown keep one frozen update intent and reconcile its original JSON', async () => {
       const scopeKey = 'a'.repeat(64), raw = {stateToken: 'prs1.' + '1'.repeat(64), document: {purchaseRequestId: 'QA-EXISTING', branchId: 'QA-B', statusId: 1, isLocked: null,
         header: {purchaseDate: '2026-10-06T13:14:15.003', purposeId: 1, personSuggest: 'SYNTHETIC', department: 'QA', purposeDescOrClient: '', price: '9999999999999999.99', notes: null, currencyId: 'VND', objectId: 'QA-OBJECT', rateExchange: 0.125},
-        lines: [{lineId: 'QA-L1', values: {itemId: 'QA-ITEM', quantity: '999999999999999999', unitPrice: '-2', totalPrice: null, budget: null, timeRequired: '', model: null}}]}};
+        lines: [{lineId: 'QA-L1', values: {itemId: 'QA-ITEM', quantity: '999999999999999999', unitPrice: '2', totalPrice: null, budget: null, timeRequired: '', model: null}}]}};
       const transported = [], executed = [], reconciled = []; let release;
       const bridge = createPurchaseCommandAdapter(scopeKey, raw, async (scope, route, body) => {transported.push({scope, route, body}); if (route === 'save') await new Promise(resolve => {release = resolve;}); throw Error('Synthetic lost ACK');});
       const adapter = {...bridge.adapter, execute: (intent, signal) => {executed.push(intent); return bridge.adapter.execute(intent, signal);}, reconcile: (intent, signal) => {reconciled.push(intent); return bridge.adapter.reconcile(intent, signal);}};

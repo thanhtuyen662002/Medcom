@@ -85,22 +85,27 @@ public static class PurchaseRequestCommandRules
         if (input is null || !Text(input.PersonSuggest, 500) || !Text(input.Department, 100)
             || !Text(input.PurposeDescOrClient, MaxText, true) || !Text(input.Notes, MaxText, true)
             || !Identifier(input.CurrencyId, 3) || input.ObjectId is not null && !Identifier(input.ObjectId, 100)
-            || !double.IsFinite(input.RateExchange)) throw new ArgumentException("Invalid header.");
+            || input.RateExchange is {} rate && !double.IsFinite(rate)) throw new ArgumentException("Invalid header.");
         return input with { PurchaseDate = Date(input.PurchaseDate), Price = Decimal(input.Price, 2, true),
-            RateExchange = input.RateExchange == 0d ? 0d : input.RateExchange };
+            RateExchange = input.RateExchange is 0d ? 0d : input.RateExchange };
     }
     public static PurchaseRequestLineValues Line(PurchaseRequestLineValues? input)
     {
         if (input is null || !Identifier(input.ItemId, 50) || !Text(input.TimeRequired, 200, true)
             || !Text(input.Model, 50, true)) throw new ArgumentException("Invalid line.");
-        return input with { Quantity = Decimal(input.Quantity, 0)!, UnitPrice = Decimal(input.UnitPrice, 0)!,
+        // ERP 29/10: the price may be blank until quoted (persisted NULL is read as is).
+        return input with { Quantity = Decimal(input.Quantity, 0)!, UnitPrice = Decimal(input.UnitPrice, 0, true),
             Budget = Decimal(input.Budget, 0, true), TotalPrice = Decimal(input.TotalPrice, 0, true) };
     }
     // SY_FrmExpTbl AP_PurposeRequestListFrm/Detail/TotalPrice. Preserve the
     // submitted intent bytes and historical snapshot normalization separately.
+    // AP_PurchaseRequest_OptionalPriceValidationFnc (29/10): a submitted line price is blank or not negative.
+    private static PurchaseRequestLineValues Priced(PurchaseRequestLineValues line) =>
+        line.UnitPrice is not null && decimal.Parse(line.UnitPrice, CultureInfo.InvariantCulture) < 0 ? throw new ArgumentException("Negative unit price.") : line;
     public static bool CalculateLine(PurchaseRequestLineValues input,out PurchaseRequestLineValues calculated)
     {
         calculated=input;
+        if(input.UnitPrice is null){calculated=input with{TotalPrice=null};return true;}
         try
         {
             var value=checked(decimal.Parse(input.Quantity,CultureInfo.InvariantCulture)*decimal.Parse(input.UnitPrice,CultureInfo.InvariantCulture));
@@ -114,7 +119,7 @@ public static class PurchaseRequestCommandRules
         Common(input.IdempotencyKey, input.BranchId);
         if (input.Lines is null || input.Lines.Count > MaxLines) throw new ArgumentException("Line bound.");
         var lines = input.Lines.Select(l => l is not null && Identifier(l.ClientLineKey, 100)
-            ? l with { Values = Line(l.Values) } : throw new ArgumentException("Invalid line key.")).ToArray();
+            ? l with { Values = Priced(Line(l.Values)) } : throw new ArgumentException("Invalid line key.")).ToArray();
         if (lines.Select(l => l.ClientLineKey).Distinct(StringComparer.Ordinal).Count() != lines.Length)
             throw new ArgumentException("Duplicate client line key.");
         return input with { Header = Header(input.Header), Lines = Array.AsReadOnly(lines) };
@@ -130,11 +135,11 @@ public static class PurchaseRequestCommandRules
             if (l.Kind == PurchaseRequestLineChangeKind.Add)
             {
                 if (l.LineId is not null || !Identifier(l.ClientLineKey, 100)) throw new ArgumentException("Invalid add.");
-                return l with { Values = Line(l.Values) };
+                return l with { Values = Priced(Line(l.Values)) };
             }
             if (!Identifier(l.LineId, 50) || l.ClientLineKey is not null) throw new ArgumentException("Invalid line identity.");
             if (l.Kind == PurchaseRequestLineChangeKind.Remove && l.Values is not null) throw new ArgumentException("Remove values.");
-            return l with { Values = l.Kind == PurchaseRequestLineChangeKind.Update ? Line(l.Values) : null };
+            return l with { Values = l.Kind == PurchaseRequestLineChangeKind.Update ? Priced(Line(l.Values)) : null };
         }).ToArray();
         if (changes.Where(l => l.LineId is not null).Select(l => l.LineId).Distinct(StringComparer.Ordinal).Count()
                 != changes.Count(l => l.LineId is not null)

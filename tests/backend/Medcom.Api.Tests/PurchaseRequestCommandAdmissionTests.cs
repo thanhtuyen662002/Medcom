@@ -555,7 +555,7 @@ internal sealed class I22AdmissionModel
                 var h = Document.Header;
                 table = Table([typeof(string), typeof(DateTime), typeof(int), typeof(string), typeof(string), typeof(string), typeof(decimal), typeof(string), typeof(int), typeof(bool), typeof(string), typeof(string), typeof(double), typeof(string)],
                     [Document.PurchaseRequestId, O(h.PurchaseDate is null ? null : DateTime.Parse(h.PurchaseDate, CultureInfo.InvariantCulture)), O(h.PurposeId), h.PersonSuggest, h.Department,
-                     O(h.PurposeDescOrClient), O(D(h.Price)), O(h.Notes), Document.StatusId, O(Document.IsLocked), h.CurrencyId, O(h.ObjectId), h.RateExchange, Document.BranchId]); break;
+                     O(h.PurposeDescOrClient), O(D(h.Price)), O(h.Notes), Document.StatusId, O(Document.IsLocked), h.CurrencyId, O(h.ObjectId), O(h.RateExchange), Document.BranchId]); break;
             case "details":
                 Assert.Equal(PurchaseFixtures.DocumentId, cmd.Parameters["@document"].Value);
                 table = Table([typeof(string), typeof(string), typeof(decimal), typeof(string), typeof(decimal), typeof(decimal), typeof(decimal), typeof(string), typeof(string)]);

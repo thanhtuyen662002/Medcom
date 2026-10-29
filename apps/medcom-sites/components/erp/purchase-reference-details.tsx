@@ -37,7 +37,7 @@ export function usePurchaseReferenceContext(input: PurchaseReferenceInput): Purc
 }
 export type PurchaseReferenceDetailsProps = PurchaseReferenceInput & Readonly<{
  /** Stored readback value displayed separately, never substituted by catalog rate. */
- documentRateExchange: number;
+ documentRateExchange: number | null;
  onContextChange?: (context: PurchaseReferenceContext) => void;
 }>;
 function sourceText(label:string|null) {
@@ -74,7 +74,7 @@ export function PurchaseReferenceDetails(props: PurchaseReferenceDetailsProps) {
      ?"Cần xác minh lại phiên hoặc phạm vi truy cập qua màn hình chính."
      :"Không đọc được tham chiếu. Thông tin chứng từ vẫn độc lập với lần tra cứu này."}</p>}
    </div>
-   {kind==="currencies"&&<p>Tỷ giá lưu trên chứng từ: {String(props.documentRateExchange)}</p>}
+   {kind==="currencies"&&<p>Tỷ giá lưu trên chứng từ: {props.documentRateExchange ?? "Không nhập (đề nghị không dùng tỷ giá)"}</p>}
    {"progress" in state&&<><p>Đã đọc {state.progress.pages}/{PURCHASE_REFERENCE_LIMITS.pages} trang; {state.progress.requests}/{PURCHASE_REFERENCE_LIMITS.requests} yêu cầu.</p>
     {state.progress.canContinue&&<RequestButton type="button" onClick={()=>continueLookup(kind)}>Đọc thêm một trang {kind==="purposes"?"mục đích":"tiền tệ"}</RequestButton>}
     {state.progress.canRetry&&<RequestButton type="button" onClick={()=>retryLookup(kind)}>Thử lại tham chiếu {kind==="purposes"?"mục đích":"tiền tệ"}</RequestButton>}

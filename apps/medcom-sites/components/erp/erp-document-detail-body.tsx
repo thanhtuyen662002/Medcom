@@ -296,10 +296,12 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
           const qty = (draft.quantity ?? "").trim();
           const priceVal = (draft.unitPrice ?? "").trim();
           // Item/quantity/price rules apply to editors that change those; recorded-value editors skip them.
-          if (lineKeys.includes("quantity") && (!itemId || !/^\d+(\.\d+)?$/.test(qty) || !/^\d+(\.\d+)?$/.test(priceVal))) {
+          // ERP 29/10: a purchase request line may leave Đơn giá blank until quoted.
+          const priceOptional = module === "purchase-requests" && !priceVal;
+          if (lineKeys.includes("quantity") && (!itemId || !/^\d+(\.\d+)?$/.test(qty) || !priceOptional && !/^\d+(\.\d+)?$/.test(priceVal))) {
             setActionFeedback({
               type: "warning",
-              message: "Mỗi dòng cần Mã hàng, Số lượng và Đơn giá hợp lệ.",
+              message: module === "purchase-requests" ? "Mỗi dòng cần Mã hàng và Số lượng hợp lệ; Đơn giá để trống hoặc là số không âm." : "Mỗi dòng cần Mã hàng, Số lượng và Đơn giá hợp lệ.",
             });
             setExecutingAction(null);
             return;

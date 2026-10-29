@@ -142,7 +142,7 @@ internal static class DocumentFieldCatalog
                 new("isLock","data.sourceFields.header.isLock","bit",true,"boolean",null,"data.rows[].fields.isLock"),
                 new("CurrencyID","data.sourceFields.header.currencyId","varchar(3)",false,"string",null,"data.rows[].fields.currencyId"),
                 new("ObjectID","data.sourceFields.header.objectId","varchar(100)",true,"string",null,"data.rows[].fields.objectId"),
-                new("RateExchange","data.sourceFields.header.rateExchange","float",false,"number",null,"data.rows[].fields.rateExchange"),
+                new("RateExchange","data.sourceFields.header.rateExchange","float",true,"number",null,"data.rows[].fields.rateExchange"),
                 new("BranchID","data.sourceFields.header.branchId","varchar(50)",false,"string",null,"data.rows[].fields.branchId")]),
             new("AP_PurchaseRequestDetailTbl",[
                 new("UserAutoID","data.sourceFields.lines[].userAutoId","varchar(50)",false,"string",null,null),
@@ -150,7 +150,7 @@ internal static class DocumentFieldCatalog
                 new("Budget","data.sourceFields.lines[].budget","decimal(18, 0)",true,"string","decimal-string",null),
                 new("TimeRequired","data.sourceFields.lines[].timeRequired","nvarchar(200)",true,"string",null,null),
                 new("Quantity","data.sourceFields.lines[].quantity","decimal(18, 0)",false,"string","decimal-string",null),
-                new("UnitPrice","data.sourceFields.lines[].unitPrice","decimal(18, 0)",false,"string","decimal-string",null),
+                new("UnitPrice","data.sourceFields.lines[].unitPrice","decimal(18, 0)",true,"string","decimal-string",null),
                 new("TotalPrice","data.sourceFields.lines[].totalPrice","decimal(18, 0)",true,"string","decimal-string",null),
                 new("Model","data.sourceFields.lines[].model","varchar(50)",true,"string",null,null),
                 new("PurchaseRequestID","data.sourceFields.lines[].purchaseRequestId","nvarchar(50)",true,"string",null,null)])),

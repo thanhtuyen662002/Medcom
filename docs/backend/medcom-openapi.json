@@ -36760,12 +36760,19 @@
             "x-medcom-sql-nullable": true
           },
           "rateExchange": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "float",
             "x-medcom-source-column": "RateExchange",
             "x-medcom-json-path": "data.sourceFields.header.rateExchange",
             "x-medcom-list-json-path": "data.rows[].fields.rateExchange",
-            "x-medcom-sql-nullable": false
+            "x-medcom-sql-nullable": true
           },
           "branchId": {
             "type": "string",
@@ -37134,7 +37141,14 @@
             ]
           },
           "rateExchange": {
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "x-medcom-exact-input": true,
@@ -37198,7 +37212,14 @@
             "type": "string"
           },
           "unitPrice": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "totalPrice": {
             "anyOf": [
@@ -37342,14 +37363,21 @@
             "pattern": "^-?[0-9]\u002B(?:\\.[0-9]\u002B)?$"
           },
           "unitPrice": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^-?[0-9]\u002B(?:\\.[0-9]\u002B)?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "decimal(18, 0)",
             "x-medcom-source-column": "UnitPrice",
             "x-medcom-json-path": "data.sourceFields.lines[].unitPrice",
             "x-medcom-list-json-path": null,
-            "x-medcom-sql-nullable": false,
-            "description": "decimal-string",
-            "pattern": "^-?[0-9]\u002B(?:\\.[0-9]\u002B)?$"
+            "x-medcom-sql-nullable": true,
+            "description": "decimal-string"
           },
           "totalPrice": {
             "anyOf": [
@@ -72157,11 +72185,18 @@
             "x-medcom-writable": false
           },
           "rateExchange": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "RateExchange",
             "x-medcom-sql-type": "float",
             "x-medcom-sql-type-arguments": null,
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "branchId": {
@@ -72249,11 +72284,18 @@
             "x-medcom-writable": false
           },
           "unitPrice": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "UnitPrice",
             "x-medcom-sql-type": "decimal",
             "x-medcom-sql-type-arguments": "(18, 0)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "totalPrice": {
@@ -73621,15 +73663,21 @@
             ]
           },
           "rateExchange": {
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "x-medcom-exact-input": true,
         "required": [
           "personSuggest",
           "department",
-          "currencyId",
-          "rateExchange"
+          "currencyId"
         ]
       },
       "ErpPurchaseRequestLineInput": {
@@ -73663,7 +73711,14 @@
             "type": "string"
           },
           "unitPrice": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "model": {
             "anyOf": [
@@ -73679,8 +73734,7 @@
         "x-medcom-exact-input": true,
         "required": [
           "itemId",
-          "quantity",
-          "unitPrice"
+          "quantity"
         ]
       },
       "Erp_purchase_requests_new_line": {
@@ -74100,11 +74154,18 @@
             "x-medcom-writable": true
           },
           "rateExchange": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "RateExchange",
             "x-medcom-sql-type": "float",
             "x-medcom-sql-type-arguments": null,
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "branchId": {
@@ -74192,11 +74253,18 @@
             "x-medcom-writable": true
           },
           "unitPrice": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "UnitPrice",
             "x-medcom-sql-type": "decimal",
             "x-medcom-sql-type-arguments": "(18, 0)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "totalPrice": {
@@ -89286,12 +89354,19 @@
             "x-medcom-sql-nullable": true
           },
           "rateExchange": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "float",
             "x-medcom-source-column": "RateExchange",
             "x-medcom-json-path": "data.sourceFields.header.rateExchange",
             "x-medcom-list-json-path": "data.rows[].fields.rateExchange",
-            "x-medcom-sql-nullable": false
+            "x-medcom-sql-nullable": true
           },
           "branchId": {
             "type": "string",
@@ -89764,7 +89839,14 @@
             ]
           },
           "rateExchange": {
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "purchaseDateDisplay": {
             "anyOf": [
@@ -89935,7 +90017,14 @@
             "type": "string"
           },
           "unitPrice": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "totalPrice": {
             "anyOf": [
@@ -90165,14 +90254,21 @@
             "pattern": "^-?[0-9]\u002B(?:\\.[0-9]\u002B)?$"
           },
           "unitPrice": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^-?[0-9]\u002B(?:\\.[0-9]\u002B)?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "decimal(18, 0)",
             "x-medcom-source-column": "UnitPrice",
             "x-medcom-json-path": "data.sourceFields.lines[].unitPrice",
             "x-medcom-list-json-path": null,
-            "x-medcom-sql-nullable": false,
-            "description": "decimal-string",
-            "pattern": "^-?[0-9]\u002B(?:\\.[0-9]\u002B)?$"
+            "x-medcom-sql-nullable": true,
+            "description": "decimal-string"
           },
           "totalPrice": {
             "anyOf": [
@@ -130381,11 +130477,18 @@
             "x-medcom-writable": false
           },
           "rateExchange": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "RateExchange",
             "x-medcom-sql-type": "float",
             "x-medcom-sql-type-arguments": null,
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "branchId": {
@@ -130818,11 +130921,18 @@
             "x-medcom-writable": false
           },
           "unitPrice": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "UnitPrice",
             "x-medcom-sql-type": "decimal",
             "x-medcom-sql-type-arguments": "(18, 0)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "totalPrice": {
@@ -132478,11 +132588,18 @@
             "x-medcom-writable": true
           },
           "rateExchange": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "RateExchange",
             "x-medcom-sql-type": "float",
             "x-medcom-sql-type-arguments": null,
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "branchId": {
@@ -132915,11 +133032,18 @@
             "x-medcom-writable": true
           },
           "unitPrice": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "UnitPrice",
             "x-medcom-sql-type": "decimal",
             "x-medcom-sql-type-arguments": "(18, 0)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "totalPrice": {
@@ -155695,12 +155819,19 @@
             "x-medcom-sql-nullable": true
           },
           "rateExchange": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "float",
             "x-medcom-source-column": "RateExchange",
             "x-medcom-json-path": "data.document.header.rateExchange",
             "x-medcom-list-json-path": "data.rows[].rateExchange",
-            "x-medcom-sql-nullable": false
+            "x-medcom-sql-nullable": true
           },
           "purposeName": {
             "anyOf": [
@@ -155960,12 +156091,19 @@
                     "x-medcom-sql-nullable": true
                   },
                   "rateExchange": {
-                    "type": "number",
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "x-medcom-sql-type": "float",
                     "x-medcom-source-column": "RateExchange",
                     "x-medcom-json-path": "data.document.header.rateExchange",
                     "x-medcom-list-json-path": "data.rows[].rateExchange",
-                    "x-medcom-sql-nullable": false
+                    "x-medcom-sql-nullable": true
                   },
                   "branchId": {
                     "type": "string",
@@ -156240,14 +156378,21 @@
                       "pattern": "^-?[0-9]\u002B(?:\\.[0-9]\u002B)?$"
                     },
                     "unitPrice": {
-                      "type": "string",
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^-?[0-9]\u002B(?:\\.[0-9]\u002B)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
                       "x-medcom-sql-type": "decimal(18, 0)",
                       "x-medcom-source-column": "UnitPrice",
                       "x-medcom-json-path": "data.document.lines[].unitPrice",
                       "x-medcom-list-json-path": null,
-                      "x-medcom-sql-nullable": false,
-                      "description": "decimal-string",
-                      "pattern": "^-?[0-9]\u002B(?:\\.[0-9]\u002B)?$"
+                      "x-medcom-sql-nullable": true,
+                      "description": "decimal-string"
                     },
                     "totalPrice": {
                       "anyOf": [
@@ -156818,12 +156963,19 @@
             "x-medcom-sql-nullable": true
           },
           "rateExchange": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "float",
             "x-medcom-source-column": "RateExchange",
             "x-medcom-json-path": "data.document.header.rateExchange",
             "x-medcom-list-json-path": "data.rows[].rateExchange",
-            "x-medcom-sql-nullable": false
+            "x-medcom-sql-nullable": true
           },
           "purposeName": {
             "anyOf": [
@@ -157083,12 +157235,19 @@
                     "x-medcom-sql-nullable": true
                   },
                   "rateExchange": {
-                    "type": "number",
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "x-medcom-sql-type": "float",
                     "x-medcom-source-column": "RateExchange",
                     "x-medcom-json-path": "data.document.header.rateExchange",
                     "x-medcom-list-json-path": "data.rows[].rateExchange",
-                    "x-medcom-sql-nullable": false
+                    "x-medcom-sql-nullable": true
                   },
                   "branchId": {
                     "type": "string",
@@ -157363,14 +157522,21 @@
                       "pattern": "^-?[0-9]\u002B(?:\\.[0-9]\u002B)?$"
                     },
                     "unitPrice": {
-                      "type": "string",
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^-?[0-9]\u002B(?:\\.[0-9]\u002B)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
                       "x-medcom-sql-type": "decimal(18, 0)",
                       "x-medcom-source-column": "UnitPrice",
                       "x-medcom-json-path": "data.document.lines[].unitPrice",
                       "x-medcom-list-json-path": null,
-                      "x-medcom-sql-nullable": false,
-                      "description": "decimal-string",
-                      "pattern": "^-?[0-9]\u002B(?:\\.[0-9]\u002B)?$"
+                      "x-medcom-sql-nullable": true,
+                      "description": "decimal-string"
                     },
                     "totalPrice": {
                       "anyOf": [
@@ -157978,7 +158144,14 @@
                 ]
               },
               "rateExchange": {
-                "type": "number"
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "branchId": {
                 "type": "string"
@@ -158066,7 +158239,14 @@
             "type": "string"
           },
           "unitPrice": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "totalPrice": {
             "anyOf": [
@@ -209730,11 +209910,18 @@
             "x-medcom-writable": false
           },
           "rateExchange": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "RateExchange",
             "x-medcom-sql-type": "float",
             "x-medcom-sql-type-arguments": null,
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "branchId": {
@@ -210213,11 +210400,18 @@
                 "x-medcom-writable": false
               },
               "rateExchange": {
-                "type": "number",
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "x-medcom-source-column": "RateExchange",
                 "x-medcom-sql-type": "float",
                 "x-medcom-sql-type-arguments": null,
-                "x-medcom-sql-nullable": false,
+                "x-medcom-sql-nullable": true,
                 "x-medcom-writable": false
               },
               "branchId": {
@@ -210569,11 +210763,18 @@
             "x-medcom-writable": false
           },
           "unitPrice": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "UnitPrice",
             "x-medcom-sql-type": "decimal",
             "x-medcom-sql-type-arguments": "(18, 0)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "totalPrice": {
@@ -213070,11 +213271,18 @@
             "x-medcom-writable": true
           },
           "rateExchange": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "RateExchange",
             "x-medcom-sql-type": "float",
             "x-medcom-sql-type-arguments": null,
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "branchId": {
@@ -213446,11 +213654,18 @@
                 "x-medcom-writable": true
               },
               "rateExchange": {
-                "type": "number",
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "x-medcom-source-column": "RateExchange",
                 "x-medcom-sql-type": "float",
                 "x-medcom-sql-type-arguments": null,
-                "x-medcom-sql-nullable": false,
+                "x-medcom-sql-nullable": true,
                 "x-medcom-writable": true
               },
               "branchId": {
@@ -213802,11 +214017,18 @@
             "x-medcom-writable": true
           },
           "unitPrice": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "UnitPrice",
             "x-medcom-sql-type": "decimal",
             "x-medcom-sql-type-arguments": "(18, 0)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "totalPrice": {
@@ -272485,11 +272707,18 @@
                       "x-medcom-writable": false
                     },
                     "rateExchange": {
-                      "type": "number",
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
                       "x-medcom-source-column": "RateExchange",
                       "x-medcom-sql-type": "float",
                       "x-medcom-sql-type-arguments": null,
-                      "x-medcom-sql-nullable": false,
+                      "x-medcom-sql-nullable": true,
                       "x-medcom-writable": false
                     },
                     "branchId": {
@@ -272880,11 +273109,18 @@
                     "x-medcom-writable": false
                   },
                   "rateExchange": {
-                    "type": "number",
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "x-medcom-source-column": "RateExchange",
                     "x-medcom-sql-type": "float",
                     "x-medcom-sql-type-arguments": null,
-                    "x-medcom-sql-nullable": false,
+                    "x-medcom-sql-nullable": true,
                     "x-medcom-writable": false
                   },
                   "branchId": {
@@ -273171,11 +273407,18 @@
                           "x-medcom-writable": false
                         },
                         "unitPrice": {
-                          "type": "string",
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
                           "x-medcom-source-column": "UnitPrice",
                           "x-medcom-sql-type": "decimal",
                           "x-medcom-sql-type-arguments": "(18, 0)",
-                          "x-medcom-sql-nullable": false,
+                          "x-medcom-sql-nullable": true,
                           "x-medcom-writable": false
                         },
                         "totalPrice": {
@@ -274844,11 +275087,18 @@
                       "x-medcom-writable": true
                     },
                     "rateExchange": {
-                      "type": "number",
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
                       "x-medcom-source-column": "RateExchange",
                       "x-medcom-sql-type": "float",
                       "x-medcom-sql-type-arguments": null,
-                      "x-medcom-sql-nullable": false,
+                      "x-medcom-sql-nullable": true,
                       "x-medcom-writable": true
                     },
                     "branchId": {
@@ -275239,11 +275489,18 @@
                     "x-medcom-writable": true
                   },
                   "rateExchange": {
-                    "type": "number",
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "x-medcom-source-column": "RateExchange",
                     "x-medcom-sql-type": "float",
                     "x-medcom-sql-type-arguments": null,
-                    "x-medcom-sql-nullable": false,
+                    "x-medcom-sql-nullable": true,
                     "x-medcom-writable": true
                   },
                   "branchId": {
@@ -275530,11 +275787,18 @@
                           "x-medcom-writable": true
                         },
                         "unitPrice": {
-                          "type": "string",
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
                           "x-medcom-source-column": "UnitPrice",
                           "x-medcom-sql-type": "decimal",
                           "x-medcom-sql-type-arguments": "(18, 0)",
-                          "x-medcom-sql-nullable": false,
+                          "x-medcom-sql-nullable": true,
                           "x-medcom-writable": true
                         },
                         "totalPrice": {

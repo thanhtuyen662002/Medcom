@@ -77,7 +77,9 @@ public static class ErpActionRules
         var owner=state.Owner==state.Actor;
         return (state.Module,operation) switch
         {
-            ("purchase-requests","save" or "delete" or "submit")=>!state.IsLocked&&state.StatusId is 1 or 4,
+            ("purchase-requests","save" or "submit")=>!state.IsLocked&&state.StatusId is 1 or 4,
+            // AP_PurchaseRequest_DeleteDraftTrg (29/10): only an unlocked Nháp without a PO of the same number.
+            ("purchase-requests","delete")=>!state.IsLocked&&state.StatusId==1&&!state.LinkedToPurchaseOrder,
             ("purchase-requests","send-purchase-order")=>state.StatusId==3&&!state.LinkedToPurchaseOrder&&state.LineCount>0,
             ("sales-orders","save")=>!state.IsLocked&&owner&&state.StatusId is -1 or 11,
             ("sales-orders","delete")=>!state.IsLocked&&owner&&state.StatusId==-1,
