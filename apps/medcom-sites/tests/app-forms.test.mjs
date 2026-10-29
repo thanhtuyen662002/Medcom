@@ -260,22 +260,33 @@ test('PR edit: save label, permission gate, double submit lock and uncertain ret
   await mounted(PR, false, async tree => { assert.equal(button(tree, 'Lưu thay đổi').props.disabled, true); await submit(tree); assert.equal(globalThis.__formSaves.length, 0); }, { documentId: 'QA-PR' });
 });
 
-test('generic catalog lookups preserve the existing payload; request lookup without branch prerequisites stays a clear text field', async () => {
+test('generic catalog lookups send the chosen values; transfer forms pick a different receiving branch', async () => {
   for (const [moduleId, lookupId] of [['machine-movements', 'header.MoveTypeID'], ['machine-repairs', 'header.ServiceTypeID']]) {
     await mounted(TabErpScreen, true, async tree => {
       await pick(tree, lookupId, choice('QA-TYPE')); await pick(tree, 'lines.AssetID', choice('QA-ASSET'));
       await submit(tree); assert.equal(globalThis.__formCalls.length, 1);
-      // Existing generic handlers use fixed type IDs. P2-04 must not change that
-      // payload behavior while replacing the former raw-code inputs with lookups.
-      assert.equal(globalThis.__formCalls[0].header[moduleId === 'machine-movements' ? 'moveTypeId' : 'serviceTypeId'], moduleId === 'machine-movements' ? 'MOVE01' : 'SRV01');
+      // The chosen type is sent; the former fixed MOVE01/SRV01 IDs do not exist in ERP.
+      assert.equal(globalThis.__formCalls[0].header[moduleId === 'machine-movements' ? 'moveTypeId' : 'serviceTypeId'], 'QA-TYPE');
       assert.equal(globalThis.__formCalls[0].lines[0].values.assetId, 'QA-ASSET');
     }, { module: moduleId, isActive: true });
   }
   await mounted(TabErpScreen, true, async tree => {
+    // The request lookup needs both branches, so it appears only after the receiving branch is chosen.
     assert.equal(lookup(tree, 'lines.RequestID'), undefined);
-    await set(tree, 'Mã đề nghị điều chuyển', 'QA-REQUEST');
-    assert.ok(native(tree).some(node => node.type === 'p' && text(node).includes('chi nhánh nguồn và đích')));
+    assert.ok(native(tree).some(node => node.type === 'p' && text(node).includes('Chọn chi nhánh nhận')));
+    await pick(tree, 'header.ToBranchID', choice('QA-TO'));
+    assert.notEqual(lookup(tree, 'lines.RequestID'), undefined);
+    await submit(tree); assert.equal(globalThis.__formCalls.length, 1);
+    assert.equal(globalThis.__formCalls[0].header.toBranchId, 'QA-TO');
+    assert.notEqual(globalThis.__formCalls[0].header.fromBranchId, 'QA-TO');
   }, { module: 'internal-transfer-batches', isActive: true });
+  await mounted(TabErpScreen, true, async tree => {
+    await submit(tree); assert.equal(globalThis.__formCalls.length, 0);
+    await pick(tree, 'header.ToBranchID', choice('QA-TO')); await pick(tree, 'lines.ItemID', choice('QA-ITEM'));
+    await submit(tree); assert.equal(globalThis.__formCalls.length, 1);
+    assert.equal(globalThis.__formCalls[0].header.toBranchId, 'QA-TO');
+    assert.equal(globalThis.__formCalls[0].lines[0].values.itemId, 'QA-ITEM');
+  }, { module: 'internal-transfer-requests', isActive: true });
 });
 
 test('all three owned forms share the responsive hook and the create region has no forced black labels', async () => {

@@ -58,6 +58,11 @@ export function LookupField({
   secondaryFields?: readonly string[];
 }) {
   const [open, setOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  // On a phone the field can sit at the bottom of the sheet; bring the whole list into view.
+  useEffect(() => {
+    if (open) panelRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+  }, [open]);
   const [search, setSearch] = useState("");
   const [result, setResult] = useState<{ key: string; items: ErpChoice[]; hasMore: boolean; page: number }>();
   const [pendingKey, setPendingKey] = useState<string | null>(null);
@@ -196,16 +201,18 @@ export function LookupField({
           </button>
         )}
         {open && (
-          <div className="absolute z-30 mt-1 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-xl overflow-hidden">
-            <div className="flex items-center gap-2 p-2 border-b border-neutral-100 dark:border-neutral-800">
-              <Search className="size-3.5 text-neutral-400 shrink-0" />
-              <input
-                autoFocus
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm kiếm..."
-                className="min-h-11 w-full bg-transparent outline-none text-base leading-6 text-black dark:text-white placeholder:text-black dark:placeholder:text-white"
-              />
+          <div ref={panelRef} className="absolute z-30 mt-1 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-xl overflow-hidden">
+            <div className="p-2 border-b border-neutral-100 dark:border-neutral-800">
+              <div className="flex items-center gap-2 rounded-lg bg-neutral-100 px-3 ring-1 ring-transparent transition-shadow focus-within:bg-white focus-within:ring-brand-500/50 dark:bg-neutral-800 dark:focus-within:bg-neutral-900 dark:focus-within:ring-brand-400/50">
+                <Search className="size-4 text-neutral-500 dark:text-neutral-400 shrink-0" />
+                <input
+                  autoFocus
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm kiếm..."
+                  className="min-h-10 w-full bg-transparent outline-none focus-visible:outline-none text-base leading-6 text-black dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-400"
+                />
+              </div>
             </div>
             <div className="max-h-48 overflow-y-auto">
               {loading ? (

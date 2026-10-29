@@ -10,12 +10,22 @@ export function formatVietnamDate(val: unknown): string {
   return `${d}/${m}/${y}`;
 }
 
+// Backend refusal codes a user can act on, so the form says what to fix instead of a generic error.
+const INVALID_INPUT_MESSAGES: Record<string, string> = {
+  transfer_branches_equal: "Chi nhánh nhận phải khác chi nhánh gửi.",
+  reference_missing_or_ambiguous: "Có mục chọn không còn trong danh mục ERP. Hãy chọn lại từ danh sách.",
+  unit_price_negative: "Đơn giá không được âm.",
+  document_rate_invalid: "Tỷ giá phải lớn hơn 0; VND là 1.",
+  calculated_value_out_of_range: "Số lượng hoặc đơn giá vượt giới hạn cho phép.",
+  document_line_count: "Số dòng chi tiết vượt giới hạn cho phép.",
+};
+
 export function getActionErrorMessage(outcome: string, code?: string | null, message?: string | null): string {
   // ERP explained the refusal itself (e.g. "Cần nhập lý do không duyệt"): show it as ERP does.
   if (message?.trim() && (outcome === "Conflict" || outcome === "InvalidInput")) return message.trim();
   switch (outcome) {
     case "InvalidInput":
-      return "Thông tin chưa hợp lệ hoặc thiếu trường bắt buộc. Vui lòng kiểm tra lại.";
+      return (code && INVALID_INPUT_MESSAGES[code]) || "Thông tin chưa hợp lệ hoặc thiếu trường bắt buộc. Vui lòng kiểm tra lại.";
     case "Denied":
       return "Tài khoản hiện tại không có quyền thực hiện thao tác này.";
     case "Conflict":
