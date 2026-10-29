@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useId } from "react";
 import { Plus, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/erp/api";
 import { erpClient, type ErpScreenModule, type ErpScreenDescription, type ErpDocumentRow, type ErpActionState, type ErpChoice, type ErpCommandResult } from "@/lib/erp/erp-client";
 import { FormSheet } from "@/components/app/form-sheet";
 import { FormField, FormSection } from "@/components/app/form-field";
@@ -791,6 +792,8 @@ export function TabErpScreen({
         header.destinationPoint = createDestination!.id;
         header.orderTypeId = createOrderType!.id;
         header.objectId = createSupplier?.id || null;
+        // Required by the inbound header contract; every ERP inbound request carries "SET".
+        header.qrPrintType = "SET";
         header.notes = createNotes || null;
         if (createItemId.trim()) {
           lines.push({
@@ -849,11 +852,15 @@ export function TabErpScreen({
       }
       handleCreateCommandOutcome(res);
       loadList(1);
-    } catch {
+    } catch (error) {
       if (run !== createGeneration.current) return;
+      // A 4xx refusal (e.g. invalid_erp_intent) is not a connection problem; nothing was written.
+      const refused = error instanceof ApiError && error.status >= 400 && error.status < 500;
       setCreateFeedback({
         type: "error",
-        message: module === "sales-orders" ? "Chưa xác nhận đầy đủ kết quả. Bấm tiếp tục để kiểm tra đúng đơn/lần tải đang có." : "Lỗi kết nối khi tạo mới chứng từ ERP.",
+        message: module === "sales-orders" ? "Chưa xác nhận đầy đủ kết quả. Bấm tiếp tục để kiểm tra đúng đơn/lần tải đang có."
+          : refused ? `Hệ thống từ chối dữ liệu của phiếu (${error.code}). Chưa có gì được lưu; kiểm tra lại các trường rồi thử lại.`
+          : "Lỗi kết nối khi tạo mới chứng từ ERP.",
       });
     } finally {
       if (run === createGeneration.current) setCreatingDocument(false);
