@@ -22,7 +22,7 @@ import type { DetailAction, DocumentDetailHandlers, DocumentDetailModel } from "
 import { WRITE_GATED_MODULES, MENU_ACTION_IDS, DIALOG_ACTION_MODULES, SAVE_HEADER_BY_MODULE, editableHeaderKeys, requiredEditKeys, editLookupId, saveLineKeys, editValue, lockBadgeState, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
 
 // Event-only key generation, with the same clock/random evaluation as the original handlers.
-function editCommandKey(prefix: "save" | "del") {
+function editCommandKey(prefix: "save" | "del" | "act") {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
@@ -70,21 +70,6 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
     action: ErpActionState | null;
     notes: string;
   }>({ open: false, action: null, notes: "" });
-
-  // Return Step Modal (sales-order-sa, internal-transfer-sa, accounting, warehouse-out)
-  const [returnStepModalOpen, setReturnStepModalOpen] = useState(false);
-  const returnStepChoices: ErpChoice[] = [];
-  const [selectedReturnStatusId, setSelectedReturnStatusId] = useState("");
-  const [returnNotes, setReturnNotes] = useState("");
-  const loadingReturnStep = false;
-
-  // Send SA Modal (internal-transfer-tech)
-  const [sendSaModalOpen, setSendSaModalOpen] = useState(false);
-  const saChoices: ErpChoice[] = [];
-  const [selectedPrimarySaId, setSelectedPrimarySaId] = useState("");
-  const [selectedSupportingSaId, setSelectedSupportingSaId] = useState("");
-  const [sendSaNotes, setSendSaNotes] = useState("");
-  const loadingSendSa = false;
 
   // QR Camera Modal State
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
@@ -396,7 +381,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
     setActionFeedback(null);
     try {
       const res = await erpClient.executeWorkflowAction(module, act.id, {
-        idempotencyKey: `act-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        idempotencyKey: editCommandKey("act"),
         branchId: currentBranch,
         documentId: detail.documentId,
         expectedStateToken: detail.stateToken,
@@ -416,7 +401,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
     : (detail?.actions || []).filter(
         (a): a is ErpActionState =>
           a.visible && ((MENU_ACTION_IDS as readonly string[]).includes(a.id)
-            // Inbound step screens: every ERP button of the form (Gửi TP SA, Gửi PM, Chọn bước gửi về…).
+            // Inbound and transfer step screens: every ERP button of the form (Gửi TP SA, Gửi PM, Chọn bước gửi về…).
             || (module === "inbound-warehouse" || DIALOG_ACTION_MODULES.has(module)) && a.id !== "create" && !a.id.startsWith("save-"))
       );
 
@@ -575,72 +560,6 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
       setActionFeedback({
         type: "error",
         message: "Lỗi kết nối khi gửi thao tác tới máy chủ.",
-      });
-    } finally {
-      setExecutingAction(null);
-    }
-  };
-
-  // Submit Return Step
-  const handleConfirmReturnStep = async () => {
-    if (!detail || !selectedReturnStatusId) return;
-    setExecutingAction("return-step");
-    setActionFeedback(null);
-    const idempotencyKey = `ret-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    try {
-      const res = await erpClient.executeWorkflowAction(module, "return-step", {
-        idempotencyKey,
-        branchId: currentBranch,
-        documentId: detail.documentId,
-        expectedStateToken: detail.stateToken,
-        payload: {
-          statusId: Number(selectedReturnStatusId),
-          notes: returnNotes.trim() || undefined,
-        },
-      });
-      setReturnStepModalOpen(false);
-      handleCommandOutcome(res);
-    } catch {
-      setActionFeedback({
-        type: "error",
-        message: "Lỗi kết nối khi thực hiện gửi trả về bước trước.",
-      });
-    } finally {
-      setExecutingAction(null);
-    }
-  };
-
-  // Submit Send SA (tech -> SA)
-  const handleConfirmSendSa = async () => {
-    if (!detail || !selectedPrimarySaId || !selectedSupportingSaId) return;
-    if (selectedPrimarySaId === selectedSupportingSaId) {
-      setActionFeedback({
-        type: "warning",
-        message: "Hai SA phải khác nhau (một TPAdminHN và một TPAdminHCM).",
-      });
-      return;
-    }
-    setExecutingAction("send-sa");
-    setActionFeedback(null);
-    const idempotencyKey = `sa-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    try {
-      const res = await erpClient.executeWorkflowAction(module, "send-sa", {
-        idempotencyKey,
-        branchId: currentBranch,
-        documentId: detail.documentId,
-        expectedStateToken: detail.stateToken,
-        payload: {
-          primarySaId: selectedPrimarySaId,
-          supportingSaId: selectedSupportingSaId,
-          notes: sendSaNotes.trim() || undefined,
-        },
-      });
-      setSendSaModalOpen(false);
-      handleCommandOutcome(res);
-    } catch {
-      setActionFeedback({
-        type: "error",
-        message: "Lỗi kết nối khi chuyển cho TP SA duyệt.",
       });
     } finally {
       setExecutingAction(null);
@@ -990,7 +909,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
           documentId={detail.documentId}
           busy={executingAction === dialogAction.id}
           title={dialogAction.caption || dialogAction.id}
-          intro={`Xác nhận thực hiện "${dialogAction.caption || dialogAction.id}" trên đề nghị nhập hàng ${detail.documentId}.`}
+          intro={`Xác nhận thực hiện "${dialogAction.caption || dialogAction.id}" trên ${module.startsWith("internal-transfer-") ? "chứng từ điều chuyển" : "đề nghị nhập hàng"} ${detail.documentId}.`}
           notesRequired={["reject", "return-step", "cancel-draft"].includes(dialogAction.id)}
           message={actionFeedback && actionFeedback.type !== "success" ? actionFeedback.message : undefined}
           onClose={() => setDialogAction(null)}
@@ -1048,142 +967,6 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
                   <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
                 )}
                 {executingAction === actionPromptModal.action.id ? "Đang xử lý..." : `Xác nhận ${actionPromptModal.action.caption}`}
-              </button>
-            </div>
-          </div>
-        </UntitledBottomSheet>
-      )}
-
-      {/* RETURN STEP MODAL */}
-      {returnStepModalOpen && (
-        <UntitledBottomSheet
-          open={returnStepModalOpen}
-          onClose={() => setReturnStepModalOpen(false)}
-          title="Chọn bước gửi về"
-        >
-          <div className="space-y-3.5 p-2 text-xs">
-            <div>
-              <label className="block text-neutral-500 mb-1 font-medium">
-                Bước / Trạng thái muốn gửi về (*):
-              </label>
-              {loadingReturnStep ? (
-                <ListSkeleton label="Đang tải danh sách bước hợp lệ..." />
-              ) : returnStepChoices.length === 0 ? (
-                <p className="text-amber-600 py-2">Không có trạng thái nào đủ điều kiện để quay lại.</p>
-              ) : (
-                <select
-                  value={selectedReturnStatusId}
-                  onChange={(e) => setSelectedReturnStatusId(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
-                >
-                  {returnStepChoices.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.label || c.id} (Status {c.id})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            <div>
-              <label className="block text-neutral-500 mb-1 font-medium">Lý do gửi về:</label>
-              <textarea
-                value={returnNotes}
-                onChange={(e) => setReturnNotes(e.target.value)}
-                placeholder="Nhập lý do gửi về..."
-                rows={3}
-                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setReturnStepModalOpen(false)}
-                className="px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 text-xs"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmReturnStep}
-                disabled={!selectedReturnStatusId || executingAction === "return-step"}
-                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 text-xs"
-              >
-                {executingAction === "return-step" ? "Đang gửi..." : "Xác nhận gửi về"}
-              </button>
-            </div>
-          </div>
-        </UntitledBottomSheet>
-      )}
-
-      {/* SEND SA MODAL (internal-transfer-tech) */}
-      {sendSaModalOpen && (
-        <UntitledBottomSheet
-          open={sendSaModalOpen}
-          onClose={() => setSendSaModalOpen(false)}
-          title="Gửi TP SA duyệt điều chuyển"
-        >
-          <div className="space-y-3.5 p-2 text-xs">
-            <div>
-              <label className="block text-neutral-500 mb-1 font-medium">
-                TP SA chính (Primary SA - TPAdminHN) (*):
-              </label>
-              {loadingSendSa ? (
-                <ListSkeleton label="Đang tải danh sách SA..." />
-              ) : (
-                <select
-                  value={selectedPrimarySaId}
-                  onChange={(e) => setSelectedPrimarySaId(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
-                >
-                  {saChoices.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.label || c.id}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            <div>
-              <label className="block text-neutral-500 mb-1 font-medium">
-                TP SA hỗ trợ (Supporting SA - TPAdminHCM) (*):
-              </label>
-              <select
-                value={selectedSupportingSaId}
-                onChange={(e) => setSelectedSupportingSaId(e.target.value)}
-                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
-              >
-                {saChoices.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label || c.id}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-neutral-500 mb-1 font-medium">Ghi chú kỹ thuật:</label>
-              <textarea
-                value={sendSaNotes}
-                onChange={(e) => setSendSaNotes(e.target.value)}
-                placeholder="Ghi chú kết quả kiểm tra thiết bị..."
-                rows={3}
-                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setSendSaModalOpen(false)}
-                className="px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 text-xs"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmSendSa}
-                disabled={!selectedPrimarySaId || !selectedSupportingSaId || executingAction === "send-sa"}
-                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 text-xs"
-              >
-                {executingAction === "send-sa" ? "Đang gửi..." : "Xác nhận gửi SA"}
               </button>
             </div>
           </div>
