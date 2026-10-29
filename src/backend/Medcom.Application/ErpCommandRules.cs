@@ -91,7 +91,8 @@ public static class ErpCommandRules
                             case "transfer-tech":var tech=Read<ErpTransferTechSend>(action.Payload);
                                 if(!ErpInputRules.AnsiIdentifier(tech.PrimarySaId,100)||!ErpInputRules.AnsiIdentifier(tech.SupportingSaId,100)
                                     ||tech.PrimarySaId==tech.SupportingSaId||!Note(tech.Notes))return false;payload=ErpInputRules.Serialize(tech);break;
-                            case "pm":var pm=Read<ErpSendOrderPm>(action.Payload);if(!ErpInputRules.AnsiIdentifier(pm.PmId,100)||!Note(pm.Notes))return false;payload=ErpInputRules.Serialize(pm);break;
+                            // Inbound TP SA / Kỹ thuật "Gửi PM" (catalog payloadType inbound-pm) sends the same { pmId, notes }.
+                            case "pm":case "inbound-pm":var pm=Read<ErpSendOrderPm>(action.Payload);if(!ErpInputRules.AnsiIdentifier(pm.PmId,100)||!Note(pm.Notes))return false;payload=ErpInputRules.Serialize(pm);break;
                             case "empty":if(action.Payload.EnumerateObject().Any())return false;break;
                             default:return false;
                         }
