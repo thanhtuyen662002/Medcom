@@ -75,6 +75,10 @@ const INBOUND_WAREHOUSE_HEADER = ["totalPalletQuantityByReal","totalBarrelQuanti
 const INBOUND_TECH_HEADER = ["damagedPackageQuantity", "imageURL", "bBKCUrl", "notes"] as const;
 const INBOUND_PM_HEADER = ["damagedPackageQuantity", "imageURL", "notes"] as const;
 const EDITABLE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
+  // Writable header fields of the catalog; without an entry the sales-order defaults (Khách hàng required) applied.
+  "machine-movements": ["documentDate", "nguoiGiao", "nguoiNhan", "memo", "notes", "contractId", "effectiveFrom", "effectiveTo", "referenceNo", "referenceDate", "documentLink"],
+  "machine-repairs": ["documentDate", "nguoiGiao", "nguoiNhan", "memo", "notes", "objectId", "serviceLocation", "contractId", "startDate", "endDate", "technician", "serviceStatus", "referenceNo", "referenceDate", "documentLink"],
+  "internal-transfer-requests": ["documentDate", "requestedTransferDate", "transferReason", "transportMethod", "notes"],
   "inbound-warehouse": INBOUND_WAREHOUSE_HEADER,
   "inbound-tech": INBOUND_TECH_HEADER,
   "inbound-pm": INBOUND_PM_HEADER,
@@ -122,6 +126,9 @@ export function editableHeaderKeys(module: ErpScreenModule): readonly string[] {
   return EDITABLE_HEADER_BY_MODULE[module] ?? DEFAULT_EDITABLE_HEADER_KEYS;
 }
 const REQUIRED_EDIT_KEYS: Record<string, readonly string[]> = {
+  "machine-movements": ["documentDate"],
+  "machine-repairs": ["documentDate"],
+  "internal-transfer-requests": ["documentDate"],
   "inbound-warehouse": [],
   "inbound-tech": [],
   "inbound-pm": [],
@@ -185,6 +192,10 @@ export function editValue(key: string, raw: string): unknown {
   return v;
 }
 export const SAVE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
+  // The type is chosen at creation and kept on save; read-only detail fields are never sent.
+  "machine-movements": ["documentDate", "nguoiGiao", "nguoiNhan", "memo", "notes", "contractId", "effectiveFrom", "effectiveTo", "referenceNo", "referenceDate", "documentLink", "moveTypeId"],
+  "machine-repairs": ["documentDate", "nguoiGiao", "nguoiNhan", "memo", "notes", "objectId", "serviceLocation", "contractId", "startDate", "endDate", "technician", "serviceStatus", "referenceNo", "referenceDate", "documentLink", "serviceTypeId"],
+  "internal-transfer-requests": ["fromBranchId", "toBranchId", "documentDate", "requestedTransferDate", "transferReason", "transportMethod", "notes"],
   "inbound-warehouse": INBOUND_WAREHOUSE_HEADER,
   "inbound-tech": INBOUND_TECH_HEADER,
   "inbound-pm": INBOUND_PM_HEADER,
