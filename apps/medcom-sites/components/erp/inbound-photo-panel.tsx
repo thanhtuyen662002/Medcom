@@ -36,17 +36,20 @@ export function InboundPhotoPanel({ module, branchId, documentId, onUploaded }: 
     if (!files.length || busySlot !== null) return;
     setBusySlot(slotId); setMessage(null);
     try {
-      for (const original of files) {
+      // An inbound photo slot holds one photo (ERP STT): the first chosen file adds it or replaces the current one.
+      for (const original of files.slice(0, 1)) {
         const file = await compressImageFile(original);
         const problem = await validateAttachmentFile(file);
         if (problem) { setMessage(`${file.name}: ${problem}`); return; }
-        // Each upload changes the document state token, so read it again before the next file.
         const page = await erpClient.getAttachments(module, branchId, documentId);
         if (!page.canUpload) { setMessage("Trạng thái đề nghị hiện không cho phép thêm ảnh."); return; }
+        const existing = page.rows.find(row => row.slotId === slotId);
         const outcome = await erpClient.uploadAttachment({ idempotencyKey: `upload-${crypto.randomUUID()}`, branchId, documentId,
-          expectedStateToken: page.documentStateToken, file, module, slotId });
+          expectedStateToken: page.documentStateToken, file, module, slotId,
+          ...(existing ? { attachmentId: existing.attachmentId, expectedAttachmentToken: existing.stateToken } : {}) });
         if (outcome.outcome !== "Committed" && outcome.outcome !== "Replayed") {
-          setMessage(outcome.outcome === "Conflict" ? "Đề nghị vừa thay đổi. Làm mới rồi thử lại."
+          setMessage(outcome.code === "attachment_slot_occupied" ? "Nhóm ảnh này đã có ảnh. Bấm Làm mới ảnh rồi dùng Thay ảnh."
+            : outcome.outcome === "Conflict" ? "Đề nghị vừa thay đổi. Làm mới rồi thử lại."
             : outcome.outcome === "Denied" ? "Tài khoản chưa được phép thêm ảnh cho đề nghị này."
             : outcome.outcome === "InvalidInput" ? `${file.name}: ảnh không được ERP chấp nhận.`
             : "Chưa xác nhận được kết quả tải ảnh. Làm mới để kiểm tra trước khi thử lại.");
@@ -55,7 +58,7 @@ export function InboundPhotoPanel({ module, branchId, documentId, onUploaded }: 
       }
       onUploaded?.();
     } catch (failure) {
-      setMessage(failure instanceof ApiError && failure.status === 413 ? "Ảnh vượt giới hạn 10 MB."
+      setMessage(failure instanceof ApiError && failure.status === 413 ? "Ảnh vẫn vượt giới hạn tải lên của máy chủ sau khi nén. Chọn ảnh khác hoặc báo quản trị viên."
         : failure instanceof ApiError && failure.status === 401 ? "Phiên đăng nhập đã hết hạn."
         : "Chưa xác nhận được kết quả tải ảnh. Làm mới để kiểm tra trước khi thử lại.");
     } finally {
@@ -90,12 +93,12 @@ export function InboundPhotoPanel({ module, branchId, documentId, onUploaded }: 
           {data.canUpload && <>
             {(["pick", "camera"] as const).map(kind => <input key={kind} ref={node => { pickers.current[`${id}-${kind}`] = node; }} type="file" className="hidden"
               aria-label={`${kind === "camera" ? "Chụp" : "Chọn"} ${slot.slotName.toLocaleLowerCase("vi")}`}
-              accept="image/jpeg,image/png,.jpg,.jpeg,.png" multiple={kind === "pick"} capture={kind === "camera" ? "environment" : undefined}
+              accept="image/jpeg,image/png,.jpg,.jpeg,.png" capture={kind === "camera" ? "environment" : undefined}
               onChange={event => { const files = Array.from(event.currentTarget.files || []); event.currentTarget.value = ""; void upload(id, files); }} />)}
             <div className="grid grid-cols-2 gap-2">
               <button type="button" disabled={busySlot !== null} onClick={() => pickers.current[`${id}-pick`]?.click()} className={buttonClass}>
-                {busySlot === id ? <Loader2 aria-hidden className="size-4 animate-spin" /> : <ImagePlus aria-hidden className="size-4" />}Chọn ảnh</button>
-              <button type="button" disabled={busySlot !== null} onClick={() => pickers.current[`${id}-camera`]?.click()} className={buttonClass}><Camera aria-hidden className="size-4" />Chụp ảnh</button>
+                {busySlot === id ? <Loader2 aria-hidden className="size-4 animate-spin" /> : <ImagePlus aria-hidden className="size-4" />}{rows.length ? "Thay ảnh" : "Chọn ảnh"}</button>
+              <button type="button" disabled={busySlot !== null} onClick={() => pickers.current[`${id}-camera`]?.click()} className={buttonClass}><Camera aria-hidden className="size-4" />{rows.length ? "Chụp lại" : "Chụp ảnh"}</button>
             </div>
           </>}
         </div>;

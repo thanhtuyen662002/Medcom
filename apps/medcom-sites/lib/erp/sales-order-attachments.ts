@@ -25,6 +25,8 @@ export type SalesOrderAttachmentUpload = {
   idempotencyKey: string; branchId: string; documentId: string; expectedStateToken: string; file: File;
   /** Defaults to the sales order "Tài liệu đính kèm" slot 2. */
   module?: AttachmentModule; slotId?: number;
+  /** Replaces this attachment (same slot) instead of adding one; an inbound slot holds a single photo. */
+  attachmentId?: string; expectedAttachmentToken?: string;
 };
 export type DraftAttachment = {
   key: string; file: File; status: "queued" | "uploading" | "uploaded" | "error"; error?: string;
