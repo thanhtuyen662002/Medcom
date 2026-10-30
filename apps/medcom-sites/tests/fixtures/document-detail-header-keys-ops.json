@@ -99,6 +99,9 @@
   },
   "internal-transfer-batches": {
     "header": [
+      "assignedPM",
+      "assignedSA",
+      "assignedTechnician",
       "batchDate",
       "batchDateDisplay",
       "branchId",

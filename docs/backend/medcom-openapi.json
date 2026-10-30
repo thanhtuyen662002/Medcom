@@ -257624,6 +257624,51 @@
                       "x-medcom-sql-nullable": true,
                       "x-medcom-writable": true
                     },
+                    "assignedPM": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "x-medcom-source-column": "AssignedPM",
+                      "x-medcom-sql-type": "varchar",
+                      "x-medcom-sql-type-arguments": "(100)",
+                      "x-medcom-sql-nullable": true,
+                      "x-medcom-writable": true
+                    },
+                    "assignedTechnician": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "x-medcom-source-column": "AssignedTechnician",
+                      "x-medcom-sql-type": "varchar",
+                      "x-medcom-sql-type-arguments": "(100)",
+                      "x-medcom-sql-nullable": true,
+                      "x-medcom-writable": true
+                    },
+                    "assignedSA": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "x-medcom-source-column": "AssignedSA",
+                      "x-medcom-sql-type": "varchar",
+                      "x-medcom-sql-type-arguments": "(100)",
+                      "x-medcom-sql-nullable": true,
+                      "x-medcom-writable": true
+                    },
                     "hasEquipment": {
                       "type": "boolean",
                       "x-medcom-source-column": "HasEquipment",
@@ -257995,6 +258040,9 @@
                     "fromStoreHouseId",
                     "toStoreHouseId",
                     "plannedTransferDate",
+                    "assignedPM",
+                    "assignedTechnician",
+                    "assignedSA",
                     "hasEquipment",
                     "statusId",
                     "transportMethod",
@@ -258143,6 +258191,51 @@
                     "x-medcom-source-column": "PlannedTransferDate",
                     "x-medcom-sql-type": "datetime",
                     "x-medcom-sql-type-arguments": null,
+                    "x-medcom-sql-nullable": true,
+                    "x-medcom-writable": true
+                  },
+                  "assignedPM": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "x-medcom-source-column": "AssignedPM",
+                    "x-medcom-sql-type": "varchar",
+                    "x-medcom-sql-type-arguments": "(100)",
+                    "x-medcom-sql-nullable": true,
+                    "x-medcom-writable": true
+                  },
+                  "assignedTechnician": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "x-medcom-source-column": "AssignedTechnician",
+                    "x-medcom-sql-type": "varchar",
+                    "x-medcom-sql-type-arguments": "(100)",
+                    "x-medcom-sql-nullable": true,
+                    "x-medcom-writable": true
+                  },
+                  "assignedSA": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "x-medcom-source-column": "AssignedSA",
+                    "x-medcom-sql-type": "varchar",
+                    "x-medcom-sql-type-arguments": "(100)",
                     "x-medcom-sql-nullable": true,
                     "x-medcom-writable": true
                   },
@@ -258537,6 +258630,9 @@
                   "fromStoreHouseId",
                   "toStoreHouseId",
                   "plannedTransferDate",
+                  "assignedPM",
+                  "assignedTechnician",
+                  "assignedSA",
                   "hasEquipment",
                   "statusId",
                   "transportMethod",
