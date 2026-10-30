@@ -94,6 +94,7 @@ export const transferPmDetailConfig = {
   modules: [ "internal-transfer-pm" ],
   title: "Chi tiết PM duyệt điều chuyển",
   closeLabel: "Đóng chi tiết PM duyệt điều chuyển",
+  slots: ["lines-editor"],
   groups: [
     {
       id: "request",
@@ -307,6 +308,7 @@ export const transferTechnicalDetailConfig = {
   modules: [ "internal-transfer-tech", "internal-transfer-sa" ],
   title: "Chi tiết kiểm tra điều chuyển",
   closeLabel: "Đóng chi tiết kiểm tra điều chuyển",
+  slots: ["lines-editor"],
   groups: [
     {
       id: "batch",
@@ -441,6 +443,7 @@ export const transferAccountingDetailConfig = {
   modules: [ "internal-transfer-accounting" ],
   title: "Chi tiết kế toán điều chuyển",
   closeLabel: "Đóng chi tiết kế toán điều chuyển",
+  slots: ["lines-editor"],
   groups: [
     {
       id: "batch",
@@ -566,6 +569,7 @@ export const transferWarehouseOutDetailConfig = {
   modules: [ "internal-transfer-warehouse-out" ],
   title: "Chi tiết xuất kho điều chuyển",
   closeLabel: "Đóng chi tiết xuất kho điều chuyển",
+  slots: ["lines-editor"],
   groups: [
     {
       id: "batch",
@@ -686,6 +690,7 @@ export const transferWarehouseInDetailConfig = {
   modules: [ "internal-transfer-warehouse-in" ],
   title: "Chi tiết nhận kho điều chuyển",
   closeLabel: "Đóng chi tiết nhận kho điều chuyển",
+  slots: ["lines-editor"],
   groups: [
     {
       id: "batch",

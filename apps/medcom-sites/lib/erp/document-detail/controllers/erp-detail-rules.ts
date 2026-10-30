@@ -82,6 +82,13 @@ const EDITABLE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
   "internal-transfer-requests": ["documentDate", "requestedTransferDate", "transferReason", "transportMethod", "notes"],
   // Kho, chi nhánh và người phụ trách là trường ẩn trên form ERP; bỏ qua khi lưu thì giữ nguyên giá trị đã lưu.
   "internal-transfer-batches": ["batchDate", "plannedTransferDate", "transportMethod", "carrierName", "carrierPhone", "vehicleNo", "notes"],
+  // Batch workflow steps: each form edits only its own columns (the rest are hidden or read-only there).
+  "internal-transfer-pm": [],
+  "internal-transfer-tech": [],
+  "internal-transfer-sa": [],
+  "internal-transfer-accounting": ["outputDocumentId"],
+  "internal-transfer-warehouse-out": ["transportMethod", "carrierName", "carrierPhone", "vehicleNo"],
+  "internal-transfer-warehouse-in": ["inputDocumentId"],
   "inbound-warehouse": INBOUND_WAREHOUSE_HEADER,
   "inbound-tech": INBOUND_TECH_HEADER,
   "inbound-pm": INBOUND_PM_HEADER,
@@ -133,6 +140,8 @@ const REQUIRED_EDIT_KEYS: Record<string, readonly string[]> = {
   "machine-repairs": ["documentDate"],
   "internal-transfer-requests": ["documentDate"],
   "internal-transfer-batches": ["batchDate"],
+  "internal-transfer-pm": [], "internal-transfer-tech": [], "internal-transfer-sa": [], "internal-transfer-accounting": [],
+  "internal-transfer-warehouse-out": [], "internal-transfer-warehouse-in": [],
   "inbound-warehouse": [],
   "inbound-tech": [],
   "inbound-pm": [],
@@ -146,6 +155,10 @@ export function requiredEditKeys(module: ErpScreenModule): readonly string[] {
 const EDIT_LOOKUPS: Record<string, Record<string, string>> = {
   "inbound-tech": {},
   "inbound-pm": {},
+  "internal-transfer-pm": {}, "internal-transfer-tech": {}, "internal-transfer-sa": {},
+  "internal-transfer-accounting": { outputDocumentId: "header.OutputDocumentID" },
+  "internal-transfer-warehouse-out": { transportMethod: "header.TransportMethod" },
+  "internal-transfer-warehouse-in": { inputDocumentId: "header.InputDocumentID" },
   "inbound-warehouse": {
     damageInsideStatusId: "header.DamageInsideStatusID",
     locationDamageDetectedId: "header.LocationDamageDetectedID",
@@ -181,6 +194,13 @@ const SAVE_LINE_BY_MODULE: Record<string, readonly string[]> = {
   // Kỹ thuật records the service on each machine; the machine itself (assetId) is sent unchanged.
   "machine-repairs": ["assetId", "noiDung", "quantity", "problemDescription", "actionTaken", "resultStatus", "warrantyCovered",
     "nextServiceDate", "laborAmount", "internalAlert", "notes"],
+  // Batch workflow steps record their own per-line result (PM must confirm each line's quantity before Đồng ý).
+  "internal-transfer-pm": ["pMApprovedQty", "pMNote"],
+  "internal-transfer-tech": ["techStatus", "techNotes", "bBKCUrl"],
+  "internal-transfer-sa": ["approvedQty", "notes"],
+  "internal-transfer-accounting": ["lot", "expireDate", "accountingNote"],
+  "internal-transfer-warehouse-out": ["actualIssueQty", "warehouseNote"],
+  "internal-transfer-warehouse-in": ["actualReceiveQty", "receiveNote"],
   // Every member is sent so a save never clears one; the codes filled by Đối tượng nhận are pass-through.
   "machine-movements": ["assetId", "quantity", "fromObjectId", "fromStoreHouseId", "objectId", "toStoreHouseId", "handoverDate",
     "fromLocation", "toLocation", "handoverComponents", "assetCondition", "notes",
@@ -237,6 +257,13 @@ export const SAVE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
   "internal-transfer-requests": ["documentDate", "requestedTransferDate", "transferReason", "transportMethod", "notes"],
   // Kho, chi nhánh và người phụ trách là trường ẩn trên form ERP; bỏ qua khi lưu thì giữ nguyên giá trị đã lưu.
   "internal-transfer-batches": ["batchDate", "plannedTransferDate", "transportMethod", "carrierName", "carrierPhone", "vehicleNo", "notes"],
+  // Batch workflow steps: each form edits only its own columns (the rest are hidden or read-only there).
+  "internal-transfer-pm": [],
+  "internal-transfer-tech": [],
+  "internal-transfer-sa": [],
+  "internal-transfer-accounting": ["outputDocumentId"],
+  "internal-transfer-warehouse-out": ["transportMethod", "carrierName", "carrierPhone", "vehicleNo"],
+  "internal-transfer-warehouse-in": ["inputDocumentId"],
   "inbound-warehouse": INBOUND_WAREHOUSE_HEADER,
   "inbound-tech": INBOUND_TECH_HEADER,
   "inbound-pm": INBOUND_PM_HEADER,
