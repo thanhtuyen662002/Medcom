@@ -34,7 +34,7 @@ public sealed partial class SqlErpScreenCommands
         {
             var header=Map(request.Header!.Value);
             RestoreHidden(plan,"header",header,before?.Header);
-            await References(transaction,identity,plan,"header",header,header,request.BranchId,token);
+            await References(transaction,identity,plan,"header",header,header,request.BranchId,token,before?.Header);
             if(plan.Module=="internal-transfer-requests")
                 Require(header["fromBranchId"].GetString()!=header["toBranchId"].GetString(),ErpCommandOutcome.InvalidInput,"transfer_branches_equal");
             if(plan.Module=="purchase-orders")
@@ -160,6 +160,7 @@ public sealed partial class SqlErpScreenCommands
             ||ErpScreenCatalog.IsWorkflow(plan.Module)&&plan.Screen.Lookups.Any(l=>l.Id==section+"."+c.Column&&!l.Disabled))))
         {
             if(!row.TryGetValue(column.Name,out var value)||value.ValueKind==JsonValueKind.Null||value.ValueKind==JsonValueKind.String&&value.GetString()=="")continue;
+            if(UnchangedHidden(plan.Module,section,column.Name,value,existing))continue;
             // Ready-for-batch lists exclude an already linked request. Keeping that exact
             // saved association must remain editable; adding/changing one uses the popup.
             if(plan.Module=="internal-transfer-batches"&&section=="lines"&&column.Column=="RequestID"
@@ -178,6 +179,12 @@ public sealed partial class SqlErpScreenCommands
         }
         return projected;
     }
+    // A hidden field is never shown, so the Web cannot have changed it: RestoreHidden put back the saved value.
+    // Re-checking it against today's picker would refuse a save for someone else's choice (e.g. a batch whose
+    // AssignedPM is not in the PM list), so an unchanged hidden reference is kept as saved.
+    internal static bool UnchangedHidden(string module,string section,string field,JsonElement value,IReadOnlyDictionary<string,object?>? existing)=>
+        existing?.GetValueOrDefault(field) is string saved&&value.ValueKind==JsonValueKind.String&&value.GetString()==saved
+        &&ErpVisibleFields.IsHidden(module,section,field);
     // A lookup parameter names a column of this row, or of the header with ERP's "Master." prefix
     // (the batch request picker is bound to Master.FromBranchID;Master.ToBranchID).
     internal static string ParameterValue(string parameter,IReadOnlyDictionary<string,JsonElement> header,IReadOnlyDictionary<string,JsonElement> row)
