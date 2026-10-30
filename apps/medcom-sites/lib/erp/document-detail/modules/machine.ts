@@ -6,6 +6,7 @@ export const machineMovementDetailConfig = {
   modules: [ "machine-movements" ],
   title: "Chi tiết bàn giao máy",
   closeLabel: "Đóng chi tiết bàn giao máy",
+  slots: ["lines-editor"],
   groups: [
     {
       id: "movement",

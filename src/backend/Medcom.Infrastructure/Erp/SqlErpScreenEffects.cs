@@ -168,9 +168,7 @@ public sealed partial class SqlErpScreenCommands
             if(definition is null)continue;
             if(definition.AllowUnlisted&&column.Column!="VATID")continue;
             var args=(definition.Parameters??"").Split(';',StringSplitOptions.RemoveEmptyEntries);
-            var vals=args.Select(arg=>header.GetValueOrDefault(NativeJsonName(arg)).ValueKind==JsonValueKind.String
-                ?header[NativeJsonName(arg)].GetString()??"":row.GetValueOrDefault(NativeJsonName(arg)).ValueKind==JsonValueKind.String
-                    ?row[NativeJsonName(arg)].GetString()??"":"").ToArray();
+            var vals=args.Select(arg=>ParameterValue(arg,header,row)).ToArray();
             var key=value.ValueKind==JsonValueKind.String?value.GetString():value.GetRawText();
             var choices=await SqlErpScreenService.Choices(transaction,identity,plan,definition,args,vals,branch,null,token,key);
             Require(choices is not null,ErpCommandOutcome.QualificationRequired,"reference_binding_unavailable");
@@ -179,6 +177,15 @@ public sealed partial class SqlErpScreenCommands
             if(column.Column is "ItemID" or "AssetID" or "VATID")foreach(var pair in matches[0].Fields)projected[pair.Key]=pair.Value;
         }
         return projected;
+    }
+    // A lookup parameter names a column of this row, or of the header with ERP's "Master." prefix
+    // (the batch request picker is bound to Master.FromBranchID;Master.ToBranchID).
+    internal static string ParameterValue(string parameter,IReadOnlyDictionary<string,JsonElement> header,IReadOnlyDictionary<string,JsonElement> row)
+    {
+        var master=parameter.StartsWith("Master.",StringComparison.Ordinal);
+        var name=NativeJsonName(master?parameter["Master.".Length..]:parameter);
+        static string? Text(IReadOnlyDictionary<string,JsonElement> values,string key)=>values.TryGetValue(key,out var value)&&value.ValueKind==JsonValueKind.String?value.GetString():null;
+        return Text(header,name)??(master?null:Text(row,name))??"";
     }
     private static string NativeJsonName(string native)
     {var name=native.Replace("ID","Id",StringComparison.Ordinal).Replace("QR","Qr",StringComparison.Ordinal);return char.ToLowerInvariant(name[0])+name[1..];}

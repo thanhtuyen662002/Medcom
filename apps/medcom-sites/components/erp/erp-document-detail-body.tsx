@@ -712,7 +712,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
           ? editsLineItems(module)
             ? <ErpLineEditor module={module} detail={detail} editLines={editLines}
                 patchEditLine={patchEditLine} columns={config.lines.columns} />
-            : <ErpFieldLineEditor module={module} detail={detail} editLines={editLines}
+            : <ErpFieldLineEditor module={module} detail={detail} branchId={currentBranch} editLines={editLines}
                 patchEditLine={patchEditLine} columns={config.lines.columns} /> : undefined,
         costs: detail && (module === "inbound-requests" || module === "inbound-costs") ? (
           <InboundCostsPanel module={module} detail={detail} branchId={currentBranch} onSaved={() => handleOpenDetail(detail.documentId)} />
