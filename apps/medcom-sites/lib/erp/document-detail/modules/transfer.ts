@@ -483,7 +483,8 @@ export const transferAccountingDetailConfig = {
       title: "Vận chuyển & chứng từ",
       columns: 2,
       fields: [
-        { key: "outputDocumentId", label: "Phiếu xuất kho liên kết", format: "reference", displayKey: "outputDocumentName", secondaryKey: "outputDocumentId" },
+        { key: "outputDocumentId", label: "Phiếu xuất kho liên kết", format: "reference", displayKey: "outputDocumentName", secondaryKey: "outputDocumentId",
+          edit: { input: "lookup", lookupId: "header.OutputDocumentID", lookupContext: { FromStoreHouseID: "fromStoreHouseId" }, placeholder: "Chọn phiếu xuất kho..." } },
       ],
     },
     {
@@ -725,7 +726,8 @@ export const transferWarehouseInDetailConfig = {
         { key: "carrierName", label: "Đơn vị vận chuyển", format: "text" },
         { key: "vehicleNo", label: "Biển số xe", format: "text" },
         { key: "outputDocumentId", label: "Phiếu xuất kho liên kết", format: "reference", displayKey: "outputDocumentName", secondaryKey: "outputDocumentId" },
-        { key: "inputDocumentId", label: "Phiếu nhập kho liên kết", format: "reference", displayKey: "inputDocumentName", secondaryKey: "inputDocumentId" },
+        { key: "inputDocumentId", label: "Phiếu nhập kho liên kết", format: "reference", displayKey: "inputDocumentName", secondaryKey: "inputDocumentId",
+          edit: { input: "lookup", lookupId: "header.InputDocumentID", lookupContext: { ToStoreHouseID: "toStoreHouseId" }, placeholder: "Chọn phiếu nhập kho..." } },
       ],
     },
     {
