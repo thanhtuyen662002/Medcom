@@ -73,7 +73,8 @@ const legacyDraftModules = [
 export const attachmentModules = ["sales-orders", "sales-order-pm", "sales-order-sa", "inbound-requests", "inbound-warehouse",
   "inbound-sa", "inbound-tech", "inbound-pm", "inbound-bld", "inbound-costs"] as const;
 export type AttachmentModule = typeof attachmentModules[number];
-const attachmentUploadModules: readonly AttachmentModule[] = ["sales-orders", "inbound-requests", "inbound-warehouse", "inbound-tech", "inbound-pm"];
+// Whether a PM may add photos to an order is decided by ERP (backend canUpload); the route is open for it.
+const attachmentUploadModules: readonly AttachmentModule[] = ["sales-orders", "sales-order-pm", "inbound-requests", "inbound-warehouse", "inbound-tech", "inbound-pm"];
 
 const erpScreenPostRoutes = new Set([
   ...attachmentUploadModules.map(m => `api/erp/${m}/attachments/upload`),

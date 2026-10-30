@@ -6,6 +6,7 @@ import { ApiError } from "@/lib/erp/api";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { AttachmentModule } from "@/lib/erp/proxy-policy";
 import { attachmentContentUrl, validateAttachmentFile, type SalesOrderAttachmentPage } from "@/lib/erp/sales-order-attachments";
+import { compressImageFile } from "@/lib/erp/image-compress";
 
 /**
  * ERP inbound forms show three photo slots (AttachWebcamImageControlCtl STT 2/4/6: hư hỏng, trước/sau khi dỡ hàng).
@@ -35,7 +36,8 @@ export function InboundPhotoPanel({ module, branchId, documentId, onUploaded }: 
     if (!files.length || busySlot !== null) return;
     setBusySlot(slotId); setMessage(null);
     try {
-      for (const file of files) {
+      for (const original of files) {
+        const file = await compressImageFile(original);
         const problem = await validateAttachmentFile(file);
         if (problem) { setMessage(`${file.name}: ${problem}`); return; }
         // Each upload changes the document state token, so read it again before the next file.
