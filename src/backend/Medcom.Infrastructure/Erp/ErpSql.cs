@@ -79,9 +79,13 @@ internal sealed class ErpSqlPlan
         _=>"H.BranchID=@branch"
     };
     internal string HeaderText=>$"SELECT TOP(2) {Projection(Screen.Fields["header"],"H")} FROM dbo.[{HeaderTable}] H WITH(HOLDLOCK) {ReadJoin("header","H")} WHERE H.[{HeaderKey}]=@document AND {Exact("H.["+HeaderKey+"]","@document")} AND ({ScopePredicate});";
+    // The list search box says "Tìm mã, đối tượng": a document with an ERP object (customer/supplier) also matches
+    // on the object's code or name.
+    private string ObjectSearch=>Screen.Fields["header"].Any(column=>column.Column=="ObjectID")
+        ?" OR H.ObjectID LIKE @search ESCAPE N'~' OR EXISTS(SELECT 1 FROM dbo.CF_ObjectTbl SO WITH(HOLDLOCK) WHERE SO.ObjectID=H.ObjectID AND SO.ObjectName LIKE @search ESCAPE N'~')":"";
     internal string ListText=>$"""
         SELECT {Projection(Screen.Fields["header"],"H")} FROM dbo.[{HeaderTable}] H WITH(HOLDLOCK) {ReadJoin("header","H")}
-        WHERE ({ScopePredicate}) AND (@search IS NULL OR H.[{HeaderKey}] LIKE @search ESCAPE N'~')
+        WHERE ({ScopePredicate}) AND (@search IS NULL OR H.[{HeaderKey}] LIKE @search ESCAPE N'~'{ObjectSearch})
           AND (@from IS NULL OR H.[{DateColumn}]>=@from) AND (@to IS NULL OR H.[{DateColumn}]<@to)
           {(Screen.Fields["header"].Any(column=>column.Column=="StatusID")?"AND (@status IS NULL OR H.StatusID=@status)":"")}
         ORDER BY H.[{DateColumn}] DESC,H.[{HeaderKey}] COLLATE Latin1_General_100_BIN2 DESC
