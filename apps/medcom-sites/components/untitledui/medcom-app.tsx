@@ -382,7 +382,8 @@ export function MedcomApp() {
     try {
       const [poData, prData, inData, notifData] = await Promise.allSettled([
         erpClient.getDocumentsList("purchase-orders", 1, "", branch),
-        erpClient.getPurchaseRequestsList(1, "", branch),
+        // The typed /api/purchase-requests read is not qualified on prod (503); the ERP screen counts are.
+        erpClient.getErpStatusCounts("purchase-requests", branch),
         erpClient.getDocumentsList("inbound-requests", 1, "", branch),
         erpClient.getNotifications({ page: 1, pageSize: 1, unreadOnly: true }),
       ]);
@@ -395,10 +396,10 @@ export function MedcomApp() {
       }
 
       if (prData.status === "fulfilled" && prData.value) {
-        const val = prData.value.list as unknown as { totalRows?: number; rows?: { statusId?: number | null }[] };
-        setPurchasesCount(typeof val?.totalRows === "number" ? val.totalRows : val?.rows?.length ?? 0);
+        const items = prData.value.items;
+        setPurchasesCount(items.reduce((sum, item) => sum + item.count, 0));
         // AP_PurchaseStatusTbl: 2 = "Chờ duyệt" (same rule as the home approval list).
-        setPendingApprovalCount(val?.rows?.filter(row => row.statusId === 2).length ?? 0);
+        setPendingApprovalCount(items.find(item => item.statusId === 2)?.count ?? 0);
       } else {
         setPurchasesCount(0);
         setPendingApprovalCount(0);

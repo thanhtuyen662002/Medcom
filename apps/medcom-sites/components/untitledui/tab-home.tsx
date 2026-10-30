@@ -51,20 +51,23 @@ export function TabHome({
     const fetchPending = async () => {
       setLoadingPending(true);
       try {
-        const res = await erpClient.getPurchaseRequestsList(1, "", branch);
-        if (!isCancelled && res && res.list && res.list.rows) {
-          const pending = res.list.rows
-            // AP_PurchaseStatusTbl: 2 = "Chờ duyệt" (1 is "Nháp", not awaiting approval).
-            .filter((r) => r.statusId === 2)
-            .map((r): PurchaseItem => ({
-              id: r.documentId, code: r.documentId,
-              purpose: r.fields?.purposeDescOrClient || r.fields?.notes || "—",
-              department: r.department || "—", creator: r.personSuggest || "—", branch,
-              date: formatDateTime(r.purchaseDate),
-              totalAmount: "—", statusId: r.statusId, statusName: r.statusName ?? null, lines: [],
-              statusForeColor: typeof r.statusForeColor === "string" ? r.statusForeColor : null,
-              statusBackColor: typeof r.statusBackColor === "string" ? r.statusBackColor : null,
-            }));
+        // AP_PurchaseStatusTbl: 2 = "Chờ duyệt" (1 is "Nháp", not awaiting approval).
+        const res = await erpClient.getErpModuleList("purchase-requests", { branchId: branch, page: 1, pageSize: 20, statusId: 2 });
+        if (!isCancelled && res && res.rows) {
+          const text = (value: unknown) => typeof value === "string" && value.trim() ? value : null;
+          const pending = res.rows
+            .map((row): PurchaseItem => {
+              const h = row.header ?? row;
+              return {
+                id: row.documentId, code: row.documentId,
+                purpose: text(h.purposeDescOrClient) ?? text(h.notes) ?? "—",
+                department: text(h.departmentName) ?? text(h.department) ?? "—",
+                creator: text(h.personSuggestName) ?? text(h.personSuggest) ?? "—", branch,
+                date: formatDateTime(text(h.purchaseDate) ?? undefined),
+                totalAmount: "—", statusId: typeof h.statusId === "number" ? h.statusId : 2, statusName: text(h.statusName), lines: [],
+                statusForeColor: text(h.statusForeColor), statusBackColor: text(h.statusBackColor),
+              };
+            });
           setPendingItems(pending);
           lastFetchedRef.current = { branch, at: Date.now() };
         } else if (!isCancelled) {
