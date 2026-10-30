@@ -52,7 +52,8 @@ public sealed class ErpLookupDiagnostics
         var rows = live.Where(row => row.Form == screen.FormId && row.Column == lookup.Field && row.Grid == lookup.Grid).ToArray();
         // The Web never runs a lookup it has disabled, so ERP's row for it cannot break anything.
         if (lookup.Disabled) return new(screen.Id, lookup.Id, "ok", []);
-        if (rows.Length != 1) return new(screen.Id, lookup.Id, rows.Length == 0 ? "missing" : "duplicate", []);
+        if (rows.Length > 1) return new(screen.Id, lookup.Id, "duplicate", []);
+        if (rows.Length == 0) return new(screen.Id, lookup.Id, "missing", Candidates(screen, lookup, live));
         var row = rows[0]; var mismatches = new List<ErpLookupMismatch>();
         void Check(string field, string? expected, string? actual) { if (expected != actual) mismatches.Add(new(field, expected, actual)); }
         Check("ValueColumn", lookup.ValueField, row.Value);
@@ -66,5 +67,16 @@ public sealed class ErpLookupDiagnostics
         // Not refused by itself, but a changed query can change the columns the Web reads.
         Check("SourceHash", lookup.SourceHash, row.SourceHash);
         return new(screen.Id, lookup.Id, mismatches.Count == 0 ? "ok" : "changed", mismatches);
+    }
+
+    // Where a missing row may have gone: the same column under another grid, or else which grids the form still has
+    // (none at all means ERP dropped every dropdown of that form).
+    private static ErpLookupMismatch[] Candidates(ErpScreenDescription screen, ErpLookupDefinition lookup, IReadOnlyList<LiveRow> live)
+    {
+        var form = live.Where(row => row.Form == screen.FormId).ToArray();
+        var moved = form.Where(row => row.Column == lookup.Field).Select(row => new ErpLookupMismatch("GridName", lookup.Grid, row.Grid)).ToArray();
+        if (moved.Length > 0) return moved;
+        var grids = string.Join(';', form.Select(row => row.Grid ?? "").Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
+        return [new("FormGrids", lookup.Grid, grids)];
     }
 }
