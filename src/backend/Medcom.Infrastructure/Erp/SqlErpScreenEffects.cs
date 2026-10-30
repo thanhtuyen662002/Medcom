@@ -169,7 +169,7 @@ public sealed partial class SqlErpScreenCommands
             if(definition is null)continue;
             if(definition.AllowUnlisted&&column.Column!="VATID")continue;
             var args=(definition.Parameters??"").Split(';',StringSplitOptions.RemoveEmptyEntries);
-            var vals=args.Select(arg=>ParameterValue(arg,header,row)).ToArray();
+            var vals=args.Select(arg=>SavedParameter(ParameterValue(arg,header,row),arg,section,existing)).ToArray();
             var key=value.ValueKind==JsonValueKind.String?value.GetString():value.GetRawText();
             var choices=await SqlErpScreenService.Choices(transaction,identity,plan,definition,args,vals,branch,null,token,key);
             Require(choices is not null,ErpCommandOutcome.QualificationRequired,"reference_binding_unavailable");
@@ -185,6 +185,14 @@ public sealed partial class SqlErpScreenCommands
     internal static bool UnchangedHidden(string module,string section,string field,JsonElement value,IReadOnlyDictionary<string,object?>? existing)=>
         existing?.GetValueOrDefault(field) is string saved&&value.ValueKind==JsonValueKind.String&&value.GetString()==saved
         &&ErpVisibleFields.IsHidden(module,section,field);
+    // A workflow step saves only its own header columns (e.g. Kế toán: OutputDocumentID), so a parameter such as
+    // FromStoreHouseID that this step does not send is read from the saved document.
+    internal static string SavedParameter(string value,string parameter,string section,IReadOnlyDictionary<string,object?>? existing)
+    {
+        if(value!=""||section!="header"||existing is null)return value;
+        var name=NativeJsonName(parameter.StartsWith("Master.",StringComparison.Ordinal)?parameter["Master.".Length..]:parameter);
+        return existing.FirstOrDefault(pair=>pair.Key.Equals(name,StringComparison.OrdinalIgnoreCase)).Value is string saved?saved:value;
+    }
     // A lookup parameter names a column of this row, or of the header with ERP's "Master." prefix
     // (the batch request picker is bound to Master.FromBranchID;Master.ToBranchID).
     internal static string ParameterValue(string parameter,IReadOnlyDictionary<string,JsonElement> header,IReadOnlyDictionary<string,JsonElement> row)
