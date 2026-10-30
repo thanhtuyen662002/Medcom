@@ -350,8 +350,9 @@ test('10. Backend-filtered fields and derived Name/Display/state/color aliases n
 test('11. Both QR modules expose precisely the qr-scan slot', () => {
   for (const name of ['warehouseQrDetailConfig', 'salesQrDetailConfig'])
     assert.deepEqual(exports[name].slots, ['qr-scan']);
-  // Machine handovers and repairs edit each machine line in place.
-  const lineEditors = [exports.machineMovementDetailConfig, exports.machineRepairDetailConfig];
+  // Machine handovers/repairs and the transfer batch steps edit each line in place.
+  const lineEditors = [exports.machineMovementDetailConfig, exports.machineRepairDetailConfig, exports.transferPmDetailConfig,
+    exports.transferTechnicalDetailConfig, exports.transferAccountingDetailConfig, exports.transferWarehouseOutDetailConfig, exports.transferWarehouseInDetailConfig];
   for (const config of lineEditors) assert.deepEqual(config.slots, ['lines-editor']);
   for (const config of configs.filter(config => !config.modules.some(id => id.endsWith('-qr')) && !lineEditors.includes(config)))
     assert.equal(config.slots, undefined);

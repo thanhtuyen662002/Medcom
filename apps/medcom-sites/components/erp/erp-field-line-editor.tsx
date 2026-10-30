@@ -54,7 +54,7 @@ export function ErpFieldLineEditor({ module, detail, branchId, editLines, patchE
                   </RequestSelect>
                 : key.toLowerCase().includes("date")
                   ? <RequestInput id={id} type="date" value={value.slice(0, 10)} onChange={event => set(event.target.value)} />
-                  : <RequestInput id={id} type="text" inputMode={/quantity|amount/i.test(key) ? "decimal" : undefined} value={value} onChange={event => set(event.target.value)} />}
+                  : <RequestInput id={id} type="text" inputMode={/quantity|qty|amount/i.test(key) ? "decimal" : undefined} value={value} onChange={event => set(event.target.value)} />}
             </div>;
           })}
         </div>
