@@ -175,8 +175,8 @@ test('375×812 and 1280×860: real tabs, portal bounds, themes, detail labels, o
         await page.screenshot({ path: path.join(output, `${screen}-${width}-${dark ? 'dark' : 'light'}-top.png`) });
         let bounds = null;
         if (width === 375) {
-          // Purchase-order writes are gated (WRITE_GATED_MODULES), so its ERP screen has no create FAB.
-          const creates = screen !== 'orders';
+          // Every screen here admits create (Đặt mua hàng writes were admitted on 30/10).
+          const creates = true;
           assert.equal(await fab.count(), creates ? 1 : 0, 'cached hidden tabs must not leak portal FABs');
           if (creates) {
             bounds = await fab.boundingBox();

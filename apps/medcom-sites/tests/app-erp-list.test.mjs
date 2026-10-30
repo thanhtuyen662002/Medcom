@@ -221,5 +221,4 @@ test('desktop create and mobile FAB preserve visible/enabled and write admission
       if (visible) { assert.equal(create.props.disabled, !enabled); assert.equal(fab.props.disabled, !enabled); }
     }, { branch: `P2-PERM-${suffix}`, actions: () => [{ id: 'create', visible, enabled }] });
   }
-  await mounted('purchase-orders', tree => { assert.equal(button(tree, 'Tạo mới'), undefined); assert.equal(button(tree, 'Tạo Đề nghị mua hàng (PO)'), undefined); });
 });

@@ -289,9 +289,7 @@ export function lockBadgeState(header: unknown): boolean | null {
 // marks them visible; enabled state and reason come from the same action.
 export const MENU_ACTION_IDS = ["save", "submit", "send-purchase-order", "approve", "reject", "delete"] as const;
 
-// Tạm thời: Đặt mua hàng chưa có trong Medcom:ErpWrites:Modules nên backend
-// trả erp_write_unqualified (nút "Tạo mới" bị khóa kèm lý do "chưa ghi trực
-// tiếp", và save/delete hiện disabled trong dropdown chi tiết). Thay vì hiển
-// thị trạng thái bị chặn, ẨN toàn bộ action write của module này ở FE.
-// Bỏ "purchase-orders" khỏi danh sách này khi operator bật ghi cho module.
-export const WRITE_GATED_MODULES = new Set<ErpScreenModule>(["purchase-orders"]);
+// Modules whose writes the operator has not admitted (Medcom:ErpWrites:Modules): the FE hides every write
+// action instead of showing the backend's erp_write_unqualified state. Đặt mua hàng was admitted on prod
+// (create/save/delete enabled, 30/10), so none is gated now.
+export const WRITE_GATED_MODULES = new Set<ErpScreenModule>([]);
