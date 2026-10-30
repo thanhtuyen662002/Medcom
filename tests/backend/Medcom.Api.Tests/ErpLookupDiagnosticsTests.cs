@@ -36,7 +36,7 @@ public sealed class ErpLookupDiagnosticsTests
     [Fact]
     public void A_missing_row_names_where_it_may_have_gone()
     {
-        var screen = ErpScreenCatalog.Get("inbound-costs")!;
+        var screen = ErpScreenCatalog.Get("inbound-requests")!;
         var lookup = screen.Lookups.Single(item => item.Id == "costs.ObjectID");
         var moved = Live(screen, lookup, lookup.LinkedFields) with { Grid = "grdChitiet3" };
         Assert.Equal(new ErpLookupMismatch("GridName", "grdChitiet2", "grdChitiet3"), Assert.Single(ErpLookupDiagnostics.Compare(screen, lookup, [moved]).Mismatches));
