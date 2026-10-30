@@ -155,68 +155,38 @@ test('legacy edit groups use fixed labels while fixtures and static groups conta
   }
 });
 
-test('default editors show missing keys only in the legacy edit group, and hide it again on discard', async () => {
-  // Machine screens now edit their own catalog fields (no sales-order customer); see the test below.
-  for (const moduleId of ['internal-transfer-batches']) {
-    const config = getDocumentDetailEntry(moduleId).config;
-    const before = structuredClone(config);
-    await mounted(async tree => {
-      assert.doesNotMatch(text(tree.toJSON()), /Trường sửa kế thừa/);
-      await edit(tree);
-      const projected = tree.root.findByType(DocumentDetailView).props.config;
-      const legacy = projected.groups.find(group => group.id === 'legacy-edit');
-      assert.equal(legacy.title, 'Trường sửa kế thừa');
-      const expected = moduleId === 'machine-movements' ? ['objectId', 'deliverDate']
-        : ['documentDate', 'objectId', 'deliverDate', 'contractId', 'memo'];
-      assert.deepEqual(legacy.fields.map(field => field.key), expected);
-      const section = tree.root.findAllByType('section').find(node =>
-        node.findAllByType('h3').some(heading => text(heading) === 'Trường sửa kế thừa'));
-      assert.ok(section);
-      assert.equal(section.findByProps({ 'data-lookup': 'header.ObjectID' }).props.label, 'Khách hàng');
-      assert.equal(section.findAllByType('input').filter(node => node.props.type === 'date').length,
-        moduleId === 'machine-movements' ? 1 : 2);
-      assert.equal(legacy.fields.find(field => field.key === 'objectId').edit.required, true);
-      if (moduleId === 'internal-transfer-batches') {
-        assert.equal(legacy.fields.find(field => field.key === 'documentDate').edit.required, true);
-        assert.match(text(section), /Ngày chứng từ/);
-      } else {
-        // This API-backed field already belongs to the normal movement group.
-        assert.equal(fields(projected).filter(field => field.key === 'documentDate').length, 1);
-      }
-      await act(async () => button(tree, 'Hủy sửa').props.onClick());
-      assert.doesNotMatch(text(tree.toJSON()), /Trường sửa kế thừa/);
-      assert.deepEqual(config, before);
-    }, { module: moduleId });
-  }
+test('a transfer batch edits its own fields, not the legacy sales-order group', async () => {
+  const moduleId = 'internal-transfer-batches';
+  const config = getDocumentDetailEntry(moduleId).config;
+  const before = structuredClone(config);
+  await mounted(async tree => {
+    await edit(tree);
+    const projected = tree.root.findByType(DocumentDetailView).props.config;
+    assert.equal(projected.groups.some(group => group.id === 'legacy-edit'), false);
+    for (const key of ['batchDate', 'plannedTransferDate', 'transportMethod', 'carrierName', 'carrierPhone', 'vehicleNo', 'notes'])
+      assert.ok(fields(projected).some(field => field.key === key && field.edit), key);
+    assert.equal(fields(projected).find(field => field.key === 'batchDate').edit.required, true);
+    assert.doesNotMatch(text(tree.toJSON()), /Ngày giao hàng|Mã hợp đồng/);
+    await act(async () => button(tree, 'Hủy sửa').props.onClick());
+    assert.deepEqual(config, before);
+  }, { module: moduleId });
 });
 
-test('default editor saveDocument headers match the ui-sync/main baseline, including required and null fields', async () => {
-  // Golden headers: ui-sync/main@57618a7, ErpDocumentDetailBody.startEditing/handleSaveHeader.
-  // Both old and new bodies were executed with these synthetic inputs; see FIELD_EVIDENCE_GENERIC_EDITOR.md.
-  for (const moduleId of ['internal-transfer-batches']) {
-    const header = { documentId: 'QA-DOC', branchId: 'QA', notes: ' Ghi chú cũ ', isLocked: false,
-      ...(moduleId === 'machine-movements' ? { documentDate: '2026-10-23T00:00:00' } : { batchDate: '2026-10-23T00:00:00' }) };
-    const commands = [];
-    await mounted(async tree => {
-      await edit(tree);
-      await act(async () => button(tree, 'Lưu thay đổi').props.onClick());
-      assert.equal(commands.length, 0, 'the inherited required fields still block save');
-      assert.match(text(tree.toJSON()), /Vui lòng nhập đủ các trường bắt buộc/);
-      const date = tree.root.findAllByType('input').find(node => node.props.type === 'date' && node.props.required);
-      await act(async () => date.props.onChange({ target: { value: '2026-10-24' } }));
-      await act(async () => button(tree, 'Lưu thay đổi').props.onClick());
-      assert.equal(commands.length, 0, 'objectId remains required after filling documentDate');
-      await act(async () => tree.root.findByProps({ 'data-lookup': 'header.ObjectID' }).props.onSelect({
-        id: 'QA-CUSTOMER', name: 'Đối tượng kiểm thử', label: 'Đối tượng kiểm thử', fields: {},
-      }));
-      await act(async () => button(tree, 'Lưu thay đổi').props.onClick());
-      assert.equal(commands.length, 1);
-      assert.equal(commands[0][0], moduleId);
-      assert.deepEqual(commands[0][1].header, { ...header, documentDate: '2026-10-24T00:00:00.000',
-        objectId: 'QA-CUSTOMER', deliverDate: null, contractId: null, memo: null, notes: 'Ghi chú cũ' });
-      assert.deepEqual(commands[0][1].lineChanges, []);
-    }, { module: moduleId, detail: data(header), api: { save: async (...args) => { commands.push(args); return { outcome: 'Denied' }; } } });
-  }
+test('a transfer batch save sends only its writable visible header fields', async () => {
+  // Branches, warehouses and assignees are hidden on the ERP form: omitted, the backend keeps the saved values.
+  const moduleId = 'internal-transfer-batches';
+  const header = { documentId: 'QA-DOC', branchId: 'QA', notes: ' Ghi chú cũ ', isLocked: false, batchDate: '2026-10-23T00:00:00',
+    plannedTransferDate: null, transportMethod: 'ROAD', carrierName: null, carrierPhone: null, vehicleNo: null,
+    fromBranchId: 'QA', toBranchId: 'QB', fromStoreHouseId: 'K1', toStoreHouseId: 'K2' };
+  const commands = [];
+  await mounted(async tree => {
+    await edit(tree);
+    await act(async () => button(tree, 'Lưu thay đổi').props.onClick());
+    assert.equal(commands.length, 1);
+    assert.deepEqual(commands[0][1].header, { batchDate: '2026-10-23T00:00:00.000', plannedTransferDate: null, transportMethod: 'ROAD',
+      carrierName: null, carrierPhone: null, vehicleNo: null, notes: 'Ghi chú cũ' });
+    assert.deepEqual(commands[0][1].lineChanges, []);
+  }, { module: moduleId, detail: data(header), api: { save: async (...args) => { commands.push(args); return { outcome: 'Denied' }; } } });
 });
 
 test('the retained line editor replaces the lines tab and forwards the original mobile/desktop edits', async () => {
