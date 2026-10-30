@@ -7,8 +7,12 @@ export function editableDetailConfig(config: DocumentDetailConfig, module: ErpSc
   const keys = editableHeaderKeys(module);
   const field = (definition: DetailFieldConfig): DetailFieldConfig => {
     if (!editing || !keys.includes(definition.key)) return definition;
-    const lookupId = editLookupId(module, definition.key);
+    // A field may declare its own lookup (e.g. the batch's Kho nguồn with its branch parameter); keep it.
+    const declared = definition.edit;
+    const lookupId = declared?.lookupId ?? editLookupId(module, definition.key);
     return { ...definition, edit: {
+      ...(declared?.lookupContext ? { lookupContext: declared.lookupContext } : {}),
+      ...(declared?.placeholder ? { placeholder: declared.placeholder } : {}),
       input: lookupId ? "lookup" : BOOLEAN_EDIT_KEYS.has(definition.key) ? "boolean"
         : definition.key.toLowerCase().includes("date") ? "date"
         : isMoneyField(definition.key) ? "money" : "text",

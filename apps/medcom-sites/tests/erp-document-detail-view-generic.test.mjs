@@ -166,6 +166,10 @@ test('a transfer batch edits its own fields, not the legacy sales-order group', 
     for (const key of ['batchDate', 'plannedTransferDate', 'fromStoreHouseId', 'toStoreHouseId', 'transportMethod', 'carrierName', 'carrierPhone', 'vehicleNo', 'notes'])
       assert.ok(fields(projected).some(field => field.key === key && field.edit), key);
     assert.equal(fields(projected).find(field => field.key === 'batchDate').edit.required, true);
+    // Kho nguồn / Kho đích keep their declared pickers bound to the batch's branches.
+    const source = fields(projected).find(field => field.key === 'fromStoreHouseId').edit;
+    assert.deepEqual([source.input, source.lookupId, source.lookupContext], ['lookup', 'header.FromStoreHouseID', { FromBranchID: 'fromBranchId' }]);
+    assert.equal(fields(projected).find(field => field.key === 'toStoreHouseId').edit.lookupId, 'header.ToStoreHouseID');
     assert.doesNotMatch(text(tree.toJSON()), /Ngày giao hàng|Mã hợp đồng/);
     await act(async () => button(tree, 'Hủy sửa').props.onClick());
     assert.deepEqual(config, before);
