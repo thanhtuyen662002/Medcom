@@ -1152,7 +1152,12 @@ export function TabErpScreen({
 
       {createModalOpen && (
         <FormSheet open={createModalOpen}
-          onClose={() => { if (!creatingDocument && !createAttachments.uploading) setCreateModalOpen(false); }}
+          onClose={() => {
+            if (creatingDocument || createAttachments.uploading) return;
+            setCreateModalOpen(false);
+            // Hủy discards the generic form; reopening must not resubmit a stale pick (sales orders keep their pending create).
+            if (module !== "sales-orders") { setCreateObject(""); setCreateObjectChoice(null); resetGenericCreate(); setCreateFeedback(null); }
+          }}
           title={module === "sales-orders" ? "Tạo đơn hàng" : "Tạo mới " + getModuleTitle(module)}
           submitLabel={module === "sales-orders" ? createAttachments.uploading ? "Đang tải ảnh..." : creatingDocument ? "Đang tạo..." : createdOrderId ? "Thử lại tải ảnh" : pendingOrderCreate ? "Kiểm tra / tiếp tục" : "Tạo đơn hàng" : creatingDocument ? "Đang tạo..." : "Tạo chứng từ"}
           onSubmit={() => void handleCreateDocument()} busy={creatingDocument}
