@@ -52,6 +52,12 @@ function dataApi(handler = () => pageResult()) {
   return async (method, ...args) => {
     if (method === 'getDocumentsList') return handler({ method, kind: args[0], page: args[1], search: args[2], branch: args[3], pageSize: args[4] });
     if (method === 'getPurchaseRequestsList') return { scopeKey: 'qa-scope', list: await handler({ method, kind: 'purchase-requests', page: args[0], search: args[1], branch: args[2], pageSize: args[3] }) };
+    // The ERP screen list is flat, server-filtered by status; the transform also exposes it as header.
+    if (method === 'getErpModuleList') {
+      const page = await handler({ method, kind: args[0], page: args[1].page, branch: args[1].branchId, pageSize: args[1].pageSize });
+      return { ...page, rows: page.rows.filter(r => args[1].statusId == null || r.statusId === args[1].statusId)
+        .map(r => ({ ...r, header: { ...r, ...r.fields } })) };
+    }
     if (method === 'getDocumentDetail') return { document: {}, purchaseOrderLines: [], inboundRequestLines: [] };
     if (method === 'getPurchaseRequestDetail') return { document: { header: {}, lines: [] } };
     throw new Error('Unexpected API: ' + method);
