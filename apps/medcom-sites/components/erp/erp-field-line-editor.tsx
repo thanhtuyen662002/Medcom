@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import type { ErpDocumentDetail } from "@/lib/erp/erp-client";
 import type { ErpScreenModule, LineColumnConfig } from "@/lib/erp/document-detail/types";
 import { BOOLEAN_EDIT_KEYS, lineEditLookup, passthroughLineKey, saveLineKeys } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
@@ -18,6 +18,8 @@ export function ErpFieldLineEditor({ module, detail, branchId, editLines, patchE
   columns: readonly LineColumnConfig[];
 }) {
   const baseId = useId();
+  // Name of a value picked in this edit, keyed by line and field, so the picker shows it instead of the code.
+  const [picked, setPicked] = useState<Record<string, string>>({});
   const keys = saveLineKeys(module).filter(key => !passthroughLineKey(module, key));
   // A reference column is configured by its display key (objectId shows as objectName).
   const label = (key: string) => columns.find(column => column.key === key || column.key === lineEditLookup(module, key)?.nameKey)?.label ?? key;
@@ -36,8 +38,9 @@ export function ErpFieldLineEditor({ module, detail, branchId, editLines, patchE
             const lookup = lineEditLookup(module, key);
             if (lookup) return <div key={key} className="min-w-0">
               <LookupField label={label(key)} module={module} lookupId={lookup.lookupId} branchId={branchId} value={value} choice={null}
-                displayValue={value && value === String(fields[key] ?? "") ? String(fields[lookup.nameKey] ?? value) : value}
+                displayValue={!value ? value : picked[`${row.lineId}:${key}`] ?? (value === String(fields[key] ?? "") ? String(fields[lookup.nameKey] ?? value) : value)}
                 onSelect={choice => {
+                  setPicked(current => ({ ...current, [`${row.lineId}:${key}`]: String(choice?.label ?? choice?.name ?? choice?.id ?? "") }));
                   set(choice?.id ?? "");
                   for (const [source, target] of Object.entries(lookup.links ?? {}))
                     patchEditLine(row.lineId, target, choice?.fields?.[source] == null ? "" : String(choice.fields[source]));

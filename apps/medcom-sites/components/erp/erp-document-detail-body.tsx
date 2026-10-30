@@ -759,6 +759,11 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
                             >
                               Quét xóa mã QR
                             </UntitledButton>
+                            {[scanAddAct, scanDelAct].find(act => act && !act.enabled && act.reason) && (
+                              <p className="col-span-2 text-sm text-neutral-600 dark:text-neutral-400">
+                                {getActionReasonMessage([scanAddAct, scanDelAct].find(act => act && !act.enabled && act.reason)!.reason!)}
+                              </p>
+                            )}
                           </>
                         );
                       })()}
