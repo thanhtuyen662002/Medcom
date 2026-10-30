@@ -11,11 +11,11 @@ public sealed class ErpUnchangedHiddenReferenceTests
     [Fact]
     public void Only_an_unchanged_hidden_reference_skips_the_picker_check()
     {
-        // A batch created by Administrator keeps AssignedPM=Administrator, who is not in the PM list (prod 30/10).
-        var saved = new Dictionary<string, object?> { ["assignedPM"] = "Administrator", ["batchDate"] = "2026-10-30" };
-        Assert.True(SqlErpScreenCommands.UnchangedHidden("internal-transfer-batches", "header", "assignedPM", Text("Administrator"), saved));
-        Assert.False(SqlErpScreenCommands.UnchangedHidden("internal-transfer-batches", "header", "assignedPM", Text("other"), saved));
-        Assert.False(SqlErpScreenCommands.UnchangedHidden("internal-transfer-batches", "header", "assignedPM", Text("Administrator"), null));
+        // A hidden batch reference the Web cannot edit (OutputDocumentID) is kept as saved.
+        var saved = new Dictionary<string, object?> { ["outputDocumentId"] = "PX-001", ["batchDate"] = "2026-10-30" };
+        Assert.True(SqlErpScreenCommands.UnchangedHidden("internal-transfer-batches", "header", "outputDocumentId", Text("PX-001"), saved));
+        Assert.False(SqlErpScreenCommands.UnchangedHidden("internal-transfer-batches", "header", "outputDocumentId", Text("PX-002"), saved));
+        Assert.False(SqlErpScreenCommands.UnchangedHidden("internal-transfer-batches", "header", "outputDocumentId", Text("PX-001"), null));
         // A visible field is still checked even when unchanged.
         Assert.False(SqlErpScreenCommands.UnchangedHidden("internal-transfer-batches", "header", "batchDate", Text("2026-10-30"), saved));
     }

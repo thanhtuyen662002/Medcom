@@ -19,10 +19,11 @@ public static class ErpVisibleFields
     // These are transport identities/control metadata, not rendered grid columns.
     private static bool Protocol(string field)=>field.ToLowerInvariant() is "documentid" or "purchaserequestid" or "batchid"
         or "userautoid" or "lineid" or "branchid" or "statusid" or "islock" or "islocked";
-    // Owner 30/10: the batch form shows CN nguồn / Chi nhánh đích and Kho nguồn / Đến kho (FromStoreHouseID,
-    // ToStoreHouseID) although its T0 HDE lists them; ERP refuses Gửi TP SA until both warehouses are set.
+    // Owner 30/10: the batch form shows CN nguồn / Chi nhánh đích, Kho nguồn / Đến kho and KThuật / TP SA / PM phụ
+    // trách although its T0 HDE lists them; ERP refuses Gửi TP SA until the warehouses and TP SA phụ trách are set.
     private static bool Shown(string module,string section,string field)=>module=="internal-transfer-batches"&&section=="header"
-        &&field.ToLowerInvariant() is "frombranchid" or "tobranchid" or "fromstorehouseid" or "tostorehouseid";
+        &&field.ToLowerInvariant() is "frombranchid" or "tobranchid" or "fromstorehouseid" or "tostorehouseid"
+            or "assignedpm" or "assignedtechnician" or "assignedsa";
     // Earlier explicit owner PO exclusions remain in force independently of HDE.
     public static bool IsHidden(string module,string section,string field)=>!Shown(module,section,field)&&(module=="purchase-orders"&&section=="lines"
         &&field.ToLowerInvariant() is "property" or "property2" or "parentid" or "sourceamount" or "quantity2" or "amount"

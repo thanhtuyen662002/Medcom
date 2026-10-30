@@ -209,9 +209,12 @@ export const transferBatchDetailConfig = {
       title: "Người phụ trách",
       columns: 2,
       fields: [
-        { key: "pMName", label: "PM phụ trách", format: "text" },
-        { key: "technicianName", label: "Kỹ thuật phụ trách", format: "text" },
-        { key: "sAName", label: "SA phụ trách", format: "text" },
+        { key: "assignedPM", label: "PM phụ trách", format: "reference", displayKey: "pMName",
+          edit: { input: "lookup", lookupId: "header.AssignedPM", lookupContext: { FromBranchID: "fromBranchId" }, placeholder: "Chọn PM..." } },
+        { key: "assignedTechnician", label: "Kỹ thuật phụ trách", format: "reference", displayKey: "technicianName",
+          edit: { input: "lookup", lookupId: "header.AssignedTechnician", lookupContext: { FromBranchID: "fromBranchId" }, placeholder: "Chọn kỹ thuật..." } },
+        { key: "assignedSA", label: "TP SA phụ trách", format: "reference", displayKey: "sAName",
+          edit: { input: "lookup", lookupId: "header.AssignedSA", lookupContext: { FromBranchID: "fromBranchId" }, placeholder: "Chọn TP SA..." } },
       ],
     },
     {

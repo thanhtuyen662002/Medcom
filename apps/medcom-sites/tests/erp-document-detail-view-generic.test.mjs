@@ -163,7 +163,7 @@ test('a transfer batch edits its own fields, not the legacy sales-order group', 
     await edit(tree);
     const projected = tree.root.findByType(DocumentDetailView).props.config;
     assert.equal(projected.groups.some(group => group.id === 'legacy-edit'), false);
-    for (const key of ['batchDate', 'plannedTransferDate', 'fromStoreHouseId', 'toStoreHouseId', 'transportMethod', 'carrierName', 'carrierPhone', 'vehicleNo', 'notes'])
+    for (const key of ['batchDate', 'plannedTransferDate', 'fromStoreHouseId', 'toStoreHouseId', 'assignedPM', 'assignedTechnician', 'assignedSA', 'transportMethod', 'carrierName', 'carrierPhone', 'vehicleNo', 'notes'])
       assert.ok(fields(projected).some(field => field.key === key && field.edit), key);
     assert.equal(fields(projected).find(field => field.key === 'batchDate').edit.required, true);
     // Kho nguồn / Kho đích keep their declared pickers bound to the batch's branches.
@@ -177,18 +177,18 @@ test('a transfer batch edits its own fields, not the legacy sales-order group', 
 });
 
 test('a transfer batch save sends only its writable visible header fields', async () => {
-  // Branches and warehouses are shown on the batch form and sent; hidden assignees are omitted and kept by the backend.
+  // Branches, warehouses and assignees are shown on the batch form and sent with the save.
   const moduleId = 'internal-transfer-batches';
   const header = { documentId: 'QA-DOC', branchId: 'QA', notes: ' Ghi chú cũ ', isLocked: false, batchDate: '2026-10-23T00:00:00',
     plannedTransferDate: null, transportMethod: 'ROAD', carrierName: null, carrierPhone: null, vehicleNo: null,
-    fromBranchId: 'QA', toBranchId: 'QB', fromStoreHouseId: 'K1', toStoreHouseId: 'K2' };
+    fromBranchId: 'QA', toBranchId: 'QB', fromStoreHouseId: 'K1', toStoreHouseId: 'K2', assignedPM: 'PM1', assignedTechnician: null, assignedSA: 'SA1' };
   const commands = [];
   await mounted(async tree => {
     await edit(tree);
     await act(async () => button(tree, 'Lưu thay đổi').props.onClick());
     assert.equal(commands.length, 1);
     assert.deepEqual(commands[0][1].header, { batchDate: '2026-10-23T00:00:00.000', plannedTransferDate: null, fromBranchId: 'QA', toBranchId: 'QB',
-      fromStoreHouseId: 'K1', toStoreHouseId: 'K2', transportMethod: 'ROAD',
+      fromStoreHouseId: 'K1', toStoreHouseId: 'K2', assignedPM: 'PM1', assignedTechnician: null, assignedSA: 'SA1', transportMethod: 'ROAD',
       carrierName: null, carrierPhone: null, vehicleNo: null, notes: 'Ghi chú cũ' });
     assert.deepEqual(commands[0][1].lineChanges, []);
   }, { module: moduleId, detail: data(header), api: { save: async (...args) => { commands.push(args); return { outcome: 'Denied' }; } } });
