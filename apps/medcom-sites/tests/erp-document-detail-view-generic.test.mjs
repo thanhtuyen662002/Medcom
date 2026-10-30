@@ -84,11 +84,11 @@ test('purchase status colors and technical metadata do not appear in the body', 
   }, { module: 'purchase-requests', detail: data({ statusForeColor: '#000000', statusBackColor: '#ffffff', statusName: 'Mới lập', isLocked: false, detailSaveToken: 'secret' }) });
 });
 
-test('generic writable modules have one document menu while purchase orders remain write gated', async () => {
+test('generic writable modules, purchase orders included, have one document menu', async () => {
   for (const moduleId of ['inbound-requests', 'internal-transfer-requests', 'purchase-orders']) {
     await mounted(tree => {
       // AppButton and its native host share props; count only user controls.
-      assert.equal(tree.root.findAllByType('button').filter(node => node.props['aria-label'] === 'Thao tác chứng từ').length, moduleId === 'purchase-orders' ? 0 : 1);
+      assert.equal(tree.root.findAllByType('button').filter(node => node.props['aria-label'] === 'Thao tác chứng từ').length, 1);
     }, { module: moduleId });
   }
 });
@@ -190,7 +190,7 @@ test('a transfer batch save sends only its writable visible header fields', asyn
 });
 
 test('the retained line editor replaces the lines tab and forwards the original mobile/desktop edits', async () => {
-  // Production PR editing still hands off to its create/edit sheet and PO stays write gated.
+  // Production PR editing still hands off to its create/edit sheet.
   // Exercise the registered presentation slot in isolation without admitting either guarded action.
   const moduleId = 'purchase-requests', config = editableDetailConfig(getDocumentDetailEntry(moduleId).config, moduleId, true);
   const detail = { ...data(), lines: page([{ lineId: 'QA-LINE', fields: { itemName: 'Hàng kiểm thử', unit: 'Cái' } }]) };

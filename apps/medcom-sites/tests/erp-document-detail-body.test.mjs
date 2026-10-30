@@ -91,11 +91,11 @@ for (const screenModule of ['inbound-requests', 'purchase-requests']) test(`${sc
     assert.equal(tree.root.findAllByType('button').filter(node => node.props['aria-label'] === 'Thao tác chứng từ').length, 1);
   }, { module: screenModule });
 });
-test('write-gated purchase-orders keeps generic detail without its write menu', async () => {
+test('admitted purchase-orders keep the generic detail with its write menu', async () => {
   await mounted(async (tree, calls) => {
     assert.equal(calls.length, 1);
     assert.match(text(tree.toJSON()), /QA-DOC/);
-    assert.equal(tree.root.findAllByProps({ 'aria-label': 'Thao tác chứng từ' }).length, 0);
+    assert.equal(tree.root.findAllByType('button').filter(node => node.props['aria-label'] === 'Thao tác chứng từ').length, 1);
   }, { module: 'purchase-orders' });
 });
 test('purchase-request edit hands the exact document id to the retained create/edit sheet', async () => {
