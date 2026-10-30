@@ -229,6 +229,9 @@ export async function uploadSalesOrderAttachment(request: SalesOrderAttachmentUp
     form.set("idempotencyKey", request.idempotencyKey); form.set("branchId", request.branchId);
     form.set("documentId", request.documentId); form.set("expectedStateToken", request.expectedStateToken);
     form.set("slotId", String(request.slotId ?? 2)); form.set("file", request.file, request.file.name);
+    if (request.attachmentId && request.expectedAttachmentToken) {
+      form.set("attachmentId", request.attachmentId); form.set("expectedAttachmentToken", request.expectedAttachmentToken);
+    }
     // The browser owns the multipart boundary. Never stringify/decode the image bytes.
     const response = await fetch(`/api/erp/api/erp/${request.module ?? "sales-orders"}/attachments/upload`, {
       method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error", signal,
