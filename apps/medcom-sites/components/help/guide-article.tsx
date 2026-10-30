@@ -66,7 +66,8 @@ export function GuideArticle({ guideId }: { guideId: string }) {
   if (!guide?.available) return null;
   return <div className={`${styles.shell} ${styles.embedded}`}>
     <div className={styles.learnCard}><div className={styles.learnIcon}><BookOpen size={21} /></div><div><strong>Trong hướng dẫn này</strong><ul>{guide.summary?.map(item => <li key={item}><CheckCircle2 size={15} />{item}</li>)}</ul><p>Dành cho: {guide.audience}</p></div></div>
-    <div className={styles.photoNote}><Info size={15} /><p>Ảnh chụp giao diện với <strong>dữ liệu minh họa</strong>. Khung đỏ và số chỉ vị trí cần chú ý. Chạm ảnh để xem lớn.</p></div>
+    {/* Text-only guides (warehouse, transfer, equipment) carry no screenshots to explain. */}
+    {guide.sections?.some(section => section.images) && <div className={styles.photoNote}><Info size={15} /><p>Ảnh chụp giao diện với <strong>dữ liệu minh họa</strong>. Khung đỏ và số chỉ vị trí cần chú ý. Chạm ảnh để xem lớn.</p></div>}
     <article className={styles.article}>{guide.sections?.map((section, index) => <section key={section.id} className={styles.section}>
       <div className={styles.sectionTitle}><span>{String(index + 1).padStart(2, "0")}</span><h2>{section.title}</h2></div>
       {section.intro && <p>{section.intro}</p>}
