@@ -209,6 +209,8 @@ const SAVE_LINE_BY_MODULE: Record<string, readonly string[]> = {
 };
 const PASSTHROUGH_LINE_KEYS: Record<string, ReadonlySet<string>> = {
   "machine-repairs": new Set(["assetId"]),
+  // Kho nhận: the received quantity is totalled by ERP from the confirmed PNK, so it is sent unchanged.
+  "internal-transfer-warehouse-in": new Set(["actualReceiveQty"]),
   "machine-movements": new Set(["assetId", "quantity", "departmentId", "costCenterId", "costId",
     "toLocationId", "toQuanHuyen", "toXaPhuong", "toChuyenKhoa", "toZoneId"]),
 };
