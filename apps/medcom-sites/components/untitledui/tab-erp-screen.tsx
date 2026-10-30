@@ -1257,7 +1257,8 @@ export function TabErpScreen({
                   : <LookupField label={module === "machine-movements" || module === "machine-repairs" ? "Thiết bị / máy" : "Mặt hàng"}
                       required module={module} branchId={currentBranch}
                       lookupId={module === "machine-movements" || module === "machine-repairs" ? "lines.AssetID" : "lines.ItemID"}
-                      value={createItemId} choice={null} onSelect={choice => setCreateItemId(choice?.id || "")} placeholder="Tìm và chọn từ danh mục..." />}
+                      value={createItemId} choice={null} onSelect={choice => setCreateItemId(choice?.id || "")} placeholder="Tìm và chọn từ danh mục..."
+                      secondaryFields={module === "machine-movements" || module === "machine-repairs" ? ["ItemName", "SerialNo", "ObjectName"] : []} />}
                 {module !== "machine-movements" && module !== "machine-repairs" && module !== "internal-transfer-batches" && (
                   <FormField label={module === "internal-transfer-requests" ? "Số lượng yêu cầu" : module === "inbound-requests" ? "Số lượng kiện/hộp" : "Số lượng"}
                     required type="number" value={createQuantity} onChange={event => setCreateQuantity(event.target.value)} />

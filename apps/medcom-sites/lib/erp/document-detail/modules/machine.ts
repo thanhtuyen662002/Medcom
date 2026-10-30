@@ -116,6 +116,7 @@ export const machineRepairDetailConfig = {
   modules: [ "machine-repairs" ],
   title: "Chi tiết sửa chữa máy",
   closeLabel: "Đóng chi tiết sửa chữa máy",
+  slots: ["lines-editor"],
   groups: [
     {
       id: "repair",
