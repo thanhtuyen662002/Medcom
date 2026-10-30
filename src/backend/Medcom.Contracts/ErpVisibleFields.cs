@@ -23,7 +23,10 @@ public static class ErpVisibleFields
     // trách although its T0 HDE lists them; ERP refuses Gửi TP SA until the warehouses and TP SA phụ trách are set.
     private static bool Shown(string module,string section,string field)=>module=="internal-transfer-batches"&&section=="header"
         &&field.ToLowerInvariant() is "frombranchid" or "tobranchid" or "fromstorehouseid" or "tostorehouseid"
-            or "assignedpm" or "assignedtechnician" or "assignedsa";
+            or "assignedpm" or "assignedtechnician" or "assignedsa"
+        // Kế toán / Kho nhận pick the linked PXK / PNK within the batch's warehouse, so they read its codes.
+        ||module is "internal-transfer-accounting" or "internal-transfer-warehouse-in"&&section=="header"
+            &&field.ToLowerInvariant() is "fromstorehouseid" or "tostorehouseid";
     // Earlier explicit owner PO exclusions remain in force independently of HDE.
     public static bool IsHidden(string module,string section,string field)=>!Shown(module,section,field)&&(module=="purchase-orders"&&section=="lines"
         &&field.ToLowerInvariant() is "property" or "property2" or "parentid" or "sourceamount" or "quantity2" or "amount"

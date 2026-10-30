@@ -499,6 +499,10 @@ export const transferAccountingDetailConfig = {
     },
   ],
   hidden: [
+    "fromStoreHouseId",
+    "toStoreHouseId",
+    "fromStoreHouseReferenceState",
+    "toStoreHouseReferenceState",
     "statusId",
     "isLocked",
     "statusCode",
@@ -742,6 +746,10 @@ export const transferWarehouseInDetailConfig = {
     },
   ],
   hidden: [
+    "fromStoreHouseId",
+    "toStoreHouseId",
+    "fromStoreHouseReferenceState",
+    "toStoreHouseReferenceState",
     "statusId",
     "isLocked",
     "statusCode",

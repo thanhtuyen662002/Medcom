@@ -397,7 +397,9 @@
       "branchId",
       "documentId",
       "fromBranchName",
+      "fromStoreHouseId",
       "fromStoreHouseName",
+      "fromStoreHouseReferenceState",
       "isLocked",
       "notes",
       "outputDocumentId",
@@ -414,7 +416,9 @@
       "statusName",
       "statusReferenceState",
       "toBranchName",
-      "toStoreHouseName"
+      "toStoreHouseId",
+      "toStoreHouseName",
+      "toStoreHouseReferenceState"
     ],
     "lines": [
       "accountingNote",
@@ -582,7 +586,9 @@
       "carrierName",
       "documentId",
       "fromBranchName",
+      "fromStoreHouseId",
       "fromStoreHouseName",
+      "fromStoreHouseReferenceState",
       "inputDocumentId",
       "inputDocumentName",
       "inputDocumentReferenceState",
@@ -600,7 +606,9 @@
       "statusName",
       "statusReferenceState",
       "toBranchName",
+      "toStoreHouseId",
       "toStoreHouseName",
+      "toStoreHouseReferenceState",
       "transportMethod",
       "vehicleNo"
     ],
