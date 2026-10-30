@@ -27,7 +27,7 @@ const confirmStep = "Hộp xác nhận hiện mã phiếu và tên thao tác. Nh
 const reasonStep = "Thao tác trả về / từ chối bắt buộc nhập lý do: ghi rõ nội dung cần bổ sung để bước trước xử lý, rồi bấm Xác nhận.";
 const editStep = "Muốn sửa số liệu của bước mình: mở Thêm, chọn Sửa thông tin, nhập các ô được phép sửa rồi bấm Lưu thay đổi. Hủy sửa nằm trong Thêm; đóng cửa sổ khi đang sửa sẽ bỏ nội dung chưa lưu.";
 const deleteStep = "Xóa chứng từ chỉ dùng cho phiếu còn ở trạng thái cho phép xóa. Nhãn đổi thành Bấm lần nữa để xóa; chỉ bấm lần hai khi chắc chắn đúng phiếu.";
-const photoStep = "Phần Ảnh hàng về có các nhóm ảnh (hư hỏng, trước / sau khi dỡ hàng). Bấm Chọn ảnh hoặc Chụp ảnh để thêm; Làm mới ảnh để tải lại danh sách ảnh.";
+const photoStep = "Phần Ảnh hàng về có các nhóm ảnh (hư hỏng, trước / sau khi dỡ hàng). Bấm Chọn ảnh (lấy từ thư viện) hoặc Chụp ảnh (mở camera điện thoại) để thêm; Làm mới ảnh để tải lại danh sách. Chỉ thêm được ảnh khi phiếu đang ở bước của bạn và chưa khóa (Nháp, Thủ kho, Kỹ thuật, PM); ở bước khác ảnh chỉ để xem.";
 
 const inboundFlow = "Luồng đề nghị nhập hàng: Nháp → Thủ kho xác nhận hàng về → TP SA kiểm soát → Kỹ thuật (nếu có thiết bị) → PM xác nhận chất lượng → Kế toán. Phương án hàng hóa đặc biệt đi qua BLĐ phê duyệt.";
 

@@ -72,7 +72,8 @@ export function InboundPhotoPanel({ module, branchId, documentId, onUploaded }: 
     {!current ? <p role="status" className="flex items-center gap-2 text-sm text-black dark:text-white"><Loader2 aria-hidden className="size-4 animate-spin" />Đang tải ảnh...</p>
       : current.error ? <p role="alert" className="text-sm text-red-600">{current.error}</p>
       : !data?.supported ? <p className="text-sm text-black dark:text-white">Ảnh chưa khả dụng cho đề nghị này.</p>
-      : <div className="grid min-w-0 gap-4 lg:grid-cols-3">{data.slots.map(slot => {
+      : <>{!data.canUpload && <p className="text-sm text-neutral-600 dark:text-neutral-400">Chỉ thêm được ảnh khi phiếu đang ở bước của bạn và chưa khóa: Đề nghị nhập hàng (Nháp), Thủ kho, Kỹ thuật hoặc PM. Ở bước khác ảnh chỉ để xem.</p>}
+      <div className="grid min-w-0 gap-4 lg:grid-cols-3">{data.slots.map(slot => {
         const id = slot.slotId ?? 0, rows = data.rows.filter(row => row.slotId === slot.slotId);
         return <div key={id} className="min-w-0 space-y-2">
           <h5 className="text-sm font-semibold text-black dark:text-white">{slot.slotName} {rows.length > 0 && `(${rows.length})`}</h5>
@@ -96,6 +97,6 @@ export function InboundPhotoPanel({ module, branchId, documentId, onUploaded }: 
             </div>
           </>}
         </div>;
-      })}</div>}
+      })}</div></>}
   </section>;
 }
