@@ -21,7 +21,7 @@ import { InboundCostsPanel } from "./inbound-costs-panel";
 import { editableDetailConfig } from "@/lib/erp/document-detail/controllers/erp-detail-model";
 import { validDocumentRate } from "@/lib/erp/document-rate";
 import type { DetailAction, DocumentDetailHandlers, DocumentDetailModel } from "@/lib/erp/document-detail/model";
-import { WRITE_GATED_MODULES, MENU_ACTION_IDS, DIALOG_ACTION_MODULES, SAVE_HEADER_BY_MODULE, editableHeaderKeys, requiredEditKeys, editLookupId, saveLineKeys, editValue, lockBadgeState, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
+import { WRITE_GATED_MODULES, MENU_ACTION_IDS, DIALOG_ACTION_MODULES, SAVE_HEADER_BY_MODULE, editableHeaderKeys, requiredEditKeys, editLookupId, saveLineKeys, editsLineItems, editValue, lockBadgeState, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
 
 // Event-only key generation, with the same clock/random evaluation as the original handlers.
 function editCommandKey(prefix: "save" | "del" | "act") {
@@ -305,7 +305,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
           // Item/quantity/price rules apply to editors that change those; recorded-value editors skip them.
           // ERP 29/10: a purchase request line may leave Đơn giá blank until quoted.
           const priceOptional = module === "purchase-requests" && !priceVal;
-          if (lineKeys.includes("quantity") && (!itemId || !/^\d+(\.\d+)?$/.test(qty) || !priceOptional && !/^\d+(\.\d+)?$/.test(priceVal))) {
+          if (editsLineItems(module) && (!itemId || !/^\d+(\.\d+)?$/.test(qty) || !priceOptional && !/^\d+(\.\d+)?$/.test(priceVal))) {
             setActionFeedback({
               type: "warning",
               message: module === "purchase-requests" ? "Mỗi dòng cần Mã hàng và Số lượng hợp lệ; Đơn giá để trống hoặc là số không âm." : "Mỗi dòng cần Mã hàng, Số lượng và Đơn giá hợp lệ.",
@@ -709,7 +709,7 @@ export function ErpDocumentDetailBody({ module, branchId: currentBranch, documen
       onMenuOpenChange={open => { setMenuOpen(open); setDeleteArmed(false); }}
       slots={{
         "lines-editor": detail && editing && saveLineKeys(module).length > 0
-          ? saveLineKeys(module).includes("quantity")
+          ? editsLineItems(module)
             ? <ErpLineEditor module={module} detail={detail} editLines={editLines}
                 patchEditLine={patchEditLine} columns={config.lines.columns} />
             : <ErpFieldLineEditor module={module} detail={detail} editLines={editLines}

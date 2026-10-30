@@ -157,7 +157,10 @@ internal static class CanonicalResponseProjection
         Alias(row, "isLock", "isLocked");
         if (row.ContainsKey("id") && row.ContainsKey("label"))
         {
-            if (row.ContainsKey("currencyName"))
+            // Only a currency choice is named by its currency; any other row that merely carries a
+            // CurrencyID (e.g. a machine asset priced in VND) keeps its own label.
+            if (row.ContainsKey("currencyName") && (row["currencyId"] is not JsonValue currency
+                || JsonNode.DeepEquals(currency, row["id"])))
             {
                 row["name"] = row["currencyName"]?.DeepClone();
                 row.Remove("currencyName");

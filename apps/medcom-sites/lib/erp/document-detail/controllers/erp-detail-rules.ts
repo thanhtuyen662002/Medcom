@@ -174,12 +174,21 @@ const SAVE_LINE_BY_MODULE: Record<string, readonly string[]> = {
   "purchase-requests": ["itemId", "quantity", "unitPrice", "budget", "timeRequired", "model"],
   "purchase-orders": ["itemId", "quantity", "unitPrice", "notes", "quantity2", "property", "property2"],
   "sales-orders": ["itemId", "quantity", "unitPrice", "discountPercent", "vATPercent", "vATQuantity", "dienGiai", "notes", "property", "property2", "parentId", "notes2", "costId", "storeHouseId", "vATId"],
+  // Kỹ thuật records the service on each machine; the machine itself (assetId) is sent unchanged.
+  "machine-repairs": ["assetId", "noiDung", "quantity", "problemDescription", "actionTaken", "resultStatus", "warrantyCovered",
+    "nextServiceDate", "laborAmount", "internalAlert", "notes"],
 };
+/** Line keys sent with a save but shown read-only in the per-field line editor. */
+export const READONLY_LINE_KEYS: ReadonlySet<string> = new Set(["assetId"]);
+/** Editors that change item, quantity and price (vs. recorded values on existing lines). */
+export function editsLineItems(module: ErpScreenModule): boolean {
+  return saveLineKeys(module).includes("unitPrice");
+}
 export function saveLineKeys(module: ErpScreenModule): readonly string[] {
   return SAVE_LINE_BY_MODULE[module] ?? [];
 }
 /** Bit columns edited as Có/Không and sent as JSON booleans. */
-export const BOOLEAN_EDIT_KEYS: ReadonlySet<string> = new Set(["isDamageOutsidePackage", "additional"]);
+export const BOOLEAN_EDIT_KEYS: ReadonlySet<string> = new Set(["isDamageOutsidePackage", "additional", "warrantyCovered"]);
 /** Draft text → API value: booleans as true/false, dates as ERP datetime, blanks as null. */
 /** Workflow buttons that open the choice/notes dialog (ERP ExecSQLWithPara prompts). */
 export const DIALOG_ACTION_MODULES: ReadonlySet<string> = new Set(["inbound-requests", "inbound-sa", "inbound-tech", "inbound-pm", "inbound-bld", "inbound-costs",

@@ -8,6 +8,16 @@ namespace Medcom.Api.Tests;
 public sealed class CanonicalResponseTests
 {
     [Fact]
+    public void A_choice_priced_in_a_currency_keeps_its_own_label()
+    {
+        var input = JsonNode.Parse("""{"data":{"items":[{"id":"MLR/0001","label":"MLR/0001","currencyId":"VND","currencyName":"VND"},{"id":"VND","label":"VND","currencyId":"VND","currencyName":"Việt Nam đồng"},{"id":"USD","label":"USD","currencyName":"Đô la Mỹ"}]}}""")!;
+        var items = CanonicalResponseProjection.Normalize(input, "/api/erp/machine-repairs/options")["data"]!["items"]!.AsArray();
+        Assert.Equal("MLR/0001", items[0]!["name"]!.GetValue<string>());
+        Assert.Equal("Việt Nam đồng", items[1]!["name"]!.GetValue<string>());
+        Assert.Equal("Đô la Mỹ", items[2]!["name"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void Batch_history_document_and_batch_are_distinct_columns_even_when_values_match()
     {
         foreach (var document in new[] { "SYNTHETIC-HISTORY", "SYNTHETIC-BATCH" })
