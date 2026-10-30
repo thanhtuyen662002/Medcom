@@ -79,6 +79,8 @@ const EDITABLE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
   "machine-movements": ["documentDate", "nguoiGiao", "nguoiNhan", "memo", "notes", "contractId", "effectiveFrom", "effectiveTo", "referenceNo", "referenceDate", "documentLink"],
   "machine-repairs": ["documentDate", "nguoiGiao", "nguoiNhan", "memo", "notes", "objectId", "serviceLocation", "contractId", "startDate", "endDate", "technician", "serviceStatus", "referenceNo", "referenceDate", "documentLink"],
   "internal-transfer-requests": ["documentDate", "requestedTransferDate", "transferReason", "transportMethod", "notes"],
+  // Kho, chi nhánh và người phụ trách là trường ẩn trên form ERP; bỏ qua khi lưu thì giữ nguyên giá trị đã lưu.
+  "internal-transfer-batches": ["batchDate", "plannedTransferDate", "transportMethod", "carrierName", "carrierPhone", "vehicleNo", "notes"],
   "inbound-warehouse": INBOUND_WAREHOUSE_HEADER,
   "inbound-tech": INBOUND_TECH_HEADER,
   "inbound-pm": INBOUND_PM_HEADER,
@@ -129,6 +131,7 @@ const REQUIRED_EDIT_KEYS: Record<string, readonly string[]> = {
   "machine-movements": ["documentDate"],
   "machine-repairs": ["documentDate"],
   "internal-transfer-requests": ["documentDate"],
+  "internal-transfer-batches": ["batchDate"],
   "inbound-warehouse": [],
   "inbound-tech": [],
   "inbound-pm": [],
@@ -231,6 +234,8 @@ export const SAVE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
   "machine-repairs": ["documentDate", "nguoiGiao", "nguoiNhan", "memo", "notes", "objectId", "serviceLocation", "contractId", "startDate", "endDate", "technician", "serviceStatus", "referenceNo", "referenceDate", "documentLink", "serviceTypeId"],
   // From/To branch are hidden on the ERP form, so the detail omits them; omitted hidden fields keep their saved value.
   "internal-transfer-requests": ["documentDate", "requestedTransferDate", "transferReason", "transportMethod", "notes"],
+  // Kho, chi nhánh và người phụ trách là trường ẩn trên form ERP; bỏ qua khi lưu thì giữ nguyên giá trị đã lưu.
+  "internal-transfer-batches": ["batchDate", "plannedTransferDate", "transportMethod", "carrierName", "carrierPhone", "vehicleNo", "notes"],
   "inbound-warehouse": INBOUND_WAREHOUSE_HEADER,
   "inbound-tech": INBOUND_TECH_HEADER,
   "inbound-pm": INBOUND_PM_HEADER,
