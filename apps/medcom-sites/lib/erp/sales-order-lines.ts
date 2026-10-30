@@ -22,10 +22,10 @@ export const SALES_ORDER_LINE_COLUMNS = [
   { key: "unitPrice", label: "Đơn giá", numeric: true, editable: true },
   { key: "amount", label: "Số tiền", numeric: true, formula: "Số lượng × Đơn giá" },
   { key: "discountPercent", label: "% Chiết khấu", numeric: true, editable: true },
-  { key: "discountAmount", label: "Tiền CK", numeric: true, formula: "Số tiền × % Chiết khấu ÷ 100" },
+  { key: "discountAmount", label: "Tiền CK", numeric: true, formula: "ERP không tự tính khi lưu" },
   { key: "vATPercent", label: "% Thuế", numeric: true, editable: true },
   { key: "vATAmount", label: "Tiền thuế", numeric: true, formula: "Số tiền × % Thuế ÷ 100" },
-  { key: "totalAmount", label: "Tổng tiền", numeric: true, formula: "Số tiền + Tiền thuế − Tiền CK" },
+  { key: "totalAmount", label: "Tổng tiền", numeric: true, formula: "Số tiền + Tiền thuế" },
   { key: "soLuongHopDong", label: "Tổng số lượng HĐ", numeric: true },
   { key: "deliveryQuantity", label: "Đã XUẤT hàng", numeric: true },
   { key: "vATQuantity", label: "Số lượng VAT", numeric: true, editable: true },
@@ -94,8 +94,9 @@ export function salesOrderLineDisplay(line: SalesOrderDraftLine): Record<string,
   // Owner-supplied ERP line-effect expressions (backend remains authoritative):
   //   Amount         = Quantity * UnitPrice
   //   VATAmount      = Amount * VATPercent / 100
-  //   DiscountAmount = Amount * DiscountPercent / 100
-  //   TotalAmount    = Amount + VATAmount - DiscountAmount
+  //   TotalAmount    = Amount + VATAmount
+  // ERP's discount expressions are disabled (owner 30/10: keep it as ERP), so % Chiết khấu is stored
+  // but neither Tiền CK nor the total is derived from it; the preview shows what the save will store.
   // Percentages are divided by 100 by scaling two decimal places; a blank percentage
   // contributes zero so the auto-filled cells stay populated. Preview only - the
   // server recalculates and confirms every saved amount.
@@ -105,13 +106,12 @@ export function salesOrderLineDisplay(line: SalesOrderDraftLine): Record<string,
     return { value: base.value * percent.value, scale: base.scale + percent.scale + 2 };
   };
   const tax = percentOf(amount, line.vATPercent);
-  const discount = percentOf(amount, line.discountPercent);
   return { itemId: line.itemId, itemCode: field("ItemCode") || field("manufacturerItemCode"),
     itemName: field("ItemName"), unit: field("Unit"),
     quantity: line.quantity,
     unitPrice: line.unitPrice, amount: format(amount), discountPercent: line.discountPercent,
-    discountAmount: format(discount),
-    vATPercent: line.vATPercent, vATAmount: format(tax), totalAmount: format(adjust(amount, tax, discount)),
+    discountAmount: "",
+    vATPercent: line.vATPercent, vATAmount: format(tax), totalAmount: format(adjust(amount, tax, null)),
     soLuongHopDong: field("SoLuongHopDong"), deliveryQuantity: field("DeliveryQuantity"),
     vATQuantity: line.vATQuantity, dienGiai: line.dienGiai, notes: line.notes };
 }
