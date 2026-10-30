@@ -44,7 +44,56 @@ public sealed class ErpLookupDiagnostics
                     reader.GetInt32(8) == 1, Text(9), reader.GetInt32(10) == 1, Text(11)?.Trim().ToLowerInvariant()));
         }
         var items = screens.SelectMany(screen => screen.Lookups.Select(lookup => Compare(screen, lookup, live))).ToArray();
-        return new(clock.GetUtcNow(), items.Length, items.Where(item => item.Status != "ok").ToArray());
+        var formChanges = new List<ErpFormConfigChange>();
+        await using (var connection = connect())
+        {
+            await connection.OpenAsync(token);
+            foreach (var screen in screens.Where(screen => ErpScreenCatalog.IsWorkflow(screen.Id)))
+            {
+                await using var command = connection.CreateCommand();
+                command.CommandTimeout = 30;
+                command.CommandText = "SELECT KeyID,SubID,SubValue,KeyValue FROM dbo.SY_FrmCfg WHERE FID=@form;";
+                var parameter = command.CreateParameter();
+                parameter.ParameterName = "@form"; parameter.DbType = DbType.String; parameter.Size = 255; parameter.Value = screen.FormId;
+                command.Parameters.Add(parameter);
+                var rows = new List<LiveConfig>();
+                await using (var reader = await command.ExecuteReaderAsync(token))
+                    while (await reader.ReadAsync(token))
+                        rows.Add(new(reader.GetString(0), reader.IsDBNull(1) ? null : reader.GetString(1), reader.IsDBNull(2) ? null : reader.GetString(2),
+                            reader.IsDBNull(3) ? null : reader.GetString(3)));
+                formChanges.AddRange(CompareForm(screen.Id, ErpScreenCatalog.Metadata(screen.Id), rows));
+            }
+        }
+        return new(clock.GetUtcNow(), items.Length, items.Where(item => item.Status != "ok").ToArray(), formChanges);
+    }
+
+    internal sealed record LiveConfig(string Key, string? Control, string? Property, string? Value);
+
+    // Same addressing and hash as SqlErpScreenCommands.VerifyScreenConfiguration (SHA-256 of the UTF-16LE value).
+    internal static IEnumerable<ErpFormConfigChange> CompareForm(string module, System.Text.Json.JsonElement metadata, IReadOnlyList<LiveConfig> live)
+    {
+        static string Address(string? key, string? control, string? property) => System.Text.Json.JsonSerializer.Serialize(new[] { key, control, property });
+        static string Hash(string? value) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.Unicode.GetBytes(value ?? ""))).ToLowerInvariant();
+        static string? Shown(string? property, string? value) => value is null ? null
+            : property is "BT" or "LBEX" || value.Length <= 2 ? value : $"({value.Length} ký tự)";
+        var expected = metadata.GetProperty("configuration").EnumerateArray().ToDictionary(row => Address(row.GetProperty("key").GetString(),
+            row.GetProperty("control").GetString(), row.GetProperty("property").GetString()), row => row, StringComparer.Ordinal);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var row in live)
+        {
+            // The catalog stores "" for an empty control/property; SY_FrmCfg may hold NULL or "".
+            var address = Address(row.Key, row.Control ?? "", row.Property ?? "");
+            if (!expected.TryGetValue(address, out var want)) { address = Address(row.Key, row.Control, row.Property); expected.TryGetValue(address, out want); }
+            if (want.ValueKind == System.Text.Json.JsonValueKind.Undefined)
+            { yield return new(module, row.Key, row.Control, row.Property, "added", null, Shown(row.Property, row.Value)); continue; }
+            seen.Add(address);
+            if (want.GetProperty("sha256Utf16LE").GetString() != Hash(row.Value) || want.GetProperty("valueIsNull").GetBoolean() != (row.Value is null))
+                yield return new(module, row.Key, row.Control, row.Property, "changed",
+                    $"({want.GetProperty("characters").GetInt32()} ký tự)", Shown(row.Property, row.Value));
+        }
+        foreach (var (address, want) in expected.Where(pair => !seen.Contains(pair.Key)))
+            yield return new(module, want.GetProperty("key").GetString()!, want.GetProperty("control").GetString(),
+                want.GetProperty("property").GetString(), "missing", $"({want.GetProperty("characters").GetInt32()} ký tự)", null);
     }
 
     internal static ErpLookupCheckItem Compare(ErpScreenDescription screen, ErpLookupDefinition lookup, IReadOnlyList<LiveRow> live)

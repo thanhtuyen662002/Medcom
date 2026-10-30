@@ -33343,12 +33343,26 @@
             "items": {
               "$ref": "#/components/schemas/ErpLookupCheckItem"
             }
+          },
+          "forms": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ErpFormConfigChange"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "checkedAt",
           "checked",
-          "changed"
+          "changed",
+          "forms"
         ]
       },
       "ErpLookupCheckItem": {
@@ -33408,6 +33422,70 @@
         },
         "required": [
           "field",
+          "expected",
+          "live"
+        ]
+      },
+      "ErpFormConfigChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "module": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "control": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "property": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "change": {
+            "type": "string"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "live": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "module",
+          "key",
+          "control",
+          "property",
+          "change",
           "expected",
           "live"
         ]
@@ -147173,12 +147251,26 @@
             "items": {
               "$ref": "#/components/schemas/ErpLookupCheckItemCanonicalV3_documentId"
             }
+          },
+          "forms": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ErpFormConfigChangeCanonicalV3_documentId"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "checkedAt",
           "checked",
-          "changed"
+          "changed",
+          "forms"
         ],
         "x-medcom-response-contract": 3
       },
@@ -147240,6 +147332,71 @@
         },
         "required": [
           "field",
+          "expected",
+          "live"
+        ],
+        "x-medcom-response-contract": 3
+      },
+      "ErpFormConfigChangeCanonicalV3_documentId": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "module": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "control": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "property": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "change": {
+            "type": "string"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "live": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "module",
+          "key",
+          "control",
+          "property",
+          "change",
           "expected",
           "live"
         ],
