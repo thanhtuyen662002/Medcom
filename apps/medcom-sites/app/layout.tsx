@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { MedcomThemeIcons } from "@/components/brand/medcom-logo";
 import "./globals.css";
 // Kept apart from globals.css so loading effects ship even when a stale build cache reuses it.
@@ -10,8 +10,13 @@ export const metadata: Metadata = {
   icons: {
     icon: "/medcom-logo.png",
     shortcut: "/medcom-logo.png",
+    apple: "/apple-touch-icon.png",
   },
+  // iPhone "Thêm vào MH chính" opens the Web full screen with this name under the icon.
+  appleWebApp: { capable: true, title: "Medcom", statusBarStyle: "default" },
 };
+
+export const viewport: Viewport = { themeColor: "#ffffff" };
 
 export default function RootLayout({
   children,
