@@ -12,6 +12,10 @@ public sealed class ErpBatchWarehouseVisibilityTests
         foreach (var field in new[] { "fromBranchId", "toBranchId", "fromStoreHouseId", "toStoreHouseId", "assignedPM", "assignedTechnician", "assignedSA" })
             Assert.False(ErpVisibleFields.IsHidden("internal-transfer-batches", "header", field), field);
         Assert.True(ErpVisibleFields.IsHidden("internal-transfer-batches", "header", "outputDocumentId"));
+        // Kế toán / Kho nhận read the warehouses that bind their linked PXK / PNK pickers.
+        Assert.False(ErpVisibleFields.IsHidden("internal-transfer-accounting", "header", "fromStoreHouseId"));
+        Assert.False(ErpVisibleFields.IsHidden("internal-transfer-warehouse-in", "header", "toStoreHouseId"));
+        Assert.True(ErpVisibleFields.IsHidden("internal-transfer-accounting", "header", "assignedSA"));
         Assert.True(ErpVisibleFields.IsHidden("internal-transfer-requests", "header", "fromBranchId"));
     }
 }

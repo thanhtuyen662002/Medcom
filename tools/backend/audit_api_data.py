@@ -31,6 +31,8 @@ def hidden_field(module, section, name):
     # ErpVisibleFields.Shown: the batch form shows its branches and warehouses although its T0 HDE lists them.
     if module == "internal-transfer-batches" and section == "header" and name.lower() in {"frombranchid", "tobranchid", "fromstorehouseid", "tostorehouseid", "assignedpm", "assignedtechnician", "assignedsa"}:
         return False
+    if module in {"internal-transfer-accounting", "internal-transfer-warehouse-in"} and section == "header" and name.lower() in {"fromstorehouseid", "tostorehouseid"}:
+        return False
     return po or name.lower() in native and name.lower() not in protocol
 
 

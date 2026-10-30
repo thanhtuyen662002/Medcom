@@ -255758,6 +255758,36 @@
                       "x-medcom-sql-nullable": false,
                       "x-medcom-writable": false
                     },
+                    "fromStoreHouseId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "x-medcom-source-column": "FromStoreHouseID",
+                      "x-medcom-sql-type": "varchar",
+                      "x-medcom-sql-type-arguments": "(50)",
+                      "x-medcom-sql-nullable": true,
+                      "x-medcom-writable": false
+                    },
+                    "toStoreHouseId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "x-medcom-source-column": "ToStoreHouseID",
+                      "x-medcom-sql-type": "varchar",
+                      "x-medcom-sql-type-arguments": "(50)",
+                      "x-medcom-sql-nullable": true,
+                      "x-medcom-writable": false
+                    },
                     "plannedTransferDate": {
                       "anyOf": [
                         {
@@ -255951,6 +255981,16 @@
                       "readOnly": true,
                       "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
                     },
+                    "fromStoreHouseReferenceState": {
+                      "type": "string",
+                      "readOnly": true,
+                      "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                    },
+                    "toStoreHouseReferenceState": {
+                      "type": "string",
+                      "readOnly": true,
+                      "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                    },
                     "plannedTransferDateDisplay": {
                       "anyOf": [
                         {
@@ -256038,6 +256078,8 @@
                   "required": [
                     "documentId",
                     "batchDate",
+                    "fromStoreHouseId",
+                    "toStoreHouseId",
                     "plannedTransferDate",
                     "statusId",
                     "outputDocumentId",
@@ -256054,6 +256096,8 @@
                     "documentName",
                     "documentReferenceState",
                     "batchDateDisplay",
+                    "fromStoreHouseReferenceState",
+                    "toStoreHouseReferenceState",
                     "plannedTransferDateDisplay",
                     "statusReferenceState",
                     "statusForeColor",
@@ -256118,6 +256162,36 @@
                     "x-medcom-sql-type": "datetime",
                     "x-medcom-sql-type-arguments": null,
                     "x-medcom-sql-nullable": false,
+                    "x-medcom-writable": false
+                  },
+                  "fromStoreHouseId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "x-medcom-source-column": "FromStoreHouseID",
+                    "x-medcom-sql-type": "varchar",
+                    "x-medcom-sql-type-arguments": "(50)",
+                    "x-medcom-sql-nullable": true,
+                    "x-medcom-writable": false
+                  },
+                  "toStoreHouseId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "x-medcom-source-column": "ToStoreHouseID",
+                    "x-medcom-sql-type": "varchar",
+                    "x-medcom-sql-type-arguments": "(50)",
+                    "x-medcom-sql-nullable": true,
                     "x-medcom-writable": false
                   },
                   "plannedTransferDate": {
@@ -256313,6 +256387,16 @@
                     "readOnly": true,
                     "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
                   },
+                  "fromStoreHouseReferenceState": {
+                    "type": "string",
+                    "readOnly": true,
+                    "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                  },
+                  "toStoreHouseReferenceState": {
+                    "type": "string",
+                    "readOnly": true,
+                    "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                  },
                   "plannedTransferDateDisplay": {
                     "anyOf": [
                       {
@@ -256420,6 +256504,8 @@
                 "required": [
                   "documentId",
                   "batchDate",
+                  "fromStoreHouseId",
+                  "toStoreHouseId",
                   "plannedTransferDate",
                   "statusId",
                   "outputDocumentId",
@@ -256436,6 +256522,8 @@
                   "documentName",
                   "documentReferenceState",
                   "batchDateDisplay",
+                  "fromStoreHouseReferenceState",
+                  "toStoreHouseReferenceState",
                   "plannedTransferDateDisplay",
                   "statusReferenceState",
                   "statusForeColor",
@@ -266126,6 +266214,36 @@
                       "x-medcom-sql-nullable": false,
                       "x-medcom-writable": false
                     },
+                    "fromStoreHouseId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "x-medcom-source-column": "FromStoreHouseID",
+                      "x-medcom-sql-type": "varchar",
+                      "x-medcom-sql-type-arguments": "(50)",
+                      "x-medcom-sql-nullable": true,
+                      "x-medcom-writable": false
+                    },
+                    "toStoreHouseId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "x-medcom-source-column": "ToStoreHouseID",
+                      "x-medcom-sql-type": "varchar",
+                      "x-medcom-sql-type-arguments": "(50)",
+                      "x-medcom-sql-nullable": true,
+                      "x-medcom-writable": false
+                    },
                     "plannedTransferDate": {
                       "anyOf": [
                         {
@@ -266349,6 +266467,16 @@
                       "readOnly": true,
                       "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
                     },
+                    "fromStoreHouseReferenceState": {
+                      "type": "string",
+                      "readOnly": true,
+                      "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                    },
+                    "toStoreHouseReferenceState": {
+                      "type": "string",
+                      "readOnly": true,
+                      "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                    },
                     "plannedTransferDateDisplay": {
                       "anyOf": [
                         {
@@ -266453,6 +266581,8 @@
                   "required": [
                     "documentId",
                     "batchDate",
+                    "fromStoreHouseId",
+                    "toStoreHouseId",
                     "plannedTransferDate",
                     "statusId",
                     "transportMethod",
@@ -266471,6 +266601,8 @@
                     "documentName",
                     "documentReferenceState",
                     "batchDateDisplay",
+                    "fromStoreHouseReferenceState",
+                    "toStoreHouseReferenceState",
                     "plannedTransferDateDisplay",
                     "statusReferenceState",
                     "statusForeColor",
@@ -266537,6 +266669,36 @@
                     "x-medcom-sql-type": "datetime",
                     "x-medcom-sql-type-arguments": null,
                     "x-medcom-sql-nullable": false,
+                    "x-medcom-writable": false
+                  },
+                  "fromStoreHouseId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "x-medcom-source-column": "FromStoreHouseID",
+                    "x-medcom-sql-type": "varchar",
+                    "x-medcom-sql-type-arguments": "(50)",
+                    "x-medcom-sql-nullable": true,
+                    "x-medcom-writable": false
+                  },
+                  "toStoreHouseId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "x-medcom-source-column": "ToStoreHouseID",
+                    "x-medcom-sql-type": "varchar",
+                    "x-medcom-sql-type-arguments": "(50)",
+                    "x-medcom-sql-nullable": true,
                     "x-medcom-writable": false
                   },
                   "plannedTransferDate": {
@@ -266762,6 +266924,16 @@
                     "readOnly": true,
                     "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
                   },
+                  "fromStoreHouseReferenceState": {
+                    "type": "string",
+                    "readOnly": true,
+                    "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                  },
+                  "toStoreHouseReferenceState": {
+                    "type": "string",
+                    "readOnly": true,
+                    "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                  },
                   "plannedTransferDateDisplay": {
                     "anyOf": [
                       {
@@ -266886,6 +267058,8 @@
                 "required": [
                   "documentId",
                   "batchDate",
+                  "fromStoreHouseId",
+                  "toStoreHouseId",
                   "plannedTransferDate",
                   "statusId",
                   "transportMethod",
@@ -266904,6 +267078,8 @@
                   "documentName",
                   "documentReferenceState",
                   "batchDateDisplay",
+                  "fromStoreHouseReferenceState",
+                  "toStoreHouseReferenceState",
                   "plannedTransferDateDisplay",
                   "statusReferenceState",
                   "statusForeColor",
