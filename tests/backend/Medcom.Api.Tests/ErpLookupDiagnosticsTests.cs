@@ -32,4 +32,16 @@ public sealed class ErpLookupDiagnosticsTests
         var row = Live(screen, lookup, lookup.LinkedFields);
         Assert.Equal("duplicate", ErpLookupDiagnostics.Compare(screen, lookup, [row, row]).Status);
     }
+
+    [Fact]
+    public void A_missing_row_names_where_it_may_have_gone()
+    {
+        var screen = ErpScreenCatalog.Get("inbound-costs")!;
+        var lookup = screen.Lookups.Single(item => item.Id == "costs.ObjectID");
+        var moved = Live(screen, lookup, lookup.LinkedFields) with { Grid = "grdChitiet3" };
+        Assert.Equal(new ErpLookupMismatch("GridName", "grdChitiet2", "grdChitiet3"), Assert.Single(ErpLookupDiagnostics.Compare(screen, lookup, [moved]).Mismatches));
+        var other = moved with { Grid = "grdChitiet", Column = "ItemID" };
+        Assert.Equal(new ErpLookupMismatch("FormGrids", "grdChitiet2", "grdChitiet"), Assert.Single(ErpLookupDiagnostics.Compare(screen, lookup, [other]).Mismatches));
+        Assert.Equal(new ErpLookupMismatch("FormGrids", "grdChitiet2", ""), Assert.Single(ErpLookupDiagnostics.Compare(screen, lookup, []).Mismatches));
+    }
 }
