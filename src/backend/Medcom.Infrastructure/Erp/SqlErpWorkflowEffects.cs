@@ -57,7 +57,9 @@ public sealed partial class SqlErpScreenCommands
             if(metadata.GetProperty(property).GetString()is {} procedure)
             {
                 var parameters=procedure=="IV_InternalTransfer_BatchRoleCheckEditStp"
-                    ?new[]{("@BatchID",DbType.AnsiString,(object?)document,30),("@Status",DbType.AnsiString,(object?)string.Join(',',metadata.GetProperty("saveStatuses").EnumerateArray().Select(s=>s.GetInt32())),100)}
+                    // ERP's Sửa thông tin calls it as (BatchID, '60,61', UserName): the role check is for that user.
+                    ?new[]{("@BatchID",DbType.AnsiString,(object?)document,30),("@Status",DbType.AnsiString,(object?)string.Join(',',metadata.GetProperty("saveStatuses").EnumerateArray().Select(s=>s.GetInt32())),100),
+                        ("@User",DbType.AnsiString,(object?)actor.PrincipalId,100)}
                     :new[]{(plan.HeaderKey=="BatchID"?"@BatchID":"@DocumentID",DbType.AnsiString,(object?)document,30),("@User",DbType.AnsiString,(object?)actor.PrincipalId,100)};
                 await NativeCheck(transaction,procedure,parameters,token);
             }
