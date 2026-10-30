@@ -1,5 +1,6 @@
 import { guideImages, type HelpPictures } from "./images";
 import { salesGuides } from "./sales-guides";
+import { equipmentGuides, transferGuides, warehouseGuides } from "./operations-guides";
 
 export type HelpSection = {
   id: string;
@@ -56,6 +57,9 @@ export function groupGuideIds(group: HelpGroup) {
 
 export const helpGuides: HelpGuide[] = [
   ...salesGuides,
+  ...warehouseGuides,
+  ...transferGuides,
+  ...equipmentGuides,
   {
     id: "purchase-requests", title: "Đề nghị mua hàng", available: true, minutes: 8,
     audience: "Người lập đề nghị", keywords: ["PR", "tạo phiếu", "gửi duyệt", "bộ phận", "chi tiết"],
@@ -63,7 +67,7 @@ export const helpGuides: HelpGuide[] = [
     summary: ["Tạo một đề nghị mới", "Nhập và kiểm tra chi tiết", "Gửi đề nghị, theo dõi trạng thái"],
     sections: [
       { id: "mo-danh-sach", title: "Mở danh sách và tìm đề nghị", intro: "Trong ứng dụng, mở menu điều hướng. Ở nhóm Mua hàng, chọn Đề nghị mua hàng (PR). Tên nhóm trong ứng dụng có thể viết tắt khác với mục lục này.",
-        steps: ["Kiểm tra chi nhánh đang làm việc. Dữ liệu và quyền thao tác phụ thuộc chi nhánh được cấp.", "Muốn tìm một phiếu, nhập mã chứng từ vào ô tìm kiếm rồi bấm Enter / phím tìm kiếm trên bàn phím điện thoại.", "Chọn một nhãn trạng thái: Tất cả, Mới lập, Chờ duyệt, Đã duyệt, Trả về hoặc Đã gửi ĐMH. Vuốt ngang hàng nhãn nếu chưa thấy hết.", "Máy tính hiển thị dạng bảng; điện thoại hiển thị thẻ. Chọn mã chứng từ để mở chi tiết. Dùng Trước / Sau và Dòng/trang ở cuối danh sách; thay bộ lọc sẽ trở về trang đầu."],
+        steps: ["Kiểm tra chi nhánh đang làm việc. Dữ liệu và quyền thao tác phụ thuộc chi nhánh được cấp.", "Muốn tìm một phiếu, nhập mã chứng từ hoặc mã / tên đối tượng vào ô tìm kiếm rồi bấm Enter / phím tìm kiếm trên bàn phím điện thoại.", "Chọn một nhãn trạng thái: Tất cả, Mới lập, Chờ duyệt, Đã duyệt, Trả về hoặc Đã gửi ĐMH. Vuốt ngang hàng nhãn nếu chưa thấy hết.", "Máy tính hiển thị dạng bảng; điện thoại hiển thị thẻ. Chọn mã chứng từ để mở chi tiết. Dùng Trước / Sau và Dòng/trang ở cuối danh sách; thay bộ lọc sẽ trở về trang đầu."],
         images: guideImages("pr-list", "Danh sách đề nghị mua hàng trên điện thoại, khung đỏ số 1 tại Tạo mới, số 2 tại bộ lọc trạng thái, số 3 tại một phiếu minh họa.", "1 · Tạo mới   2 · Lọc trạng thái   3 · Mở chi tiết"),
         tip: "Các con số cạnh nhãn trạng thái phản ánh dữ liệu đang được tải; không dùng chúng như một báo cáo tổng số toàn hệ thống." },
       { id: "tao-thong-tin", title: "Tạo phiếu: nhập thông tin chung", intro: "Bấm Tạo mới. Trên điện thoại, biểu mẫu chia thành 3 bước: Thông tin → Chi tiết → Xem lại. Máy tính hiển thị các phần trên cùng một biểu mẫu.",
@@ -105,7 +109,7 @@ export const helpGuides: HelpGuide[] = [
     description: "Tìm đề nghị đang chờ, kiểm tra nội dung và thực hiện Duyệt hoặc Không duyệt có lý do.",
     summary: ["Lọc phiếu chờ duyệt", "Kiểm tra thông tin và hàng hóa", "Duyệt hoặc không duyệt"],
     sections: [
-      { id: "tim-phieu", title: "Mở danh sách chờ duyệt", intro: "Trong menu ứng dụng, chọn Mua hàng → Duyệt đề nghị mua.", steps: ["Kiểm tra chi nhánh đang làm việc.", "Chọn nhãn Chờ duyệt. Các nhãn Tất cả, Đã duyệt và Không duyệt giúp tra cứu lại các nhóm phiếu tương ứng.", "Nếu cần một phiếu cụ thể, nhập mã chứng từ vào ô tìm kiếm và bấm Enter / phím tìm kiếm trên điện thoại.", "Chọn mã chứng từ trong bảng hoặc thẻ để mở chi tiết. Dùng Trước / Sau và Dòng/trang ở cuối danh sách; bấm Làm mới danh sách khi cần đọc lại dữ liệu."],
+      { id: "tim-phieu", title: "Mở danh sách chờ duyệt", intro: "Trong menu ứng dụng, chọn Mua hàng → Duyệt đề nghị mua.", steps: ["Kiểm tra chi nhánh đang làm việc.", "Chọn nhãn Chờ duyệt. Các nhãn Tất cả, Đã duyệt và Không duyệt giúp tra cứu lại các nhóm phiếu tương ứng.", "Nếu cần một phiếu cụ thể, nhập mã chứng từ hoặc mã / tên đối tượng vào ô tìm kiếm và bấm Enter / phím tìm kiếm trên điện thoại.", "Chọn mã chứng từ trong bảng hoặc thẻ để mở chi tiết. Dùng Trước / Sau và Dòng/trang ở cuối danh sách; bấm Làm mới danh sách khi cần đọc lại dữ liệu."],
         images: guideImages("approval-list", "Danh sách duyệt đề nghị, nhãn Chờ duyệt và một phiếu minh họa được khoanh đỏ.", "1 · Lọc Chờ duyệt   2 · Mở phiếu cần kiểm tra"),
         tip: "Danh sách trống có thể do bộ lọc, chi nhánh hoặc phạm vi quyền. Thử Tất cả và Làm mới trước khi kết luận không có đề nghị." },
       { id: "kiem-tra", title: "Kiểm tra nội dung trước khi quyết định", steps: ["Đối chiếu mã đề nghị, ngày đề xuất, người đề nghị, bộ phận, khách hàng và mục đích mua.", "Cuộn tới phần hàng hóa, kiểm tra từng mã hàng, số lượng, đơn giá, ngân sách và thời gian yêu cầu nếu có.", "Nếu có nút tải thêm dòng, bấm để đọc tiếp; không chỉ kiểm tra các dòng đang thấy đầu tiên.", "Bấm nút Thao tác chứng từ cạnh trạng thái để mở Thao tác chứng từ. Kiểm tra Duyệt và Không duyệt có được phép thực hiện không."],
@@ -128,7 +132,7 @@ export const helpGuides: HelpGuide[] = [
   {
     id: "purchase-orders", title: "Đặt mua hàng", available: true, minutes: 4,
     audience: "Nhân sự mua hàng", keywords: ["PO", "nhà cung cấp", "đơn đặt mua", "tra cứu"],
-    description: "Tra cứu đơn đặt mua, đọc nhà cung cấp và kiểm tra hàng hóa trên máy tính hoặc điện thoại.",
+    description: "Tra cứu, tạo, sửa và xóa đơn đặt mua; đọc nhà cung cấp và kiểm tra hàng hóa trên máy tính hoặc điện thoại.",
     summary: ["Tìm đơn đặt mua", "Kiểm tra nhà cung cấp và hàng hóa", "Hiểu trạng thái mở / khóa"],
     sections: [
       { id: "mo-dat-mua", title: "Mở màn hình Đặt mua hàng", intro: "Trong menu ứng dụng, chọn Mua hàng → Đặt mua hàng. Tiêu đề trong vùng nội dung có thể là Đề nghị mua hàng (PO), tùy tên màn hình được hệ thống cung cấp.", steps: ["Kiểm tra chi nhánh đang làm việc trước khi tra cứu.", "Nhập mã chứng từ vào ô tìm kiếm rồi bấm Enter / phím tìm kiếm trên điện thoại.", "Chọn Tất cả, Chưa khóa hoặc Đã khóa để thu hẹp danh sách đang tải. Vuốt ngang hàng nhãn trên màn hình nhỏ.", "Chọn đơn trong bảng trên máy tính hoặc thẻ trên điện thoại. Dùng Trước / Sau và Dòng/trang ở cuối danh sách để xem thêm."],
@@ -141,26 +145,13 @@ export const helpGuides: HelpGuide[] = [
       },
     ],
     questions: [
-      { question: "Vì sao không có nút Tạo mới, Sửa hoặc Xóa?", answer: "Giao diện Đặt mua hàng hiện ẩn các thao tác ghi này. Bạn có thể tìm và xem chi tiết đơn; phần tạo/sửa/xóa được để Feature cho đến khi được mở sử dụng." },
+      { question: "Tạo, sửa hoặc xóa đơn đặt mua ở đâu?", answer: "Bấm Tạo Đề nghị mua hàng (PO) (nút + ở góc dưới) để tạo đơn mới. Trong chi tiết đơn, bấm Thêm (Thao tác chứng từ) rồi chọn Sửa thông tin hoặc Xóa chứng từ; Xóa cần bấm lần hai để xác nhận. Nếu nút bị tắt, đọc lý do ghi dưới tên nút." },
       { question: "Đã khóa có nghĩa là đã giao hàng xong chưa?", answer: "Không đủ căn cứ để kết luận. Nhãn hiện tại biểu diễn trạng thái khóa. Cần kiểm tra chứng từ và quy trình liên quan trước khi kết luận về giao hàng, nhập kho hay thanh toán." },
     ],
   },
   ...[
-    ["inbound-requests", "Phiếu đề nghị nhập hàng"],
-    ["warehouse-cost-documents", "Chứng từ chi phí"],
-    ["warehouse-arrival-status", "Xác nhận tình trạng hàng về"],
-    ["warehouse-goods-information", "Kiểm soát thông tin hàng hóa"],
-    ["warehouse-quality-confirmation", "Kiểm soát và xác nhận chất lượng hàng hóa"],
-    ["warehouse-goods-status", "Xác nhận tình trạng hàng hóa"],
-    ["warehouse-goods-plan-approval", "Phê duyệt phương án hàng hóa"],
     ["sales-goods-status", "Xác nhận tình trạng hàng hoá"], ["sales-dispatch-invoices", "Duyệt, PXK và hoá đơn"],
-    ["warehouse-qr", "Xuất kho"], ["warehouse-sales-qr", "Xuất bán hàng"],
-    ["internal-transfer-requests", "Phiếu đề nghị điều chuyển nội bộ (Sales / NVKD)"], ["internal-transfer-pm", "Xác nhận đề nghị điều chuyển (PM)"],
-    ["internal-transfer-batches", "Đợt điều chuyển nội bộ (PM / Điều phối)"], ["internal-transfer-tech", "Xác nhận thiết bị điều chuyển (Kỹ thuật)"],
-    ["internal-transfer-sa", "Phê duyệt điều chuyển nội bộ (TP SA)"], ["internal-transfer-accounting", "Xử lý điều chuyển nội bộ (Kế toán)"],
-    ["internal-transfer-warehouse-out", "Xác nhận xuất điều chuyển (Kho nguồn)"], ["internal-transfer-warehouse-in", "Xác nhận nhận điều chuyển (Kho đích)"],
-    ["machine-movements", "Phiếu di chuyển / bàn giao máy"], ["machine-repairs", "Phiếu sửa chữa / bảo hành / bảo trì máy"],
-    ["asset-component-registration", "Đăng ký QR / Serial linh kiện"],
+    ["warehouse-sales-qr", "Xuất bán hàng"], ["asset-component-registration", "Đăng ký QR / Serial linh kiện"],
   ].map(([id, title]): HelpGuide => ({ id, title, available: false, description: "Hướng dẫn sẽ được bổ sung khi giao diện chức năng sẵn sàng." })),
 ];
 
