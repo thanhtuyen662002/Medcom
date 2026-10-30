@@ -177,9 +177,34 @@ const SAVE_LINE_BY_MODULE: Record<string, readonly string[]> = {
   // Kỹ thuật records the service on each machine; the machine itself (assetId) is sent unchanged.
   "machine-repairs": ["assetId", "noiDung", "quantity", "problemDescription", "actionTaken", "resultStatus", "warrantyCovered",
     "nextServiceDate", "laborAmount", "internalAlert", "notes"],
+  // Every member is sent so a save never clears one; the codes filled by Đối tượng nhận are pass-through.
+  "machine-movements": ["assetId", "quantity", "fromObjectId", "fromStoreHouseId", "objectId", "toStoreHouseId", "handoverDate",
+    "fromLocation", "toLocation", "handoverComponents", "assetCondition", "notes",
+    "departmentId", "costCenterId", "costId", "toLocationId", "toQuanHuyen", "toXaPhuong", "toChuyenKhoa", "toZoneId"],
 };
-/** Line keys sent with a save but shown read-only in the per-field line editor. */
-export const READONLY_LINE_KEYS: ReadonlySet<string> = new Set(["assetId"]);
+const PASSTHROUGH_LINE_KEYS: Record<string, ReadonlySet<string>> = {
+  "machine-repairs": new Set(["assetId"]),
+  "machine-movements": new Set(["assetId", "quantity", "departmentId", "costCenterId", "costId",
+    "toLocationId", "toQuanHuyen", "toXaPhuong", "toChuyenKhoa", "toZoneId"]),
+};
+/** Line keys sent unchanged with a save and not shown in the per-field line editor. */
+export function passthroughLineKey(module: ErpScreenModule, key: string): boolean {
+  return PASSTHROUGH_LINE_KEYS[module]?.has(key) ?? false;
+}
+export type LineEditLookup = { lookupId: string; nameKey: string; links?: Readonly<Record<string, string>> };
+const LINE_EDIT_LOOKUPS: Record<string, Record<string, LineEditLookup>> = {
+  "machine-movements": {
+    fromObjectId: { lookupId: "lines.FromObjectID", nameKey: "fromObjectName" },
+    fromStoreHouseId: { lookupId: "lines.FromStoreHouseID", nameKey: "fromStoreHouseName" },
+    // ERP's ObjectID dropdown fills the destination location columns of the same line.
+    objectId: { lookupId: "lines.ObjectID", nameKey: "objectName", links: { ToLocationID: "toLocationId", ToQuanHuyen: "toQuanHuyen",
+      ToXaPhuong: "toXaPhuong", ToChuyenKhoa: "toChuyenKhoa", ToZoneID: "toZoneId", ToLocation: "toLocation" } },
+    toStoreHouseId: { lookupId: "lines.ToStoreHouseID", nameKey: "toStoreHouseName" },
+  },
+};
+export function lineEditLookup(module: ErpScreenModule, key: string): LineEditLookup | undefined {
+  return LINE_EDIT_LOOKUPS[module]?.[key];
+}
 /** Editors that change item, quantity and price (vs. recorded values on existing lines). */
 export function editsLineItems(module: ErpScreenModule): boolean {
   return saveLineKeys(module).includes("unitPrice");

@@ -3,21 +3,24 @@
 import { useId } from "react";
 import type { ErpDocumentDetail } from "@/lib/erp/erp-client";
 import type { ErpScreenModule, LineColumnConfig } from "@/lib/erp/document-detail/types";
-import { BOOLEAN_EDIT_KEYS, READONLY_LINE_KEYS, saveLineKeys } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
+import { BOOLEAN_EDIT_KEYS, lineEditLookup, passthroughLineKey, saveLineKeys } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
+import { LookupField } from "@/components/untitledui/lookup-field";
 import { RequestInput, RequestSelect } from "./request-presentation";
 
 // Per-field line editor for screens that edit recorded values on existing lines (e.g. the
 // warehouse's actual lot/quantity/expiry and spot checks), not item, quantity and price.
-export function ErpFieldLineEditor({ module, detail, editLines, patchEditLine, columns }: {
+export function ErpFieldLineEditor({ module, detail, branchId, editLines, patchEditLine, columns }: {
   module: ErpScreenModule;
+  branchId: string;
   detail: ErpDocumentDetail;
   editLines: Record<string, Record<string, string>>;
   patchEditLine(lineId: string, key: string, value: string): void;
   columns: readonly LineColumnConfig[];
 }) {
   const baseId = useId();
-  const keys = saveLineKeys(module);
-  const label = (key: string) => columns.find(column => column.key === key)?.label ?? key;
+  const keys = saveLineKeys(module).filter(key => !passthroughLineKey(module, key));
+  // A reference column is configured by its display key (objectId shows as objectName).
+  const label = (key: string) => columns.find(column => column.key === key || column.key === lineEditLookup(module, key)?.nameKey)?.label ?? key;
   return <div className="space-y-4">
     {(detail.lines.rows || []).map((row, index) => {
       const fields = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
@@ -30,11 +33,19 @@ export function ErpFieldLineEditor({ module, detail, editLines, patchEditLine, c
             const id = `${baseId}-${index}-${key}`;
             const value = draft[key] ?? "";
             const set = (next: string) => patchEditLine(row.lineId, key, next);
+            const lookup = lineEditLookup(module, key);
+            if (lookup) return <div key={key} className="min-w-0">
+              <LookupField label={label(key)} module={module} lookupId={lookup.lookupId} branchId={branchId} value={value} choice={null}
+                displayValue={value && value === String(fields[key] ?? "") ? String(fields[lookup.nameKey] ?? value) : value}
+                onSelect={choice => {
+                  set(choice?.id ?? "");
+                  for (const [source, target] of Object.entries(lookup.links ?? {}))
+                    patchEditLine(row.lineId, target, choice?.fields?.[source] == null ? "" : String(choice.fields[source]));
+                }} placeholder="Chọn..." />
+            </div>;
             return <div key={key} className="grid min-w-0 gap-1.5 text-sm font-medium">
               <label htmlFor={id}>{label(key)}</label>
-              {READONLY_LINE_KEYS.has(key)
-                ? <RequestInput id={id} type="text" value={value} readOnly aria-readonly="true" />
-                : BOOLEAN_EDIT_KEYS.has(key)
+              {BOOLEAN_EDIT_KEYS.has(key)
                 ? <RequestSelect id={id} value={value} onChange={event => set(event.target.value)}>
                     <option value="">—</option><option value="true">Có</option><option value="false">Không</option>
                   </RequestSelect>
