@@ -51,7 +51,8 @@ function FieldEditor({ field, model, module, onChange, onLookupSelect, onLookupM
     // Match the existing editor's comma-separated multi-selection draft contract.
     const selected = value.split(",").map(part => part.trim()).filter(Boolean).map(id => ({ id, name: id, label: id, fields: {} }));
     const context = edit.lookupContext ? Object.fromEntries(Object.entries(edit.lookupContext).map(([parameter, draftKey]) =>
-      [parameter, draftKey === null ? null : model.draft[draftKey] || null])) : undefined;
+      // A parameter not being edited (e.g. the batch's branch) comes from the saved header.
+      [parameter, draftKey === null ? null : model.draft[draftKey] || (typeof model.header[draftKey] === "string" ? model.header[draftKey] as string : null) || null])) : undefined;
     return <><LookupField label={field.label} module={module} lookupId={edit.lookupId ?? ""} branchId={presentation?.branchId ?? branchId}
       required={edit.required} multiple={edit.multiple} value={value} choice={presentation ? presentation.choice : model.choices?.[field.key] ?? (value ? { id: value, name: display, label: display, fields: {} } : null)}
       displayValue={presentation ? presentation.displayValue : display} selected={presentation ? presentation.selected : selected} compact={presentation?.compact} context={context} secondaryFields={edit.secondaryFields} placeholder={edit.placeholder}

@@ -257563,6 +257563,52 @@
                       "x-medcom-sql-nullable": false,
                       "x-medcom-writable": true
                     },
+                    "fromBranchId": {
+                      "type": "string",
+                      "x-medcom-source-column": "FromBranchID",
+                      "x-medcom-sql-type": "varchar",
+                      "x-medcom-sql-type-arguments": "(50)",
+                      "x-medcom-sql-nullable": false,
+                      "x-medcom-writable": true
+                    },
+                    "toBranchId": {
+                      "type": "string",
+                      "x-medcom-source-column": "ToBranchID",
+                      "x-medcom-sql-type": "varchar",
+                      "x-medcom-sql-type-arguments": "(50)",
+                      "x-medcom-sql-nullable": false,
+                      "x-medcom-writable": true
+                    },
+                    "fromStoreHouseId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "x-medcom-source-column": "FromStoreHouseID",
+                      "x-medcom-sql-type": "varchar",
+                      "x-medcom-sql-type-arguments": "(50)",
+                      "x-medcom-sql-nullable": true,
+                      "x-medcom-writable": true
+                    },
+                    "toStoreHouseId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "x-medcom-source-column": "ToStoreHouseID",
+                      "x-medcom-sql-type": "varchar",
+                      "x-medcom-sql-type-arguments": "(50)",
+                      "x-medcom-sql-nullable": true,
+                      "x-medcom-writable": true
+                    },
                     "plannedTransferDate": {
                       "anyOf": [
                         {
@@ -257854,6 +257900,26 @@
                       "readOnly": true,
                       "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
                     },
+                    "fromBranchReferenceState": {
+                      "type": "string",
+                      "readOnly": true,
+                      "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                    },
+                    "toBranchReferenceState": {
+                      "type": "string",
+                      "readOnly": true,
+                      "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                    },
+                    "fromStoreHouseReferenceState": {
+                      "type": "string",
+                      "readOnly": true,
+                      "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                    },
+                    "toStoreHouseReferenceState": {
+                      "type": "string",
+                      "readOnly": true,
+                      "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                    },
                     "plannedTransferDateDisplay": {
                       "anyOf": [
                         {
@@ -257922,8 +257988,12 @@
                     }
                   },
                   "required": [
+                    "toBranchId",
                     "documentId",
+                    "fromBranchId",
                     "batchDate",
+                    "fromStoreHouseId",
+                    "toStoreHouseId",
                     "plannedTransferDate",
                     "hasEquipment",
                     "statusId",
@@ -257947,6 +258017,10 @@
                     "documentName",
                     "documentReferenceState",
                     "batchDateDisplay",
+                    "fromBranchReferenceState",
+                    "toBranchReferenceState",
+                    "fromStoreHouseReferenceState",
+                    "toStoreHouseReferenceState",
                     "plannedTransferDateDisplay",
                     "statusReferenceState",
                     "statusForeColor",
@@ -258009,6 +258083,52 @@
                     "x-medcom-sql-type": "datetime",
                     "x-medcom-sql-type-arguments": null,
                     "x-medcom-sql-nullable": false,
+                    "x-medcom-writable": true
+                  },
+                  "fromBranchId": {
+                    "type": "string",
+                    "x-medcom-source-column": "FromBranchID",
+                    "x-medcom-sql-type": "varchar",
+                    "x-medcom-sql-type-arguments": "(50)",
+                    "x-medcom-sql-nullable": false,
+                    "x-medcom-writable": true
+                  },
+                  "toBranchId": {
+                    "type": "string",
+                    "x-medcom-source-column": "ToBranchID",
+                    "x-medcom-sql-type": "varchar",
+                    "x-medcom-sql-type-arguments": "(50)",
+                    "x-medcom-sql-nullable": false,
+                    "x-medcom-writable": true
+                  },
+                  "fromStoreHouseId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "x-medcom-source-column": "FromStoreHouseID",
+                    "x-medcom-sql-type": "varchar",
+                    "x-medcom-sql-type-arguments": "(50)",
+                    "x-medcom-sql-nullable": true,
+                    "x-medcom-writable": true
+                  },
+                  "toStoreHouseId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "x-medcom-source-column": "ToStoreHouseID",
+                    "x-medcom-sql-type": "varchar",
+                    "x-medcom-sql-type-arguments": "(50)",
+                    "x-medcom-sql-nullable": true,
                     "x-medcom-writable": true
                   },
                   "plannedTransferDate": {
@@ -258302,6 +258422,26 @@
                     "readOnly": true,
                     "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
                   },
+                  "fromBranchReferenceState": {
+                    "type": "string",
+                    "readOnly": true,
+                    "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                  },
+                  "toBranchReferenceState": {
+                    "type": "string",
+                    "readOnly": true,
+                    "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                  },
+                  "fromStoreHouseReferenceState": {
+                    "type": "string",
+                    "readOnly": true,
+                    "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                  },
+                  "toStoreHouseReferenceState": {
+                    "type": "string",
+                    "readOnly": true,
+                    "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+                  },
                   "plannedTransferDateDisplay": {
                     "anyOf": [
                       {
@@ -258392,6 +258532,10 @@
                 "required": [
                   "documentId",
                   "batchDate",
+                  "fromBranchId",
+                  "toBranchId",
+                  "fromStoreHouseId",
+                  "toStoreHouseId",
                   "plannedTransferDate",
                   "hasEquipment",
                   "statusId",
@@ -258415,6 +258559,10 @@
                   "documentName",
                   "documentReferenceState",
                   "batchDateDisplay",
+                  "fromBranchReferenceState",
+                  "toBranchReferenceState",
+                  "fromStoreHouseReferenceState",
+                  "toStoreHouseReferenceState",
                   "plannedTransferDateDisplay",
                   "statusReferenceState",
                   "statusForeColor",

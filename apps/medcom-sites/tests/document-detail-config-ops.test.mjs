@@ -72,6 +72,9 @@ const screenFor = moduleId => {
   return matches[0];
 };
 function isHidden(moduleId, section, key) {
+  // ErpVisibleFields.Shown: the batch form shows its branches and warehouses although its T0 HDE lists them.
+  if (moduleId === 'internal-transfer-batches' && section === 'header'
+    && ['frombranchid', 'tobranchid', 'fromstorehouseid', 'tostorehouseid'].includes(lower(key))) return false;
   const hidden = visibility.screens.find(screen => screen.module === moduleId)
     ?.sections.find(entry => entry.section === section)?.fields ?? [];
   return !protocol.has(lower(key)) && hidden.some(field => lower(field) === lower(key));

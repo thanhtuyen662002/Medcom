@@ -163,7 +163,7 @@ test('a transfer batch edits its own fields, not the legacy sales-order group', 
     await edit(tree);
     const projected = tree.root.findByType(DocumentDetailView).props.config;
     assert.equal(projected.groups.some(group => group.id === 'legacy-edit'), false);
-    for (const key of ['batchDate', 'plannedTransferDate', 'transportMethod', 'carrierName', 'carrierPhone', 'vehicleNo', 'notes'])
+    for (const key of ['batchDate', 'plannedTransferDate', 'fromStoreHouseId', 'toStoreHouseId', 'transportMethod', 'carrierName', 'carrierPhone', 'vehicleNo', 'notes'])
       assert.ok(fields(projected).some(field => field.key === key && field.edit), key);
     assert.equal(fields(projected).find(field => field.key === 'batchDate').edit.required, true);
     assert.doesNotMatch(text(tree.toJSON()), /Ngày giao hàng|Mã hợp đồng/);
@@ -173,7 +173,7 @@ test('a transfer batch edits its own fields, not the legacy sales-order group', 
 });
 
 test('a transfer batch save sends only its writable visible header fields', async () => {
-  // Branches, warehouses and assignees are hidden on the ERP form: omitted, the backend keeps the saved values.
+  // Branches and warehouses are shown on the batch form and sent; hidden assignees are omitted and kept by the backend.
   const moduleId = 'internal-transfer-batches';
   const header = { documentId: 'QA-DOC', branchId: 'QA', notes: ' Ghi chú cũ ', isLocked: false, batchDate: '2026-10-23T00:00:00',
     plannedTransferDate: null, transportMethod: 'ROAD', carrierName: null, carrierPhone: null, vehicleNo: null,
@@ -183,7 +183,8 @@ test('a transfer batch save sends only its writable visible header fields', asyn
     await edit(tree);
     await act(async () => button(tree, 'Lưu thay đổi').props.onClick());
     assert.equal(commands.length, 1);
-    assert.deepEqual(commands[0][1].header, { batchDate: '2026-10-23T00:00:00.000', plannedTransferDate: null, transportMethod: 'ROAD',
+    assert.deepEqual(commands[0][1].header, { batchDate: '2026-10-23T00:00:00.000', plannedTransferDate: null, fromBranchId: 'QA', toBranchId: 'QB',
+      fromStoreHouseId: 'K1', toStoreHouseId: 'K2', transportMethod: 'ROAD',
       carrierName: null, carrierPhone: null, vehicleNo: null, notes: 'Ghi chú cũ' });
     assert.deepEqual(commands[0][1].lineChanges, []);
   }, { module: moduleId, detail: data(header), api: { save: async (...args) => { commands.push(args); return { outcome: 'Denied' }; } } });
