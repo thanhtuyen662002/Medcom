@@ -83,6 +83,16 @@ Căn cứ là bản sửa đã triển khai và kết quả đọc lại ngày 2
 
 Chỉ công khai tên/hash đối tượng và mô tả kiểm chứng đã loại dữ liệu giao dịch trong `content/evidence.json`. Không đưa SQL body, ảnh chứng từ, mã phiếu thử hay thông tin kết nối vào repo. Không nâng kết quả Admin này thành kiểm chứng gửi/duyệt/chốt tài chính trên mọi vai trò. Nội dung các quy trình khác không đổi; lượt cập nhật tài liệu không sửa DB hoặc triển khai IIS.
 
+## Phân loại máy chỉ theo dõi và máy có khấu hao — 30/10/2026
+
+Chỉ cập nhật bài Quản lý vòng đời máy ở HDSD/TLKT, sơ đồ, vai trò kế toán và xử lý lỗi của bài. HDSD hướng dẫn hai trường Chế độ khấu hao / Áp dụng từ kỳ tại Thông tin chung, ba lựa chọn và thao tác Sửa → chọn chế độ/kỳ → kiểm tra thông tin tài chính → Lưu. Máy cũ chờ kế toán xác nhận, máy mới mặc định chỉ theo dõi; lưu phân loại không tự sinh bút toán. Vòng đời, hợp đồng và phân loại khấu hao là các trục riêng.
+
+TLKT mô tả hai cột trên `FA_AssetTbl`, bảng lịch sử quyết định `FA_AssetDepreciationPolicyTbl`, function điều kiện, trigger ghi lịch sử, function danh sách và STP tính theo kỳ. Làm rõ quyết định có hiệu lực theo ngày, kiểm tra kỳ mở và phát sinh đã ghi nhận, giao dịch khi tính/xóa tường minh, cùng liên kết đến khấu hao và bút toán. Không thêm nút lịch sử hoặc bước duyệt không có trên ERP.
+
+Căn cứ là bản sửa đã triển khai và đọc lại ngày 30/10: 44 ca SQL trước và 44 ca sau triển khai, thử hoàn tác, kiểm tra giữ nguyên dữ liệu gốc, lịch sử, kỳ khóa và phân quyền đều đạt. Phiên Admin hiển thị hai trường, ba lựa chọn và kỳ mở; đã lưu máy minh họa ở chế độ chỉ theo dõi, đọc lại DB khớp và có một quyết định phân loại đúng người cập nhật, không có phát sinh tài chính. Máy minh họa và lịch sử của nó đã được dọn sạch. Không nâng kết quả này thành chấp nhận chốt tài chính trên máy thật hoặc kiểm thử đăng nhập từng vai trò.
+
+`content/evidence.json` chỉ giữ tên/hash đối tượng, cấu hình trường và phạm vi kiểm chứng đã loại dữ liệu nghiệp vụ; không chứa SQL body, ảnh chứng từ, mã máy thử hay thông tin kết nối. Các bài quy trình khác giữ nguyên. Lượt cập nhật web không sửa DB, phân quyền hoặc triển khai IIS.
+
 ## Quy tắc cập nhật tiếp
 
 Khi DB hoặc ERP đổi, đối chiếu module/form liên quan, cập nhật bài nguồn và sơ đồ cùng lượt. Đổi hash định nghĩa là dấu hiệu cần rà lại, không tự chứng minh nghiệp vụ đã đổi. Giữ các trạng thái UNKNOWN cho đến khi có quan sát hoặc kiểm thử đúng phạm vi, không nâng thành PASS bằng suy luận.

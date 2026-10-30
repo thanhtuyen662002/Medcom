@@ -890,7 +890,23 @@
         {
           "id": "FA_AssetListFrm",
           "caption": "Danh mục tài sản",
-          "buttons": []
+          "buttons": [],
+          "classificationFields": [
+            {
+              "field": "DepreciationMode",
+              "caption": "Chế độ khấu hao",
+              "choices": [
+                "Chờ kế toán xác nhận",
+                "Chỉ theo dõi máy",
+                "Có tính khấu hao"
+              ]
+            },
+            {
+              "field": "DepreciationFromPeriodID",
+              "caption": "Áp dụng từ kỳ",
+              "source": "Open periods after the last closed period; checked again when saved"
+            }
+          ]
         },
         {
           "id": "FA_Move2026Frm",
@@ -920,7 +936,8 @@
           "schema": "dbo",
           "name": "FA_AssetStatusDisplayView",
           "type": "VIEW",
-          "definitionSha256": "4bf6577cb567a30ce99de0378004ff17afedf82de2e8f525ac6831e2ab22f9f6"
+          "definitionSha256": "a40441bfea65dd3b80e6395d39076c241bd4e939250f20e5a80b9706072af9cb",
+          "reviewDate": "2026-10-30"
         },
         {
           "schema": "dbo",
@@ -947,8 +964,51 @@
           "name": "FA_PartGenealogyReportStp",
           "type": "SQL_STORED_PROCEDURE",
           "definitionSha256": "013b17be6bd3b9ee6ff770736e900eae3b2459604b17d129c8884f3b27efc4d0"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_Asset_DepreciationPolicyTrg",
+          "type": "SQL_TRIGGER",
+          "definitionSha256": "2da5ed5bb249d2924ee3cb5b001b1b9883ada0aa7215edb299ed313500013a3d",
+          "reviewDate": "2026-10-30"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_Asset_IsDepreciableFnc",
+          "type": "SQL_SCALAR_FUNCTION",
+          "definitionSha256": "6bd2ada95f1e36a46bb431e137128a5a8f09966627e43e67944274df46a6c4e8",
+          "reviewDate": "2026-10-30"
+        },
+        {
+          "schema": "dbo",
+          "name": "SY_Create_FixAssetDepreciateStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "ac76724e6521c9178c0cf3e2e7f2c7e06d10e018043c646b9e2fc238c1bf99bb",
+          "reviewDate": "2026-10-30"
+        },
+        {
+          "schema": "dbo",
+          "name": "SY_GetAssetListFnc",
+          "type": "SQL_TABLE_VALUED_FUNCTION",
+          "definitionSha256": "3b967fe6c3f65859e37665232d4b30e38f9367a93498c01e763f8480351a839d",
+          "reviewDate": "2026-10-30"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_AssetDepreciationPolicyTbl",
+          "type": "USER_TABLE",
+          "reviewDate": "2026-10-30"
         }
-      ]
+      ],
+      "reviewDate": "2026-10-30",
+      "verification": {
+        "date": "2026-10-30",
+        "source": "Owner-authorized asset depreciation classification repair; deployed module definitions and metadata read back after native save and fixture cleanup. Private SQL and transaction evidence stay outside the public repository.",
+        "database": "44 pre-deployment and 44 post-deployment SQL cases passed; rollback dry run passed. Original assets remain pending accountant confirmation. New assets default to tracking only; no policy decisions seeded. Closed periods, original financial/history data, journal data and permissions were verified unchanged.",
+        "nativeUI": "Admin observed the existing pending classification and both new fields; all three mode labels and the open-period picker were visible. Saved a dedicated synthetic asset as tracking only with an effective period; independent DB readback confirmed the chosen values, one policy event attributed to the editor and zero financial records. The asset and its policy event were removed.",
+        "preserved": "Existing lifecycle and depreciation history tabs, movement/repair links, period locks and existing role/branch permissions. Only two fields added to the existing form; no separate history button or classification-approval workflow.",
+        "limits": "Actual financial posting on real assets and separate role logins were not exercised in native UI. Calculation/guard checks used isolated synthetic SQL tests with rollback. This documentation update changes neither ERP nor IIS."
+      }
     },
     {
       "id": "qr-parts",
@@ -1068,7 +1128,14 @@
       "screen": "AP_PurposeRequestListFrm",
       "status": "PASS",
       "scope": "Native Admin save/reload with blank unit price and no rate input, followed by confirmed native deletion of that synthetic draft. Independent DB readback verified removal of master/detail, no orphan lines and unchanged other requests/permissions. No approval or PO action submitted in this native UI test."
+    },
+    {
+      "date": "2026-10-30",
+      "screen": "FA_AssetListFrm",
+      "status": "PASS",
+      "scope": "Admin observed the existing pending classification and both new fields; all three mode labels and the open-period picker were visible. Saved a dedicated synthetic asset as tracking only with an effective period; independent DB readback confirmed the chosen values, one policy event attributed to the editor and zero financial records. The asset and its policy event were removed.",
+      "limits": "Actual financial posting on real assets and separate role logins were not exercised in native UI. Calculation/guard checks used isolated synthetic SQL tests with rollback. This documentation update changes neither ERP nor IIS."
     }
   ],
-  "lastUpdated": "2026-10-29"
+  "lastUpdated": "2026-10-30"
 }

@@ -1,7 +1,7 @@
 {
   "title": "MEDCOM · Tài liệu ERP",
-  "version": "2026.10.29",
-  "reviewed": "2026-10-29",
+  "version": "2026.10.30",
+  "reviewed": "2026-10-30",
   "defaultArticle": "inbound",
   "articles": [
     {
@@ -387,15 +387,16 @@
     {
       "id": "machine-lifecycle",
       "title": "Quản lý vòng đời máy",
-      "subtitle": "Theo dõi serial, hợp đồng, vị trí, sửa chữa và rã máy theo chứng từ.",
+      "subtitle": "Theo dõi lịch sử máy và phân loại riêng máy chỉ theo dõi, máy có khấu hao.",
       "group": "Tài sản & linh kiện",
       "roles": [
         "Quản lý tài sản",
         "Kỹ thuật",
-        "Kho"
+        "Kho",
+        "Kế toán"
       ],
       "source": "HDSD Quản lý vòng đời máy.docx",
-      "flow": "flowchart TD\nA[Khai báo tài sản, serial và theo dõi vòng đời] --> B[Biến động tài sản]\nB --> C{Nghiệp vụ}\nC --> D[Đặt, mượn, thuê, demo, bán]\nC --> E[Thu hồi về kho]\nC --> F[Điều chuyển nội bộ]\nD --> G[Lưu và khóa chứng từ hợp lệ]\nE --> G\nF --> G\nG --> H[Vị trí và vòng đời hiện tại]\nH --> I[Sửa chữa và thay linh kiện]\nH --> J[Rã máy]\nJ --> K[Thu hồi QR linh kiện về kho]\nK --> I\nH --> L[Machine 360 và lịch sử]",
+      "flow": "flowchart TD\nA[Khai báo tài sản, serial và theo dõi vòng đời] --> B[Biến động tài sản]\nB --> C{Nghiệp vụ}\nC --> D[Đặt, mượn, thuê, demo, bán]\nC --> E[Thu hồi về kho]\nC --> F[Điều chuyển nội bộ]\nD --> G[Lưu và khóa chứng từ hợp lệ]\nE --> G\nF --> G\nG --> H[Vị trí và vòng đời hiện tại]\nH --> I[Sửa chữa và thay linh kiện]\nH --> J[Rã máy]\nJ --> K[Thu hồi QR linh kiện về kho]\nK --> I\nH --> L[Machine 360 và lịch sử]\nA --> DP[Kế toán xác nhận chế độ và kỳ áp dụng]\nDP --> VALID{Lưu phân loại hợp lệ?}\nVALID -->|Không| FIX[Kiểm tra kỳ mở, lịch sử và thông tin tài chính]\nFIX --> DP\nVALID -->|Có| POLICY[Ghi nhận phân loại, kỳ và người cập nhật]\nPOLICY --> CALC[Kế toán tính khấu hao cho kỳ đang mở]\nCALC --> MODE{Chế độ có hiệu lực tại ngày tính?}\nMODE -->|Chờ xác nhận hoặc chỉ theo dõi| SKIP[Không tính khấu hao mới, vẫn theo dõi lịch sử máy]\nMODE -->|Có tính khấu hao| ELIG{Đến ngày tính, chưa ngừng hoặc thanh lý, còn giá trị?}\nELIG -->|Không| SKIP\nELIG -->|Có| DEPR[Phát sinh khấu hao và bút toán đúng kỳ]",
       "guide": "guides/machine-lifecycle.md",
       "technical": "technical/machine-lifecycle.md",
       "forms": [
@@ -407,7 +408,11 @@
         "FA_AssetCurrentLifecycleView",
         "FA_AssetCurrentContractView",
         "FA_AssetStatusDisplayView",
-        "FA_PartGenealogyReportStp"
+        "FA_PartGenealogyReportStp",
+        "FA_Asset_IsDepreciableFnc",
+        "FA_Asset_DepreciationPolicyTrg",
+        "SY_GetAssetListFnc",
+        "SY_Create_FixAssetDepreciateStp"
       ],
       "errors": [
         [
@@ -421,9 +426,33 @@
         [
           "Serial chưa rõ hoặc trùng",
           "Tách để xác nhận hồ sơ; giữ nguyên liên kết cho đến khi xác định chính xác máy."
+        ],
+        [
+          "Máy có trong danh mục nhưng chưa được tính khấu hao",
+          "Kiểm tra Chế độ khấu hao. Máy cũ đang Chờ kế toán xác nhận, máy mới mặc định Chỉ theo dõi máy. Kế toán kiểm tra hồ sơ, chọn Có tính khấu hao và kỳ áp dụng hợp lệ, hoàn thiện thông tin tài chính rồi Lưu; sau đó tính khấu hao theo chức năng hiện có."
+        ],
+        [
+          "Không chọn được kỳ áp dụng hoặc lưu bị chặn vì kỳ",
+          "Chọn kỳ đang mở, sau các kỳ đã khóa và sau phát sinh khấu hao đã ghi nhận của máy. Không đặt lùi trước một phân loại đã thiết lập cho kỳ sau; không mở khóa kỳ cũ để sửa phân loại."
+        ],
+        [
+          "Chọn Có tính khấu hao nhưng thiếu thông tin",
+          "Bổ sung ngày bắt đầu tính khấu hao, nguyên giá dương, thời gian khấu hao dương và các tài khoản tài sản, khấu hao, chi phí hợp lệ. Lưu phân loại chưa tạo bút toán."
+        ],
+        [
+          "Đã chọn Có tính khấu hao nhưng kỳ này vẫn không có số khấu hao",
+          "Đối chiếu kỳ áp dụng, ngày bắt đầu tính, ngày ngừng/thanh lý và giá trị còn lại. Phân loại có hiệu lực ở kỳ sau không áp dụng ngược vào kỳ đang tính."
+        ],
+        [
+          "Tính lại báo kỳ đã có khấu hao của máy chưa xác nhận hoặc không thuộc diện khấu hao",
+          "Giữ nguyên phát sinh và chuyển kế toán đối chiếu phân loại, kỳ và lịch sử. Không xóa lịch sử hoặc đổi trạng thái để bỏ qua cảnh báo."
+        ],
+        [
+          "Không thấy hai trường mới hoặc không có quyền sửa",
+          "Hai trường nằm tại Thông tin chung của Danh mục tài sản. Nếu còn cấu hình cũ, lưu công việc và thoát hẳn ERP rồi mở lại. Quyền hiện hữu giữ nguyên; người chưa có quyền sửa chuyển hồ sơ cho kế toán/người có quyền xử lý."
         ]
       ],
-      "reviewed": "2026-10-22"
+      "reviewed": "2026-10-30"
     },
     {
       "id": "qr-parts",
