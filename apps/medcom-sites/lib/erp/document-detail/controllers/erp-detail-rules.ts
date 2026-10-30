@@ -18,6 +18,7 @@ const INVALID_INPUT_MESSAGES: Record<string, string> = {
   document_rate_invalid: "Tỷ giá phải lớn hơn 0; VND là 1.",
   calculated_value_out_of_range: "Số lượng hoặc đơn giá vượt giới hạn cho phép.",
   document_line_count: "Số dòng chi tiết vượt giới hạn cho phép.",
+  qr_profile_rejected: "Mã QR không đúng định dạng tem (ItemID;ItemCode;Lot hoặc mã kiện PKG…). Kiểm tra lại mã rồi quét lại.",
 };
 
 export function getActionErrorMessage(outcome: string, code?: string | null, message?: string | null): string {
