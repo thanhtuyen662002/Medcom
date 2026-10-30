@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@/lib/erp/api";
 import { getSalesOrderAttachments, uploadSalesOrderAttachment } from "@/lib/erp/erp-screen-api";
 import { validateAttachmentFile, type DraftAttachment } from "@/lib/erp/sales-order-attachments";
+import { compressImageFile } from "@/lib/erp/image-compress";
 
 export function useSalesOrderAttachments() {
   const [files, setFiles] = useState<DraftAttachment[]>([]);
@@ -29,11 +30,12 @@ export function useSalesOrderAttachments() {
     current.current.forEach(row => URL.revokeObjectURL(row.previewUrl));
   }, []);
 
-  const addFiles = async (selected: File[]) => {
-    if (busy.current || validationBusy.current || !selected.length) return;
+  const addFiles = async (chosen: File[]) => {
+    if (busy.current || validationBusy.current || !chosen.length) return;
     const run = generation.current;
     validationBusy.current = true; setValidating(true); setError(null);
     try {
+      const selected = await Promise.all(chosen.map(compressImageFile));
       const problems = await Promise.all(selected.map(async file => {
         const problem = await validateAttachmentFile(file); return problem ? `${file.name}: ${problem}` : null;
       }));
