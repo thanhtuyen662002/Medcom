@@ -32495,7 +32495,7 @@
         },
         {
           "id": "costs.AllocateKind",
-          "GridName": "grdChitiet2",
+          "GridName": "grdChitiet",
           "ColumnID": "AllocateKind",
           "ValueColumn": "AllocateKind",
           "DisplayColumn": "AllocateKindName",
@@ -32512,7 +32512,7 @@
         },
         {
           "id": "costs.CostType",
-          "GridName": "grdChitiet2",
+          "GridName": "grdChitiet",
           "ColumnID": "CostType",
           "ValueColumn": "CostType",
           "DisplayColumn": "CostTypeName",
@@ -32529,7 +32529,7 @@
         },
         {
           "id": "costs.CurrencyID",
-          "GridName": "grdChitiet2",
+          "GridName": "grdChitiet",
           "ColumnID": "CurrencyID",
           "ValueColumn": "CurrencyID",
           "DisplayColumn": "CurrencyID",
@@ -32546,7 +32546,7 @@
         },
         {
           "id": "costs.ExpenseAccID",
-          "GridName": "grdChitiet2",
+          "GridName": "grdChitiet",
           "ColumnID": "ExpenseAccID",
           "ValueColumn": "ExpenseAccID",
           "DisplayColumn": "AccountName",
@@ -32563,7 +32563,7 @@
         },
         {
           "id": "costs.NCC",
-          "GridName": "grdChitiet2",
+          "GridName": "grdChitiet",
           "ColumnID": "NCC",
           "ValueColumn": "NCC",
           "DisplayColumn": "ObjectName",
@@ -32580,7 +32580,7 @@
         },
         {
           "id": "costs.ObjectID",
-          "GridName": "grdChitiet2",
+          "GridName": "grdChitiet",
           "ColumnID": "ObjectID",
           "ValueColumn": "ObjectID",
           "DisplayColumn": "ObjectName",
@@ -32597,7 +32597,7 @@
         },
         {
           "id": "costs.Status",
-          "GridName": "grdChitiet2",
+          "GridName": "grdChitiet",
           "ColumnID": "Status",
           "ValueColumn": "Status",
           "DisplayColumn": "StatusName",
@@ -32614,7 +32614,7 @@
         },
         {
           "id": "costs.VATID",
-          "GridName": "grdChitiet2",
+          "GridName": "grdChitiet",
           "ColumnID": "VATID",
           "ValueColumn": "VATID",
           "DisplayColumn": "VATName",
