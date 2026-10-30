@@ -28,6 +28,9 @@ def hidden_field(module, section, name):
     native = {field.lower() for screen in policy["screens"] if screen["module"] == module
               for part in screen["sections"] if part["section"] == section for field in part["fields"]}
     po = module == "purchase-orders" and section == "lines" and name.lower() in {"property", "property2", "parentid", "sourceamount", "quantity2", "amount"}
+    # ErpVisibleFields.Shown: the batch form shows its branches and warehouses although its T0 HDE lists them.
+    if module == "internal-transfer-batches" and section == "header" and name.lower() in {"frombranchid", "tobranchid", "fromstorehouseid", "tostorehouseid"}:
+        return False
     return po or name.lower() in native and name.lower() not in protocol
 
 
