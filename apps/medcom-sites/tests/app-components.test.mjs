@@ -363,5 +363,5 @@ test('phones stay at 100%: viewport forbids zoom and the iOS pinch lock is mount
   assert.match(layout, /<ZoomLock \/>/);
   assert.match(lock, /"gesturestart", "gesturechange", "gestureend"/);
   assert.match(lock, /event\.touches\.length > 1/);
-  assert.match(await readFile('app/globals.css', 'utf8'), /html\{touch-action:manipulation\}/);
+  assert.match(await readFile('app/globals.css', 'utf8'), /body\{[^}]*touch-action:manipulation\}/);
 });
