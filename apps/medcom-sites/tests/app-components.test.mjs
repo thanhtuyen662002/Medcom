@@ -355,3 +355,13 @@ test('render scan: every owned button/input/link/select/textarea has a target at
   await sheetMarkup(h(FilterSheet, { open: true, value: { status: '', pageSize: 20 }, statuses: [], dateRange: true, onClose: noop, onApply: noop }), scan);
   assert.ok(targets.length >= 30);
 });
+
+test('phones stay at 100%: viewport forbids zoom and the iOS pinch lock is mounted', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const layout = await readFile('app/layout.tsx', 'utf8'), lock = await readFile('components/app/zoom-lock.tsx', 'utf8');
+  assert.match(layout, /maximumScale: 1, userScalable: false/);
+  assert.match(layout, /<ZoomLock \/>/);
+  assert.match(lock, /"gesturestart", "gesturechange", "gestureend"/);
+  assert.match(lock, /event\.touches\.length > 1/);
+  assert.match(await readFile('app/globals.css', 'utf8'), /html\{touch-action:manipulation\}/);
+});
