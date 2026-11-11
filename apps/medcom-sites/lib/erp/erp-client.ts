@@ -20,6 +20,7 @@ import {
   logout as apiLogout,
   ApiError,
 } from "./api";
+import { rememberSessionCapabilities } from "./audit-api";
 import {
   getPurchaseWorkspace,
   getPurchaseList,
@@ -181,12 +182,14 @@ export class ErpClientService {
   public async getSession(): Promise<Session> {
     const s = await apiGetSession();
     this.currentSession = s;
+    rememberSessionCapabilities(s.capabilities);
     return s;
   }
 
   public async continueSession(): Promise<Session> {
     const s = await apiContinueSession();
     this.currentSession = s;
+    rememberSessionCapabilities(s.capabilities);
     return s;
   }
 
@@ -213,6 +216,7 @@ export class ErpClientService {
     try {
       const session = await apiLogin(username.trim(), password);
       this.currentSession = session;
+      rememberSessionCapabilities(session.capabilities);
 
       let effectiveBranch = initialBranch || "";
       try {
@@ -310,6 +314,7 @@ export class ErpClientService {
     } catch {}
     this.currentSession = null;
     this.currentWorkspace = null;
+    rememberSessionCapabilities([]);
   }
 
   // --- 6-Group 7-Screen ERP CUD, Action, and Lookup APIs ---

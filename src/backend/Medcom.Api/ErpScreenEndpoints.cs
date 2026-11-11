@@ -100,6 +100,7 @@ public static class ErpScreenEndpoints
         {
             if(Guard(context,module)is {} rejection)return rejection;
             var raw=await Body(context);if(raw is null)return Problem(400,"invalid_json");
+            WebAuditMiddleware.Note(context).Request=raw.Value;
             var value=Decode<T>(raw.Value);if(value is null)return Problem(400,"invalid_json");
             if(value is ErpLookupQuery lookup && ErpScreenCatalog.Get(module)!.Lookups.SingleOrDefault(item=>item.Id==lookup.LookupId) is {} definition)
                 context.Items["Medcom.CanonicalChoiceAliases"]=new[]{definition.ValueField,definition.DisplayField};
@@ -110,9 +111,10 @@ public static class ErpScreenEndpoints
         Func<IErpScreenService,T,CancellationToken,Task<ErpCommandResult>> call)=>app.MapPost(path,async(HttpContext context,IErpScreenService service)=>
         {
             if(Guard(context,module)is {} rejection)return rejection;
-            var raw=await Body(context);if(raw is null||!ErpCommandRules.Freeze(module,operation,raw.Value,out _))return Problem(400,"invalid_erp_intent");
-            var value=Decode<T>(raw.Value);if(value is null)return Problem(400,"invalid_erp_intent");
-            var result=await call(service,value,context.RequestAborted);
+            var raw=await Body(context);var audit=WebAuditMiddleware.Note(context);if(raw is not null)audit.Request=raw.Value;
+            if(raw is null||!ErpCommandRules.Freeze(module,operation,raw.Value,out _)){audit.ErrorCode="invalid_erp_intent";return Problem(400,"invalid_erp_intent");}
+            var value=Decode<T>(raw.Value);if(value is null){audit.ErrorCode="invalid_erp_intent";return Problem(400,"invalid_erp_intent");}
+            var result=await call(service,value,context.RequestAborted);audit.Result=result;
             var status=result.Outcome switch
             {ErpCommandOutcome.Committed or ErpCommandOutcome.Replayed=>200,ErpCommandOutcome.InvalidInput=>400,ErpCommandOutcome.Denied=>403,
                 ErpCommandOutcome.Conflict or ErpCommandOutcome.OutcomeUnknown=>409,_=>503};

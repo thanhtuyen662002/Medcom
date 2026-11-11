@@ -21,6 +21,9 @@ import { navigationLabel } from "@/components/app/app-navigation";
 import { NotificationsSheet } from "./notifications-sheet";
 import { SidebarDrawer } from "./sidebar-drawer";
 import { TabErpScreen } from "./tab-erp-screen";
+import { TabAuditLog } from "./tab-audit-log";
+import { auditTracker } from "@/lib/erp/audit-tracker";
+import { AUDIT_CAPABILITY, sessionHasCapability } from "@/lib/erp/audit-api";
 import { type ErpScreenModule, erpScreenModules } from "@/lib/erp/proxy-policy";
 import { REAL_BRANCHES, erpClient, type LoginResult } from "@/lib/erp/erp-client";
 import { ROLE_QUEUE_STATUSES, roleQueueCount } from "@/lib/erp/role-queue";
@@ -104,7 +107,9 @@ export function MedcomApp() {
     try {
       const perms = await erpClient.getScreenPermissions(currentBranch);
       if (!perms || !Array.isArray(perms.screens)) throw new Error("invalid permissions");
-      const allowed = perms.screens.filter((s) => s.canView).map((s) => s.module);
+      // "audit-log" is not an ERP form: it is offered when the session holds audit.read.
+      const allowed = [...perms.screens.filter((s) => s.canView).map((s) => s.module),
+        ...(sessionHasCapability(AUDIT_CAPABILITY) ? ["audit-log"] : [])];
       setTabAccess({ loading: false, error: false, allowed });
       setQuickAccess(allowed);
     } catch {
@@ -121,6 +126,18 @@ export function MedcomApp() {
     }
     void retryTabAccess();
   }, [currentUser, retryTabAccess]);
+
+  // Activity log (Nhật ký thao tác): record screen use while signed in.
+  useEffect(() => {
+    if (currentUser) auditTracker.start();
+    else void auditTracker.stop(false);
+  }, [currentUser]);
+  useEffect(() => {
+    if (!currentUser) return;
+    auditTracker.setContext({ page: shownTab, module: (ERP_MODULES as readonly string[]).includes(shownTab) ? shownTab : undefined });
+    auditTracker.track("navigate");
+  }, [currentUser, shownTab]);
+  useEffect(() => { auditTracker.setContext({ branchId: currentBranch }); }, [currentBranch]);
 
   // Modals state
   const [createRequest, setCreateRequest] = useState<{
@@ -448,7 +465,8 @@ export function MedcomApp() {
       try {
         localStorage.removeItem("medcom.auth.user");
         localStorage.removeItem("medcom.auth.credentials");
-        void erpClient.logout();
+        // Send the last screen events before the session ends.
+        void auditTracker.stop(true).finally(() => { void erpClient.logout(); });
       } catch {}
       setCurrentUser(null);
     }
@@ -471,6 +489,7 @@ export function MedcomApp() {
   };
 
   const handleBranchChange = (newBranch: string) => {
+    if (newBranch !== currentBranch) auditTracker.track("change-branch", { detail: { from: currentBranch, to: newBranch } });
     setCreateRequest(null);
     setCurrentBranch(newBranch);
     refreshGlobalCounts(newBranch);
@@ -557,7 +576,7 @@ export function MedcomApp() {
           </div>
 
           {/* Reserve the fixed bottom nav, 56px FAB, breathing room and safe area. */}
-          <main className={`flex-1 min-w-0 w-full ${["orders", "purchases", "purchase-requests", "purchase-approvals", "purchase-orders", "sales-orders", "sales-order-pm", "sales-order-sa", "sales-qr", "inbound-requests"].includes(activeTab) ? "max-w-none" : "max-w-7xl"} mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-[calc(10rem_+_env(safe-area-inset-bottom))] md:pb-8 transition-all`}>
+          <main className={`flex-1 min-w-0 w-full ${["orders", "purchases", "audit-log", "purchase-requests", "purchase-approvals", "purchase-orders", "sales-orders", "sales-order-pm", "sales-order-sa", "sales-qr", "inbound-requests"].includes(activeTab) ? "max-w-none" : "max-w-7xl"} mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-[calc(10rem_+_env(safe-area-inset-bottom))] md:pb-8 transition-all`}>
             {/* Màn có bảng chứng từ dùng toàn bộ bề rộng; màn chỉ có biểu mẫu/thẻ giữ khung hẹp. */}
             {/* TAB 1: Home (Cached in DOM for instant response) */}
             <div className={activeTab === "home" ? "block" : "hidden"}>
@@ -638,6 +657,11 @@ export function MedcomApp() {
                 />
               </div>
             </div>
+
+            {/* Activity log for accounts granted audit.read */}
+            {tabAccess.allowed?.includes("audit-log") && <div className={activeTab === "audit-log" ? "block" : "hidden"}>
+              <TabAuditLog isActive={activeTab === "audit-log"} />
+            </div>}
 
             {/* TAB 7+: ERP screen modules, also shown by their quick tab (cached in DOM for instant tab switching) */}
             {ERP_MODULES.map((mod) => (

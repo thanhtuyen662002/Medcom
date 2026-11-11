@@ -42,6 +42,10 @@ public static class ErpAttachmentEndpoints
                 string Field(string key)=>form.Fields.GetValueOrDefault(key)??"";
                 var request=new ErpAttachmentUpload(Field("idempotencyKey"),Field("branchId"),Field("documentId"),Field("expectedStateToken"),slot,
                     form.Fields.GetValueOrDefault("attachmentId"),form.Fields.GetValueOrDefault("expectedAttachmentToken"),form.Name);
+                // Activity log keeps the file's name and size, not its bytes.
+                WebAuditMiddleware.Note(context).Request=System.Text.Json.JsonSerializer.SerializeToElement(new{request.BranchId,request.DocumentId,
+                    request.SlotId,request.AttachmentId,fileName=form.Name,fileBytes=form.Content.Length,previewBytes=form.Preview.Length},
+                    new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
                 if(!ErpAttachmentRules.Valid(request,module)||!ErpAttachmentRules.Image(form.Content,ErpAttachmentCatalog.MaximumFileBytes,form.Name)
                     ||form.Preview.Length>0&&!ErpAttachmentRules.Image(form.Preview,ErpAttachmentCatalog.MaximumPreviewBytes))return Problem(400,"invalid_attachment_image_or_request");
                 return Command(context,await service.UploadAsync(module,request,form.Content,form.Preview,context.RequestAborted));
@@ -49,7 +53,8 @@ public static class ErpAttachmentEndpoints
             app.MapPost(path+"/delete",async(HttpContext context,IErpAttachmentService service)=>
             {
                 if(ErpScreenEndpoints.Guard(context,module)is {} rejection)return rejection;
-                var raw=await ErpScreenEndpoints.Body(context);if(raw is null||ErpScreenEndpoints.Decode<ErpAttachmentDelete>(raw.Value)is not {} request)return Problem(400,"invalid_attachment_request");
+                var raw=await ErpScreenEndpoints.Body(context);if(raw is not null)WebAuditMiddleware.Note(context).Request=raw.Value;
+                if(raw is null||ErpScreenEndpoints.Decode<ErpAttachmentDelete>(raw.Value)is not {} request)return Problem(400,"invalid_attachment_request");
                 if(!ErpAttachmentRules.Valid(request,module))return Problem(400,"invalid_attachment_request");
                 return Command(context,await service.DeleteAsync(module,request,context.RequestAborted));
             });
@@ -64,6 +69,8 @@ public static class ErpAttachmentEndpoints
     }
     private static IResult Command(HttpContext context,ErpAttachmentResult result)
     {
+        var audit=WebAuditMiddleware.Note(context);audit.Result=result;audit.Outcome=WebAuditMiddleware.Outcome(result.Outcome);
+        if(result.Outcome is not (ErpCommandOutcome.Committed or ErpCommandOutcome.Replayed))audit.ErrorCode=result.Code;
         Stamp(context);var status=result.Outcome switch{ErpCommandOutcome.Committed or ErpCommandOutcome.Replayed=>200,ErpCommandOutcome.InvalidInput=>400,
             ErpCommandOutcome.Denied=>403,ErpCommandOutcome.Conflict or ErpCommandOutcome.OutcomeUnknown=>409,_=>503};return Results.Json(result,statusCode:status);
     }

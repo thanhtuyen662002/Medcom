@@ -143,6 +143,18 @@ internal static class ApiContractCatalog
         Add("get","/api/notifications/{id}","notificationDetail",Shape(typeof(ErpScopedResponse<NotificationRow>)),"current-erp-recipient-sql",parameters:(JsonArray)notificationId.DeepClone());
         Add("get","/api/notifications/{id}/target","notificationTarget",Shape(typeof(ErpScopedResponse<NotificationTarget>)),"current-erp-recipient-and-document-authority",parameters:(JsonArray)notificationId.DeepClone());
         Add("post","/api/notifications/{id}/read","notificationSetRead",Shape(typeof(ErpScopedResponse<NotificationRow>)),"current-erp-recipient-native-mark-read",request:typeof(NotificationReadRequest),parameters:(JsonArray)notificationId.DeepClone());
+        // Web activity log (Nhật ký thao tác): browser events in, admin search out.
+        Add("post","/api/audit/events","auditEvents",Shape(typeof(WebAuditEventsAccepted)),"authenticated-session-activity-log",
+            request:typeof(WebAuditEventBatch),success:202);
+        Add("get","/api/audit/logs","auditLogs",Shape(typeof(WebAuditPage)),"audit-read-capability",Medcom.Application.Audit.WebAuditViewerPolicy.Capability,
+            parameters:new JsonArray(Parameter("from","query",new(){["type"]="string",["format"]="date-time"}),
+                Parameter("to","query",new(){["type"]="string",["format"]="date-time"}),Parameter("user","query",String(100)),
+                Parameter("module","query",String(100)),Parameter("category","query",new(){["type"]="string",
+                    ["enum"]=Array(Medcom.Application.Audit.WebAuditCategories.All)}),Parameter("action","query",String(100)),
+                Parameter("outcome","query",String(30)),Parameter("documentId","query",String(100)),Parameter("branchId","query",String(50)),
+                Parameter("search","query",String(200)),Parameter("page","query",Number(100000,1)),Parameter("pageSize","query",Number(200,50))));
+        Add("get","/api/audit/logs/detail","auditLogDetail",Shape(typeof(WebAuditDetail)),"audit-read-capability",Medcom.Application.Audit.WebAuditViewerPolicy.Capability,
+            parameters:new JsonArray(Parameter("id","query",new(){["type"]="integer",["format"]="int64",["minimum"]=1},true)));
         Add("get", "/api/platform/metadata", "platformMetadata", Object(("contractVersion", new() { ["type"] = "integer", ["const"] = 1 }),
             ("status", new() { ["type"] = "string", ["enum"] = Array(["foundation_only", "read_only_adapter"]) })), "identity-observation", "platform.status");
         Add("get", "/api/platform/erp-config-drift", "platformErpConfigDrift", Shape(typeof(ErpConfigDriftReport)), "erp-configuration-observation", "platform.status");

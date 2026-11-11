@@ -27,6 +27,8 @@ public static class AuthEndpoints
         {
             if (!context.Request.IsHttps)
                 return Problem(400, "https_required", "HTTPS is required.");
+            // Activity log: the attempted account name only, never the password.
+            if (!string.IsNullOrWhiteSpace(request.Username)) WebAuditMiddleware.Note(context).LoginUser = request.Username.Trim();
             if (string.IsNullOrWhiteSpace(request.Username) || request.Username.Length > 100
                 || string.IsNullOrEmpty(request.Password) || request.Password.Length > 256)
                 return Problem(400, "invalid_login_request", "Check the login fields.");
@@ -41,7 +43,10 @@ public static class AuthEndpoints
             catch (OperationCanceledException) when (!context.RequestAborted.IsCancellationRequested)
             { return Problem(503, "identity_unavailable", "Authentication is temporarily unavailable."); }
             if (result.Outcome == IdentityOutcome.Rejected)
+            {
+                WebAuditMiddleware.Note(context).ErrorCode = "invalid_credentials";
                 return Problem(401, "invalid_credentials", "The login was not accepted.");
+            }
             if (result.Outcome != IdentityOutcome.Success || result.Identity is null)
                 return Problem(503, "identity_unavailable", "Authentication is temporarily unavailable.");
             var session = sessions.Create(result.Identity);
@@ -60,6 +65,7 @@ public static class AuthEndpoints
                     });
             }
             catch { sessions.Revoke(session.Token); throw; }
+            WebAuditMiddleware.Note(context).Session = session;
             return Results.Ok(session.View);
         }).AllowAnonymous().RequireRateLimiting("login");
 
