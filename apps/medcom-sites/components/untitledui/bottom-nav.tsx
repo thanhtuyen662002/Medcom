@@ -12,6 +12,7 @@ export type NavTabId =
   | "inbound"
   | "scan"
   | "settings"
+  | "audit-log"
   | ErpScreenModule;
 
 export interface UntitledBottomNavProps {

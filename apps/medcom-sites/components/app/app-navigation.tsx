@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type ComponentType } from "react";
-import { ArrowRightLeft, Boxes, CheckCircle2, ClipboardList, FileText, LayoutDashboard, Layers, PackageCheck, PackagePlus, QrCode, Search, Settings2, ShoppingBag, Truck, UserCheck, Wrench, X, ChevronDown } from "lucide-react";
+import { ArrowRightLeft, Boxes, CheckCircle2, ClipboardList, FileText, History, LayoutDashboard, Layers, PackageCheck, PackagePlus, QrCode, Search, Settings2, ShoppingBag, Truck, UserCheck, Wrench, X, ChevronDown } from "lucide-react";
 import type { NavTabId } from "@/components/untitledui/bottom-nav";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AppButton } from "./app-button";
@@ -58,11 +58,13 @@ const quickItems: readonly NavigationItem[] = [
   { id: "home", label: "Tổng quan", icon: LayoutDashboard },
 ];
 const settingsItem: NavigationItem = { id: "settings", label: "Cài đặt hệ thống", icon: Settings2 };
+// Shown only when the server grants audit.read (the app adds "audit-log" to the allowed list).
+const auditItem: NavigationItem = { id: "audit-log", label: "Nhật ký thao tác", icon: History };
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLocaleLowerCase("vi").trim();
 
 /** The menu label a user clicked to reach a screen; screens reuse it as their title. */
 export function navigationLabel(id: string): string | undefined {
-  return navigationSections.flatMap(section => section.items).find(item => item.id === id)?.label;
+  return [...navigationSections.flatMap(section => section.items), auditItem].find(item => item.id === id)?.label;
 }
 
 export function navigationItemClassName(active: boolean) {
@@ -90,6 +92,7 @@ export function NavigationList({ activeTab, onSelect, tabAccess, onRetryTabs, ba
   })).filter(section => section.items.length > 0);
   const quick = quickItems.filter(item => matches(item));
   const showSettings = matches(settingsItem);
+  const showAudit = Boolean(tabAccess?.allowed?.includes(auditItem.id)) && matches(auditItem);
   const renderItem = (item: NavigationItem) => {
     const active = activeTab === item.id;
     const Icon = item.icon;
@@ -125,15 +128,16 @@ export function NavigationList({ activeTab, onSelect, tabAccess, onRetryTabs, ba
         <h2 className="px-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{section.title}</h2>
         {section.items.map(item => renderItem(item))}
       </section>)}
-      {showSettings && <section aria-label="Hệ thống" className="border-t border-neutral-200 pt-3 dark:border-neutral-800">{renderItem(settingsItem)}</section>}
-      {term && quick.length === 0 && sections.length === 0 && !showSettings && <p role="status" className="px-3 py-4 text-sm text-neutral-500 dark:text-neutral-400">Không tìm thấy phân hệ phù hợp.</p>}
+      {(showSettings || showAudit) && <section aria-label="Hệ thống" className="space-y-1 border-t border-neutral-200 pt-3 dark:border-neutral-800">
+        {showAudit && renderItem(auditItem)}{showSettings && renderItem(settingsItem)}</section>}
+      {term && quick.length === 0 && sections.length === 0 && !showSettings && !showAudit && <p role="status" className="px-3 py-4 text-sm text-neutral-500 dark:text-neutral-400">Không tìm thấy phân hệ phù hợp.</p>}
     </nav>
   </div>;
 }
 
 export function NavigationMenu(props: NavigationListProps) {
   const [open, setOpen] = useState(false);
-  const active = navigationSections.flatMap(section => section.items).find(item => item.id === props.activeTab);
+  const active = [...navigationSections.flatMap(section => section.items), auditItem].find(item => item.id === props.activeTab);
   return <Popover open={open} onOpenChange={setOpen}>
     <PopoverTrigger asChild><AppButton variant="secondary" aria-label="Mở danh mục phân hệ" className="min-w-0 max-w-64">
       <Layers aria-hidden="true" className="size-5 shrink-0" /><span className="truncate">{active?.label ?? "Phân hệ"}</span><ChevronDown aria-hidden="true" className="size-4 shrink-0" />

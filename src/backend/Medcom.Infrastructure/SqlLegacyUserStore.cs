@@ -33,6 +33,11 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
     }
 
     internal SqlConnection CreateConnection() => new(connectionString);
+    // Web activity log writes/reads use their own pool and application name.
+    internal SqlConnection CreateAuditConnection() => new(new SqlConnectionStringBuilder(connectionString)
+    {
+        ApplicationName = "Medcom.Web.Audit", Enlist = false, MultipleActiveResultSets = false
+    }.ConnectionString);
     internal SqlConnection CreateErpCommandConnection() => new(new SqlConnectionStringBuilder(connectionString)
     {
         ApplicationName = "Medcom.Web.ErpCommands", Enlist = false, MultipleActiveResultSets = false

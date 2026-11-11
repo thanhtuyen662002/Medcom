@@ -16,7 +16,7 @@ public interface ILegacyUserStore
 public sealed record LegacyCompany(string TenantId, string CompanyId, string CompanyName);
 
 public sealed class LegacyIdentityAuthority(ILegacyUserStore users, ILegacyPasswordVerifier passwords,
-    LegacyCompany company, TimeProvider? clock = null) : IIdentityAuthority
+    LegacyCompany company, TimeProvider? clock = null, Medcom.Application.Audit.WebAuditViewerPolicy? auditViewers = null) : IIdentityAuthority
 {
     // Versions only order observations of one session. Start from the start time
     // (microsecond scale) so a restarted process never issues a version lower than
@@ -67,6 +67,7 @@ public sealed class LegacyIdentityAuthority(ILegacyUserStore users, ILegacyPassw
     internal static string Stamp(LegacyUser user) => Convert.ToHexString(SHA256.HashData(
         Encoding.UTF8.GetBytes(user.Username + "\0" + user.StoredHash + "\0" + user.GroupId)));
     private AuthoritativeIdentity Identity(LegacyUser user, long version) => new(user.Username, company.TenantId,
-        company.CompanyId, company.CompanyName, user.DisplayName, version, ["platform.status", .. user.Capabilities ?? []],
+        company.CompanyId, company.CompanyName, user.DisplayName, version, ["platform.status", .. user.Capabilities ?? [],
+            .. auditViewers?.Allows(user.Username, user.GroupId, user.GroupName) == true ? [Medcom.Application.Audit.WebAuditViewerPolicy.Capability] : Array.Empty<string>()],
         Stamp(user), user.BranchIds, user.BranchSelection, string.IsNullOrWhiteSpace(user.GroupName) ? null : user.GroupName.Trim());
 }

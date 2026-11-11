@@ -158,6 +158,8 @@ const erpScreenPostRoutes = new Set([
   "api/erp/internal-transfer-warehouse-out/actions/return-step",
   "api/erp/internal-transfer-warehouse-out/actions/return-step/options",
   "api/erp/internal-transfer-warehouse-in/actions/receive",
+  // Activity log: browser interaction events (same CSRF/origin/JSON rules as ERP commands).
+  "api/audit/events",
 ]);
 export function erpScreenPostRoute(path:string){return erpScreenPostRoutes.has(path);}
 
@@ -206,6 +208,8 @@ const routes = new Map([
  ...[...erpScreenPostRoutes].map(path=>[path,["POST"]] as [string,string[]]),
  ...[...erpScreenGetRoutes].map(path=>[path,["GET"]] as [string,string[]]),
  ["api/inbound-requests/draft",["GET"]],
+ // Activity log search for accounts the server grants audit.read.
+ ["api/audit/logs",["GET"]],["api/audit/logs/detail",["GET"]],
  ["api/lookups/branches",["GET"]],
  ["api/purchase-requests",["GET"]],["api/purchase-requests/workspace",["GET"]],["api/purchase-requests/detail",["GET"]],["api/purchase-requests/lookup",["GET"]],
  ["health/live",["GET"]],["health/ready",["GET"]],["api/contracts/openapi.json",["GET"]],["api/auth/csrf",["GET"]],["api/auth/login",["POST"]],["api/auth/session",["GET"]],["api/auth/session/continue",["POST"]],["api/auth/logout",["POST"]],["api/workspace",["GET"]],["api/platform/metadata",["GET"]],["api/platform/erp-config-drift",["GET"]],["api/platform/erp-lookup-check",["GET"]],["api/documents/field-contract",["GET"]],["api/documents/query-contract",["GET"]],["api/documents/purchase-orders",["GET"]],["api/documents/purchase-orders/detail",["GET"]],["api/documents/inbound-requests",["GET"]],["api/documents/inbound-requests/detail",["GET"]],["api/v2/documents/purchase-orders",["GET"]],["api/v2/documents/purchase-orders/detail",["GET"]],["api/v2/documents/inbound-requests",["GET"]],["api/v2/documents/inbound-requests/detail",["GET"]],["api/v2/purchase-requests",["GET"]],["api/v2/purchase-requests/detail",["GET"]],

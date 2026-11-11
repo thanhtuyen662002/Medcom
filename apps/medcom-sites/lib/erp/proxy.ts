@@ -1,5 +1,21 @@
+import {createHmac} from "node:crypto";
 import {resolveErpOrigins,erpCookies,relayCookie,routeAllowed,purchaseCommandRoute,inboundRoute,inboundCommandRoute,erpScreenRoute,erpScreenPostRoute,notificationRoute,notificationReadRoute,requestBodyLimit,attachmentUploadRoute,attachmentContentRoute} from "./proxy-policy";
 const problem=(status:number,code:string)=>Response.json({code},{status,headers:{"Cache-Control":"no-store"}});
+/**
+ * Activity log: the API sees this server as its peer, so pass on the browser's address
+ * (from IIS's replaced X-Forwarded-For) and user agent, signed with the private shared
+ * MEDCOM_AUDIT_RELAY_KEY (same value as the API's Audit:RelayKey). Without a key nothing is sent.
+ */
+export function signClientRelay(headers:Headers,request:Request,route:string,key:string|undefined,now=Date.now()){
+ if(!key||key.length<32)return;
+ const address=(request.headers.get("x-forwarded-for")??"").split(",")[0]?.trim()??"";
+ if(!/^[0-9A-Fa-f:.]{2,64}$/.test(address))return;
+ const agent=encodeURIComponent((request.headers.get("user-agent")??"").slice(0,512));
+ const seconds=String(Math.floor(now/1000));
+ const signature=createHmac("sha256",key).update([seconds,address,agent,request.method.toUpperCase(),"/"+route].join("\n")).digest("hex");
+ headers.set("X-Medcom-Client-Address",address);headers.set("X-Medcom-Client-Agent",agent);
+ headers.set("X-Medcom-Client-Time",seconds);headers.set("X-Medcom-Client-Signature",signature);
+}
 export async function proxyErpRequest(request:Request,path:string[],configuredOrigin:string|undefined,configuredPublicOrigin:string|undefined,upstreamFetch:typeof fetch=fetch,localHttpsMode?:string){
  const route=path.join("/");
  if(!routeAllowed(route,request.method))return problem(404,"endpoint_unavailable");
@@ -51,6 +67,7 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
   if(!csrf||csrf.length>=8192||csrf.includes(","))return problem(403,"csrf_invalid");
   headers.set("Origin",origin);
  }
+ signClientRelay(headers,request,route,process.env.MEDCOM_AUDIT_RELAY_KEY);
  let body:BodyInit|undefined;
  try{
  if(request.method==="POST"){

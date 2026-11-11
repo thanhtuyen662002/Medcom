@@ -1,6 +1,8 @@
 using Medcom.Application;
 using Medcom.Infrastructure;
 using Medcom.Application.PurchaseRequests;
+using Medcom.Application.Audit;
+using Medcom.Infrastructure.Audit;
 using Medcom.Infrastructure.PurchaseRequests;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -75,6 +77,13 @@ public static class ApiHost
         builder.Services.AddSingleton<INotificationQueries, UnavailableNotificationQueries>();
         builder.Services.AddSingleton<IReferenceData, UnavailableReferenceData>();
         builder.Services.AddInboundDraftFacade();
+        // Web activity log: disabled unless the ERP SQL identity store is configured below.
+        builder.Services.AddSingleton<IWebAuditSink, DisabledWebAuditSink>();
+        builder.Services.AddSingleton<IWebAuditQueries, UnavailableWebAuditQueries>();
+        builder.Services.AddSingleton(new WebAuditViewerPolicy(ConfiguredList(builder.Configuration, "Audit:ViewerUsers"),
+            ConfiguredList(builder.Configuration, "Audit:ViewerGroups")));
+        if (builder.Configuration["Audit:RelayKey"] is { Length: >= 32 })
+            builder.Services.AddSingleton(provider => WebAuditRelay.FromConfiguration(builder.Configuration, provider.GetRequiredService<TimeProvider>())!);
         var erpWrites = ErpWriteStartup.Read(builder.Configuration);
         if (erpWrites is not null && !builder.Configuration.GetValue("Legacy:Enabled", false))
             throw new InvalidOperationException("ERP writes require ordinary legacy identity configuration.");
@@ -90,6 +99,18 @@ public static class ApiHost
             builder.Services.AddSingleton(new SqlLegacyUserStore(connectionString, enablePilots: enablePilots,
                 developmentTestTlsTarget: developmentTestTlsTarget));
             builder.Services.AddSingleton<ILegacyUserStore>(provider=>provider.GetRequiredService<SqlLegacyUserStore>());
+            if (builder.Configuration.GetValue("Audit:Enabled", true))
+            {
+                var retention = builder.Configuration.GetValue("Audit:RetentionMonths", 12);
+                if (retention < 0) throw new InvalidOperationException("Audit:RetentionMonths must be 0 (keep) or a positive number of months.");
+                builder.Services.AddSingleton(provider => SqlWebAuditStore.FromStore(provider.GetRequiredService<SqlLegacyUserStore>()));
+                builder.Services.AddSingleton<IWebAuditQueries>(provider => provider.GetRequiredService<SqlWebAuditStore>());
+                builder.Services.AddSingleton(provider => new WebAuditWriter(provider.GetRequiredService<SqlWebAuditStore>(),
+                    new WebAuditOptions(retention, AuditSpoolDirectory(builder.Configuration, provider)),
+                    provider.GetRequiredService<ILogger<WebAuditWriter>>(), provider.GetRequiredService<TimeProvider>()));
+                builder.Services.AddSingleton<IWebAuditSink>(provider => provider.GetRequiredService<WebAuditWriter>());
+                builder.Services.AddHostedService(provider => provider.GetRequiredService<WebAuditWriter>());
+            }
             builder.Services.AddScoped<IReferenceData>(provider=>
             {
                 var context=provider.GetRequiredService<IHttpContextAccessor>().HttpContext??throw new InvalidOperationException("Current request required.");
@@ -355,6 +376,8 @@ public static class ApiHost
         app.UseStaticFiles();
         app.UseAuthentication();
         app.UseAuthorization();
+        // After authentication (who), before rate limiting/CSRF (so rejections are recorded too).
+        app.Use(WebAuditMiddleware.Observe);
         app.UseRateLimiter();
         app.Use(async (context, next) =>
         {
@@ -397,6 +420,7 @@ public static class ApiHost
             { return Results.Problem(statusCode: 503, title: "ERP lookup check unavailable."); }
         });
         AuthEndpoints.Map(app);
+        WebAuditEndpoints.Map(app);
         var data=app.MapGroup("").AddEndpointFilter<CanonicalResponseFilter>().AddEndpointFilter<FeDisplayFilter>();
         DocumentEndpoints.Map(data);
         ApiContractCatalog.Map(app);
@@ -408,6 +432,24 @@ public static class ApiHost
         BranchEndpoints.Map(data);
         data.MapInboundDraftFacade();
         return app;
+    }
+
+    // Accepts a JSON array or one comma/semicolon separated string.
+    private static IEnumerable<string> ConfiguredList(IConfiguration configuration, string key)
+    {
+        var section = configuration.GetSection(key);
+        var values = section.GetChildren().Select(child => child.Value).Append(section.Value);
+        return values.Where(value => !string.IsNullOrWhiteSpace(value))
+            .SelectMany(value => value!.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)).ToArray();
+    }
+
+    // Private folder for log rows that could not be stored yet (SQL down or table not installed).
+    private static string? AuditSpoolDirectory(IConfiguration configuration, IServiceProvider provider)
+    {
+        if (configuration["Audit:SpoolPath"] is { Length: > 0 } configured) return configured.Trim();
+        try { if (provider.GetService<WebSessionFileStore>()?.EnsurePrivateDirectory("audit-spool") is { } folder) return folder; }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+        return Path.Combine(Path.GetTempPath(), "Medcom-audit-spool");
     }
 
     private static void SetResponseHeaders(HttpContext context, string contentSecurityPolicy)

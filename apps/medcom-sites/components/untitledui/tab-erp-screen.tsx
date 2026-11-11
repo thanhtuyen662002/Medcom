@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useId } from "react";
 import { Plus, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/erp/api";
+import { auditTracker } from "@/lib/erp/audit-tracker";
 import { erpClient, type ErpScreenModule, type ErpScreenDescription, type ErpDocumentRow, type ErpActionState, type ErpChoice, type ErpCommandResult } from "@/lib/erp/erp-client";
 import { FormSheet } from "@/components/app/form-sheet";
 import { FormField, FormSection } from "@/components/app/form-field";
@@ -220,6 +221,11 @@ export function TabErpScreen({
 
   // Detail State
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  // Activity log: which document this screen shows, and when one is opened.
+  useEffect(() => {
+    auditTracker.setDocument(module, selectedDocId ?? undefined);
+    if (selectedDocId) auditTracker.track("open", { module, documentId: selectedDocId });
+  }, [module, selectedDocId]);
   const [createFeedback, setCreateFeedback] = useState<{
     type: "success" | "warning" | "error";
     message: string;

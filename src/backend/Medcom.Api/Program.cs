@@ -10,6 +10,12 @@ if (args.Any(value => value.StartsWith("--print-api-contract", StringComparison.
     return;
 }
 
+if (WebAuditSetup.IsRequested(args))
+{
+    Environment.ExitCode = await WebAuditSetup.RunAsync(args, Console.Out);
+    return;
+}
+
 if (ErpWriteSetup.IsRequested(args))
 {
     Environment.ExitCode = await ErpWriteSetup.RunAsync(args, Console.Out);
