@@ -6,7 +6,7 @@ Ghi lại người dùng đã làm gì trên ERP web, để truy vết khi có s
 
 | Loại (`Category`) | Nguồn | Nội dung |
 | --- | --- | --- |
-| `auth` | máy chủ | Đăng nhập thành công/thất bại (tên đăng nhập đã gõ, **không bao giờ lưu mật khẩu**), đăng xuất |
+| `auth` | máy chủ | Đăng nhập thành công/thất bại (tên đăng nhập đã gõ, **không bao giờ lưu mật khẩu**), đăng xuất, hết phiên (`session-ended`: hết hạn do không dùng / hết thời hạn tối đa / tài khoản ERP bị khóa hoặc đổi mật khẩu / quyền ERP thay đổi) |
 | `command` | máy chủ | Mọi lệnh ERP: tạo, lưu, xóa, gửi/duyệt/từ chối/trả lại, lưu mục chi phí/tài sản, quét QR, đánh dấu thông báo. Lưu **toàn bộ dữ liệu gửi lên** và kết quả (Committed/Denied/Conflict…, mã lỗi, số chứng từ, `AuditId` của journal lệnh) |
 | `import` | máy chủ | Dán từ Excel (`paste/validate`) và chọn hàng từ chứng từ nguồn (`selection`), kèm dữ liệu dán/chọn |
 | `read` | máy chủ | Mở danh sách (kèm từ khóa tìm/lọc), xem chi tiết chứng từ, xem thông tin hợp đồng, mở thông báo. Đọc lặp lại giống hệt trong 2 phút (màn hình tự làm mới) chỉ ghi 1 lần |

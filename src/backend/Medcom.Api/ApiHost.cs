@@ -334,6 +334,15 @@ public static class ApiHost
             LogSessionStore(app.Logger, store.FilePath, local.Restored, local.Persisting == true);
             app.Services.GetService<LegacyReadiness>()?.UpdateSessionPersistence(local.Persisting == true, cookieKeyRing is not null);
         }
+        // Activity log: sessions that end without a logout (timeouts, changed ERP account or rights).
+        if (app.Services.GetRequiredService<IWebSessions>() is LocalWebSessions sessionLog
+            && app.Services.GetRequiredService<IWebAuditSink>() is { Enabled: true } auditSink)
+            sessionLog.SessionEnded = ended => auditSink.Write(new WebAuditEntry(ended.At, WebAuditSources.Server,
+                WebAuditCategories.Auth, "session-ended", ended.Reason)
+            {
+                UserName = ended.Identity.PrincipalId, DisplayName = ended.Identity.DisplayName, RoleName = ended.Identity.RoleName,
+                SessionRef = ended.Token is null ? null : WebAuditMiddleware.SessionRef(ended.Token)
+            });
         app.UseSecureIngress(allRequestsSecure);
         app.Use(RequestPerformance.Observe);
         var contentSecurityPolicy = WebSecurity.ContentSecurityPolicy(app.Environment.WebRootPath);

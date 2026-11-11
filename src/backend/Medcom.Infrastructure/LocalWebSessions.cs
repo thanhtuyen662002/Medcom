@@ -14,6 +14,9 @@ public sealed record WebSessionPolicy(TimeSpan IdleTimeout, TimeSpan AbsoluteTim
 // restart/deploy (token hashes only; each one revalidates against ERP on use);
 // without one, restart revokes every Web session. This is not a distributed
 // store; load-balanced deployment is gated.
+/// <summary>A session the server ended without a logout (timeout or changed ERP account/rights).</summary>
+public sealed record WebSessionEnded(string? Token, AuthoritativeIdentity Identity, string Reason, DateTimeOffset At);
+
 public sealed class LocalWebSessions : IWebSessions, IDisposable
 {
     private static readonly TimeSpan SaveDelay = TimeSpan.FromSeconds(2);
@@ -30,6 +33,13 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
     private readonly object saveGate = new();
     private ITimer? pendingSave;
     private int saveScheduled;
+
+    /// <summary>
+    /// Called (under the session lock; must not block) when a session ends other than by
+    /// logout: idle-timeout, absolute-timeout, authority-rejected or authority-changed.
+    /// Token is null when the session was pruned without being presented.
+    /// </summary>
+    public Action<WebSessionEnded>? SessionEnded { get; set; }
 
     /// <summary>Sessions restored from the store at startup.</summary>
     public int Restored { get; }
@@ -102,8 +112,11 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
         var now = clock.GetUtcNow();
         lock (gate)
         {
-            foreach (var key in entries.Where(pair => Expired(pair.Value, now)).Select(pair => pair.Key).ToArray())
-                entries.Remove(key);
+            foreach (var pair in entries.Where(pair => Expired(pair.Value, now)).ToArray())
+            {
+                entries.Remove(pair.Key);
+                Ended(null, pair.Value, ExpiryReason(pair.Value, now));
+            }
             if (entries.Count >= policy.Capacity) return null;
             var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
             var entry = new Entry(frozen, now, now + policy.AbsoluteTimeout, new SemaphoreSlim(1, 1));
@@ -129,7 +142,7 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
         {
             if (!entries.TryGetValue(key, out original!) || Expired(original, clock.GetUtcNow()))
             {
-                entries.Remove(key);
+                if (entries.Remove(key)) Ended(token, original, ExpiryReason(original, clock.GetUtcNow()));
                 return null;
             }
         }
@@ -149,7 +162,7 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
                 // begin a database read after logout or expiry.
                 if (!entries.TryGetValue(key, out original!) || Expired(original, clock.GetUtcNow()))
                 {
-                    entries.Remove(key);
+                    if (entries.Remove(key)) Ended(token, original, ExpiryReason(original, clock.GetUtcNow()));
                     return null;
                 }
                 // Entry replacement proves a successful observation since this
@@ -167,7 +180,11 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
                 {
                     if (entries.TryGetValue(key, out var current))
                     {
-                        if (Expired(current, clock.GetUtcNow())) entries.Remove(key);
+                        if (Expired(current, clock.GetUtcNow()))
+                        {
+                            entries.Remove(key);
+                            Ended(token, current, ExpiryReason(current, clock.GetUtcNow()));
+                        }
                         else entries[key] = current with { AuthorityUnavailable = true };
                     }
                     return null;
@@ -186,6 +203,7 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
                     || currentIdentity.CredentialStamp != latest.Identity.CredentialStamp)
                 {
                     entries.Remove(key);
+                    Ended(token, latest, Expired(latest, clock.GetUtcNow()) ? ExpiryReason(latest, clock.GetUtcNow()) : "authority-rejected");
                     return null;
                 }
                 if (currentIdentity.AuthorityVersion < latest.Identity.AuthorityVersion) return null;
@@ -194,6 +212,7 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
                         || !currentIdentity.BranchIds!.SequenceEqual(latest.Identity.BranchIds!)))
                 {
                     entries.Remove(key);
+                    Ended(token, latest, "authority-changed");
                     return null;
                 }
                 var updated = latest with
@@ -228,7 +247,7 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
             var key = Hash(token);
             if (!entries.TryGetValue(key, out var entry) || Expired(entry, clock.GetUtcNow()))
             {
-                entries.Remove(key);
+                if (entries.Remove(key)) Ended(token, entry!, ExpiryReason(entry!, clock.GetUtcNow()));
                 return Task.FromResult<ResolvedSession?>(null);
             }
             return Task.FromResult<ResolvedSession?>(Resolve(token, entry));
@@ -252,6 +271,15 @@ public sealed class LocalWebSessions : IWebSessions, IDisposable
         bool removed;
         lock (gate) removed = entries.Remove(Hash(token));
         if (removed) Changed();
+    }
+
+    private string ExpiryReason(Entry entry, DateTimeOffset now) => now >= entry.AbsoluteExpiry ? "absolute-timeout" : "idle-timeout";
+
+    // Observers (the activity log) must never break session handling.
+    private void Ended(string? token, Entry entry, string reason)
+    {
+        try { SessionEnded?.Invoke(new WebSessionEnded(token, entry.Identity, reason, clock.GetUtcNow())); }
+        catch (Exception) { }
     }
 
     private bool Expired(Entry entry, DateTimeOffset now) =>

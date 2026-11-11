@@ -248,6 +248,26 @@ public sealed class WebAuditTests
         Assert.Contains(views, e => e.Action == "view-log" && e.Outcome == "success" && e.QueryText!.Contains("category=command", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task Sessions_ended_by_timeout_or_a_rejected_ERP_account_are_recorded_once()
+    {
+        var sink = new RecordingAuditSink();
+        await using var fixture = await PurchaseHttpFixture.Start(services => services.AddSingleton<IWebAuditSink>(sink));
+        await fixture.Login();
+        fixture.Clock.Now = fixture.Clock.Now.AddMinutes(6); // idle timeout is 5 minutes in the fixture
+        using (var expired = await fixture.Client.GetAsync("/api/auth/session")) Assert.Equal(HttpStatusCode.Unauthorized, expired.StatusCode);
+        using (var again = await fixture.Client.GetAsync("/api/auth/session")) Assert.Equal(HttpStatusCode.Unauthorized, again.StatusCode);
+        await fixture.Login();
+        fixture.Authority.Rejected = true; // e.g. the ERP account was disabled or its password changed
+        using (var rejected = await fixture.Client.GetAsync("/api/auth/session")) Assert.Equal(HttpStatusCode.Unauthorized, rejected.StatusCode);
+        var entries = sink.Wait(4);
+        var logins = entries.Where(e => e.Action == "login").ToArray();
+        var ended = entries.Where(e => e.Action == "session-ended").ToArray();
+        Assert.Equal(2, ended.Length);
+        Assert.Equal(("auth", "idle-timeout", "qa-user", logins[0].SessionRef), (ended[0].Category, ended[0].Outcome, ended[0].UserName, ended[0].SessionRef));
+        Assert.Equal(("authority-rejected", logins[1].SessionRef), (ended[1].Outcome, ended[1].SessionRef));
+    }
+
     private static object Batch(DateTimeOffset sent, string type) =>
         new { sentAt = sent, events = new[] { new { id = Guid.NewGuid(), at = sent, type } } };
 

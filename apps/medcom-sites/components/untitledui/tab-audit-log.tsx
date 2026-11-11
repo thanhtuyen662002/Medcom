@@ -33,7 +33,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const ACTION_LABELS: Record<string, string> = {
-  login: "Đăng nhập", logout: "Đăng xuất", create: "Tạo mới", save: "Lưu", delete: "Xóa", submit: "Gửi duyệt",
+  login: "Đăng nhập", logout: "Đăng xuất", "session-ended": "Hết phiên đăng nhập", create: "Tạo mới", save: "Lưu", delete: "Xóa", submit: "Gửi duyệt",
   "send-pm": "Gửi PM", "send-sa": "Gửi SA", "send-tech": "Gửi kỹ thuật", "send-accounting": "Gửi kế toán",
   "send-warehouse": "Gửi kho", "send-management": "Gửi quản lý", "send-purchase-order": "Chuyển đặt mua hàng",
   "send-to-warehouse": "Gửi thủ kho", approve: "Duyệt", reject: "Từ chối", "return-step": "Trả lại bước", recall: "Thu hồi",
@@ -61,6 +61,10 @@ const OUTCOMES: { id: string; label: string; tone: "neutral" | "success" | "warn
   { id: "unknown", label: "Chưa rõ kết quả", tone: "danger" },
   { id: "failed", label: "Lỗi hệ thống", tone: "danger" },
   { id: "cancelled", label: "Đã hủy", tone: "neutral" },
+  { id: "idle-timeout", label: "Hết hạn do không dùng", tone: "neutral" },
+  { id: "absolute-timeout", label: "Hết thời hạn tối đa", tone: "neutral" },
+  { id: "authority-rejected", label: "Tài khoản ERP bị khóa/đổi mật khẩu", tone: "warning" },
+  { id: "authority-changed", label: "Quyền ERP thay đổi", tone: "info" },
 ];
 
 const MODULE_LABELS: Record<string, string> = { notifications: "Thông báo", "audit-log": "Nhật ký thao tác", home: "Tổng quan", scan: "Quét QR", settings: "Cài đặt" };
