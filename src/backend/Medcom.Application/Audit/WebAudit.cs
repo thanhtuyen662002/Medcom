@@ -120,8 +120,9 @@ public static class WebAuditPayload
         return Bound(Encoding.UTF8.GetString(buffer.ToArray()), maximumChars);
     }
 
-    public static string? Json<T>(T? value, int maximumChars = MaximumChars) =>
-        value is null ? null : Json(JsonSerializer.SerializeToElement(value, Options), maximumChars);
+    // Separate name: a generic Json<T> overload would win for JsonElement arguments and recurse forever.
+    public static string? FromObject(object? value, int maximumChars = MaximumChars) =>
+        value is null ? null : Json(JsonSerializer.SerializeToElement(value, value.GetType(), Options), maximumChars);
 
     public static string Bound(string text, int maximumChars = MaximumChars) => text.Length <= maximumChars ? text
         : JsonSerializer.Serialize(new { truncated = true, originalLength = text.Length, text = text[..Math.Max(0, maximumChars - 200)] }, Options);

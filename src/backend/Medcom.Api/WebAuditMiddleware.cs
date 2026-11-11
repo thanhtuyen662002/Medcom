@@ -187,7 +187,7 @@ internal static class WebAuditMiddleware
             PeerAddress = peer,
             UserAgent = WebAuditPayload.Text(client?.Agent ?? context.Request.Headers.UserAgent.ToString(), 512),
             RequestData = WebAuditPayload.Json(request),
-            ResultData = result is null ? null : WebAuditPayload.Json(result),
+            ResultData = WebAuditPayload.FromObject(result),
             ErrorCode = notes?.ErrorCode ?? (command is { Outcome: not (ErpCommandOutcome.Committed or ErpCommandOutcome.Replayed) } ? command.Code : null)
         };
     }
